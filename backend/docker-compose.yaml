@@ -1,0 +1,23 @@
+services:
+  website:
+    build: .
+    image: cloud-mining
+    restart: always
+    container_name: cloud-mining
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cloud-mining.rule=Host(`${HOST}`)"
+      - "traefik.http.routers.cloud-mining.entrypoints=websecure"
+      - "traefik.http.routers.cloud-mining.tls.certresolver=myresolver"
+      - "traefik.http.services.cloud-mining.loadbalancer.server.port=3914"
+
+    networks:
+      - traefik_network
+
+networks:
+  traefik_network:
+    external: true

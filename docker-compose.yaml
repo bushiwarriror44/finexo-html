@@ -1,0 +1,75 @@
+services:
+  website:
+    build: .
+    image: cloud-mining
+    restart: always
+    container_name: cloud-mining
+    env_file:
+      - .env
+    environment:
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@cloudmine.local}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - EMAIL_API_URL=${EMAIL_API_URL}
+      - EMAIL_API_TOKEN=${EMAIL_API_TOKEN}
+      - EMAIL_FROM=${EMAIL_FROM:-noreply@cloudmine.local}
+      - CREDENTIALS_ENCRYPTION_KEY=${CREDENTIALS_ENCRYPTION_KEY:-change-me}
+      - SECRET_KEY=${SECRET_KEY:-change-me}
+      - KYC_REQUIRED_COUNTRIES=${KYC_REQUIRED_COUNTRIES:-}
+      - FEATURE_REFERRAL=${FEATURE_REFERRAL:-false}
+      - FEATURE_REFERRAL_PAYOUTS=${FEATURE_REFERRAL_PAYOUTS:-false}
+      - FEATURE_SUPPORT=${FEATURE_SUPPORT:-false}
+      - FEATURE_SUPPORT_CHAT_POLLING=${FEATURE_SUPPORT_CHAT_POLLING:-false}
+      - FEATURE_SUPPORT_SLA=${FEATURE_SUPPORT_SLA:-false}
+      - FEATURE_KYC=${FEATURE_KYC:-false}
+      - FEATURE_KYC_OPTIONAL=${FEATURE_KYC_OPTIONAL:-true}
+      - FEATURE_RATE_LIMIT_STRICT=${FEATURE_RATE_LIMIT_STRICT:-false}
+      - FEATURE_AUDIT_STRICT=${FEATURE_AUDIT_STRICT:-false}
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "3914:3914"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cloud-mining.rule=Host(`cloud-mining`)"
+      - "traefik.http.routers.cloud-mining.entrypoints=websecure"
+      - "traefik.http.routers.cloud-mining.tls.certresolver=myresolver"
+      - "traefik.http.services.cloud-mining.loadbalancer.server.port=3914"
+
+    networks:
+      - traefik_network
+
+  worker:
+    image: cloud-mining
+    restart: always
+    depends_on:
+      - website
+    env_file:
+      - .env
+    environment:
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@cloudmine.local}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - EMAIL_API_URL=${EMAIL_API_URL}
+      - EMAIL_API_TOKEN=${EMAIL_API_TOKEN}
+      - EMAIL_FROM=${EMAIL_FROM:-noreply@cloudmine.local}
+      - CREDENTIALS_ENCRYPTION_KEY=${CREDENTIALS_ENCRYPTION_KEY:-change-me}
+      - SECRET_KEY=${SECRET_KEY:-change-me}
+      - TOPUP_WORKER_POLL_SECONDS=${TOPUP_WORKER_POLL_SECONDS:-15}
+      - TOPUP_RUNNING_TIMEOUT_SECONDS=${TOPUP_RUNNING_TIMEOUT_SECONDS:-180}
+      - FEATURE_REFERRAL=${FEATURE_REFERRAL:-false}
+      - FEATURE_REFERRAL_PAYOUTS=${FEATURE_REFERRAL_PAYOUTS:-false}
+      - FEATURE_SUPPORT=${FEATURE_SUPPORT:-false}
+      - FEATURE_SUPPORT_CHAT_POLLING=${FEATURE_SUPPORT_CHAT_POLLING:-false}
+      - FEATURE_SUPPORT_SLA=${FEATURE_SUPPORT_SLA:-false}
+      - FEATURE_KYC=${FEATURE_KYC:-false}
+      - FEATURE_KYC_OPTIONAL=${FEATURE_KYC_OPTIONAL:-true}
+      - FEATURE_RATE_LIMIT_STRICT=${FEATURE_RATE_LIMIT_STRICT:-false}
+      - FEATURE_AUDIT_STRICT=${FEATURE_AUDIT_STRICT:-false}
+    command: ["python", "worker.py"]
+    volumes:
+      - ./data:/app/data
+    networks:
+      - traefik_network
+
+networks:
+  traefik_network:
+    external: true

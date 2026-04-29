@@ -1,0 +1,25 @@
+services:
+  website:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: cloud-mining-local
+    restart: unless-stopped
+    container_name: cloud-mining-local
+    environment:
+      - FLASK_DEBUG=True
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - ADMIN_PASSWORD=admin123
+      - SESSION_COOKIE_SECURE=False
+      - ALLOWED_ORIGINS=*
+    volumes:
+      - ../data:/app/data
+      - ../dist:/app/dist
+    ports:
+      - "3914:3914"
+    networks:
+      - cloud-mining-network
+
+networks:
+  cloud-mining-network:
+    driver: bridge

@@ -1,0 +1,1108 @@
+{% extends 'base.html' %}
+
+{% block title %}Админ Панель{% endblock %}
+
+{% block body %}
+<div class="container py-4">
+  <div id="admin-feedback" class="alert d-none" role="status"></div>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 m-0">Admin panel</h1>
+    <a class="btn btn-outline-danger" href="/admin/logout">Sign out</a>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-header"><strong>API credentials</strong></div>
+        <div class="card-body">
+          <form id="credentialForm" class="row g-2 mb-3">
+            <div class="col-md-4"><input class="form-control" name="provider" placeholder="provider: tron/evm/btc" required /></div>
+            <div class="col-md-4"><input class="form-control" name="apiUrl" placeholder="API url" /></div>
+            <div class="col-md-4"><input class="form-control" name="apiKey" placeholder="API key" /></div>
+            <div class="col-12"><button class="btn btn-primary" type="submit">Save credentials</button></div>
+          </form>
+          <table class="table table-sm">
+            <thead><tr><th>Provider</th><th>URL</th><th>Version</th><th>Status</th></tr></thead>
+            <tbody>
+              {% for row in credentials %}
+                <tr>
+                  <td>{{ row.provider }}</td>
+                  <td>{{ row.api_url or '-' }}</td>
+                  <td>{{ row.version }}</td>
+                  <td>{{ 'active' if row.is_active else 'inactive' }}</td>
+                </tr>
+              {% else %}
+                <tr><td colspan="4">No credentials</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-header"><strong>Wallet addresses</strong></div>
+        <div class="card-body">
+          <div class="alert alert-info py-2 mb-3" role="alert">
+            Deposit wallets support only <strong>USDT</strong> on <strong>TRON (TRX)</strong>.
+          </div>
+          <form id="walletForm" class="row g-2 mb-3">
+            <div class="col-md-4"><input class="form-control" name="asset" value="USDT" readonly required /></div>
+            <div class="col-md-4"><input class="form-control" name="network" value="TRX" readonly required /></div>
+            <div class="col-md-4"><input class="form-control" name="address" placeholder="Wallet address" required /></div>
+            <div class="col-12"><button class="btn btn-primary" type="submit">Add wallet</button></div>
+          </form>
+          <table class="table table-sm">
+            <thead><tr><th>Asset</th><th>Network</th><th>Address</th><th>USDT on wallet</th><th>Status</th></tr></thead>
+            <tbody id="walletsTableBody">
+              {% for row in wallets %}
+                <tr>
+                  <td>{{ row.asset }}</td>
+                  <td>{{ row.network }}</td>
+                  <td style="max-width: 220px; word-break: break-all">{{ row.address }}</td>
+                  <td>-</td>
+                  <td>{{ 'active' if row.is_active else 'inactive' }}</td>
+                </tr>
+              {% else %}
+                <tr><td colspan="5">No wallets</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mt-4">
+    <div class="card-header"><strong>Users</strong></div>
+    <div class="card-body">
+      <form id="adminUsersFilterForm" class="row g-2 mb-3">
+        <div class="col-md-4"><input class="form-control" name="q" placeholder="Search by email or id" /></div>
+        <div class="col-md-3">
+          <select class="form-select" name="role">
+            <option value="">All roles</option>
+            <option value="user">Users only</option>
+            <option value="admin">Admins only</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <select class="form-select" name="isActive">
+            <option value="">Any status</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+          <button class="btn btn-primary w-100" type="submit">Apply</button>
+        </div>
+      </form>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead><tr><th>ID</th><th>Email</th><th>Role</th><th>Status</th><th>Available USDT</th><th>Held USDT</th><th>Withdrawable USDT</th><th>Purchase-only USDT</th><th>Action</th></tr></thead>
+          <tbody id="adminUsersTableBody">
+            <tr><td colspan="9">Loading users...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <hr />
+      <form id="manualCreditForm" class="row g-2">
+        <div class="col-md-2"><input class="form-control" name="userId" type="number" min="1" placeholder="User ID" required /></div>
+        <div class="col-md-3"><input class="form-control" name="amount" type="number" step="0.00000001" min="0.00000001" placeholder="Amount USDT" required /></div>
+        <div class="col-md-5"><input class="form-control" name="reason" placeholder="Reason (required)" required /></div>
+        <div class="col-md-2"><button class="btn btn-success w-100" type="submit">Manual Credit</button></div>
+      </form>
+      <p class="text-muted small mt-2 mb-0">Manual Credit adds purchase-only virtual USDT. These funds can be used for buying plans but are excluded from withdrawals.</p>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mt-4">
+    <div class="card-header"><strong>Top-up monitor</strong></div>
+    <div class="card-body">
+      <p class="text-muted small mb-2">Review verification status first, then use Retry only for failed or stuck requests.</p>
+      <form id="topupsFilterForm" class="row g-2 mb-3">
+        <div class="col-md-3"><input class="form-control" name="userId" type="number" min="1" placeholder="Filter by User ID" /></div>
+        <div class="col-md-3"><input class="form-control" name="status" placeholder="status (pending/confirmed/rejected)" /></div>
+        <div class="col-md-3"><input class="form-control" name="verificationStatus" placeholder="verification (queued/running/failed/done)" /></div>
+        <div class="col-md-3 d-flex gap-2">
+          <button class="btn btn-primary w-100" type="submit">Filter</button>
+          <button class="btn btn-outline-secondary w-100" type="button" id="topupsFilterReset">Reset</button>
+        </div>
+      </form>
+      <table class="table table-sm">
+        <thead><tr><th>ID</th><th>User</th><th>Asset</th><th>Network</th><th>Tx Hash</th><th>Amount</th><th>Status</th><th>Verification</th><th>Note</th><th>Created</th><th>Actions</th></tr></thead>
+        <tbody id="topupsTableBody">
+          {% for row in topups %}
+            <tr>
+              <td>{{ row.id }}</td>
+              <td>{{ row.user_id }}</td>
+              <td>{{ row.asset }}</td>
+              <td>{{ row.network }}</td>
+              <td style="max-width: 240px; word-break: break-all">{{ row.tx_hash }}</td>
+              <td>{{ row.amount }}</td>
+              <td>{{ row.status }}</td>
+              <td>{{ row.verification_status }}</td>
+              <td>{{ row.provider_note or '-' }}</td>
+              <td>{{ row.created_at }}</td>
+              <td>
+                {% if row.status != 'confirmed' %}
+                  <button class="btn btn-sm btn-outline-primary retry-topup-btn" data-topup-id="{{ row.id }}">Retry</button>
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="11">No transactions</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="row g-4 mt-1">
+    <div class="col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-header"><strong>Referral rules</strong></div>
+        <div class="card-body">
+          <form id="referralRuleForm" class="row g-2 mb-3">
+            <div class="col-md-12"><input class="form-control" name="name" placeholder="Campaign name" required /></div>
+            <div class="col-md-3"><input class="form-control" name="level1Percent" type="number" step="0.01" placeholder="L1 %" required /></div>
+            <div class="col-md-3"><input class="form-control" name="level2Percent" type="number" step="0.01" placeholder="L2 %" required /></div>
+            <div class="col-md-3"><input class="form-control" name="level3Percent" type="number" step="0.01" placeholder="L3 %" required /></div>
+            <div class="col-md-3"><input class="form-control" name="minEventAmount" type="number" step="0.00000001" placeholder="Min amount" /></div>
+            <div class="col-12 form-check">
+              <input class="form-check-input" type="checkbox" value="true" name="isActive" id="ruleIsActive" checked>
+              <label class="form-check-label" for="ruleIsActive">Active campaign</label>
+            </div>
+            <div class="col-12"><button class="btn btn-primary" type="submit">Save referral rule</button></div>
+          </form>
+          <table class="table table-sm">
+            <thead><tr><th>Name</th><th>L1/L2/L3</th><th>Min amount</th><th>Status</th></tr></thead>
+            <tbody>
+              {% for row in referral_rules %}
+                <tr>
+                  <td>{{ row.name }}</td>
+                  <td>{{ row.level1_percent }} / {{ row.level2_percent }} / {{ row.level3_percent }}</td>
+                  <td>{{ row.min_event_amount }}</td>
+                  <td>{{ 'active' if row.is_active else 'inactive' }}</td>
+                </tr>
+              {% else %}
+                <tr><td colspan="4">No rules</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-header"><strong>Verification</strong></div>
+        <div class="card-body">
+          <form id="verificationFilterForm" class="row g-2 mb-3">
+            <div class="col-md-5">
+              <input class="form-control" name="q" placeholder="Search by user email or ID" />
+            </div>
+            <div class="col-md-4">
+              <select class="form-select" name="status">
+                <option value="all">all statuses</option>
+                <option value="not_started">not_started</option>
+                <option value="pending">pending/review</option>
+                <option value="approved">approved</option>
+                <option value="rejected">rejected</option>
+              </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+              <button class="btn btn-outline-primary w-100" type="submit">Apply</button>
+              <button class="btn btn-outline-secondary w-100" type="button" id="verificationFilterReset">Reset</button>
+            </div>
+          </form>
+          <p class="text-muted small mb-2">Admin can request verification, review documents, approve/reject KYC, and enforce withdrawal freeze until approved.</p>
+          <table class="table table-sm">
+            <thead><tr><th>User</th><th>Country</th><th>Status</th><th>Requested</th><th>Docs</th><th>Action</th></tr></thead>
+            <tbody id="verificationTableBody">
+              <tr><td colspan="6">Loading verification list...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="verificationDocsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Verification documents</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="verificationDocsModalBody">
+          <p class="text-muted">Loading...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mt-4">
+    <div class="card-header"><strong>Support inbox + SLA</strong></div>
+    <div class="card-body">
+      <table class="table table-sm">
+        <thead><tr><th>ID</th><th>User</th><th>Subject</th><th>Priority</th><th>Status</th><th>SLA</th><th>Actions</th></tr></thead>
+        <tbody>
+          {% for row in support_tickets %}
+            <tr>
+              <td>{{ row.id }}</td>
+              <td>{{ row.requester_id }}</td>
+              <td>{{ row.subject }}</td>
+              <td>{{ row.priority }}</td>
+              <td>{{ row.status }}</td>
+              <td>{{ row.sla_state }}</td>
+              <td>
+                <button class="btn btn-sm btn-outline-primary support-action-btn" data-ticket-id="{{ row.id }}" data-action="assign">Assign me</button>
+                <button class="btn btn-sm btn-outline-warning support-action-btn" data-ticket-id="{{ row.id }}" data-action="escalate">Escalate case</button>
+                <button class="btn btn-sm btn-outline-success support-action-btn" data-ticket-id="{{ row.id }}" data-action="close">Close</button>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="7">No tickets</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <hr />
+      <div class="row g-3">
+        <div class="col-lg-4">
+          <h6 class="mb-2">Realtime chats</h6>
+          <div id="realtimeTicketList" class="list-group small" style="max-height: 320px; overflow-y: auto;"></div>
+        </div>
+        <div class="col-lg-8">
+          <h6 class="mb-2">Conversation</h6>
+          <div id="realtimeChatBody" class="border rounded p-2 bg-light" style="height: 260px; overflow-y: auto;"></div>
+          <form id="realtimeChatForm" class="d-flex gap-2 mt-2">
+            <input id="realtimeChatInput" class="form-control" placeholder="Type message to user..." />
+            <button class="btn btn-primary" type="submit">Send</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mt-4">
+    <div class="card-header"><strong>Withdrawals inbox</strong></div>
+    <div class="card-body">
+      <p class="text-muted small mb-2">Confirm network, amount, and compliance note before changing withdrawal state.</p>
+      <table class="table table-sm">
+        <thead><tr><th>ID</th><th>User</th><th>Asset</th><th>Network</th><th>Address</th><th>Amount</th><th>Status</th><th>Source</th><th>Tx hash</th><th>Note</th><th>Actions</th></tr></thead>
+        <tbody>
+          {% for row in withdrawals %}
+            <tr>
+              <td>{{ row.id }}</td>
+              <td>{{ row.user_id }}</td>
+              <td>{{ row.asset }}</td>
+              <td>{{ row.network }}</td>
+              <td style="max-width: 220px; word-break: break-all">{{ row.address }}</td>
+              <td>{{ row.amount }}</td>
+              <td>{{ row.status }}</td>
+              <td>
+                {% if row.withdraw_source_label == 'purchase_only_excluded' %}
+                  <span class="badge text-bg-warning">purchase-only excluded ({{ row.user_purchase_only_usdt }} USDT)</span>
+                {% else %}
+                  <span class="badge text-bg-secondary">standard</span>
+                {% endif %}
+              </td>
+              <td style="max-width: 140px; word-break: break-all">{{ row.external_tx_hash or '-' }}</td>
+              <td>{{ row.admin_note or '-' }}</td>
+              <td>
+                <div class="d-flex flex-wrap gap-1">
+                  <button class="btn btn-sm btn-outline-primary withdrawal-action-btn" data-withdrawal-id="{{ row.id }}" data-action="approve">Approve</button>
+                  <button class="btn btn-sm btn-outline-secondary withdrawal-action-btn" data-withdrawal-id="{{ row.id }}" data-action="start_processing">Mark processing</button>
+                  <button class="btn btn-sm btn-outline-success withdrawal-action-btn" data-withdrawal-id="{{ row.id }}" data-action="complete">Complete</button>
+                  <button class="btn btn-sm btn-outline-danger withdrawal-action-btn" data-withdrawal-id="{{ row.id }}" data-action="reject">Reject</button>
+                </div>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="11">No withdrawals</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="row g-4 mt-1">
+    <div class="col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-header"><strong>Mining plans</strong></div>
+        <div class="card-body">
+          <form id="miningPlanForm" class="row g-2 mb-3">
+            <div class="col-md-6"><input class="form-control" name="name" placeholder="Plan name" required /></div>
+            <div class="col-md-6"><input class="form-control" name="strategy" placeholder="btc_sha256/ltc_doge_scrypt/kas_kheavyhash" required /></div>
+            <div class="col-md-3"><input class="form-control" name="hashrateValue" type="number" step="0.0001" placeholder="Hashrate" required /></div>
+            <div class="col-md-3"><input class="form-control" name="hashrateUnit" placeholder="TH/s" required /></div>
+            <div class="col-md-3"><input class="form-control" name="durationDays" type="number" placeholder="Days" required /></div>
+            <div class="col-md-3"><input class="form-control" name="priceUsdt" type="number" step="0.00000001" placeholder="Price USDT" required /></div>
+            <div class="col-12"><button class="btn btn-primary" type="submit">Save mining plan</button></div>
+          </form>
+          <table class="table table-sm">
+            <thead><tr><th>ID</th><th>Name</th><th>Strategy</th><th>Hashrate</th><th>Days</th><th>Price</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>
+              {% for row in mining_plans %}
+                <tr>
+                  <td>{{ row.id }}</td>
+                  <td>{{ row.name }}</td>
+                  <td>{{ row.strategy }}</td>
+                  <td>{{ row.hashrate_value }} {{ row.hashrate_unit }}</td>
+                  <td>{{ row.duration_days }}</td>
+                  <td>{{ row.price_usdt }}</td>
+                  <td>{{ 'active' if row.is_active else 'inactive' }}</td>
+                  <td><button class="btn btn-sm btn-outline-secondary mining-plan-toggle-btn" data-plan-id="{{ row.id }}">Toggle</button></td>
+                </tr>
+              {% else %}
+                <tr><td colspan="8">No mining plans</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-header"><strong>Mining strategy params</strong></div>
+        <div class="card-body">
+          <form id="miningParamForm" class="row g-2 mb-3">
+            <div class="col-md-6"><input class="form-control" name="strategy" placeholder="strategy" required /></div>
+            <div class="col-md-6"><input class="form-control" name="baseYieldPerHashPerDay" type="number" step="0.000000000001" placeholder="base yield" required /></div>
+            <div class="col-md-3"><input class="form-control" name="difficultyFactor" type="number" step="0.000001" placeholder="difficulty" required /></div>
+            <div class="col-md-3"><input class="form-control" name="priceFactor" type="number" step="0.000001" placeholder="price" required /></div>
+            <div class="col-md-3"><input class="form-control" name="feeFactor" type="number" step="0.000001" placeholder="fee" required /></div>
+            <div class="col-md-3"><input class="form-control" name="volatilityBand" type="number" step="0.000001" placeholder="volatility" required /></div>
+            <div class="col-md-6"><input class="form-control" name="uptimeFactor" type="number" step="0.000001" placeholder="uptime factor" required /></div>
+            <div class="col-12"><button class="btn btn-primary" type="submit">Save strategy params</button></div>
+          </form>
+          <table class="table table-sm">
+            <thead><tr><th>Strategy</th><th>Base</th><th>Diff</th><th>Price</th><th>Fee</th><th>Vol</th><th>Uptime</th></tr></thead>
+            <tbody>
+              {% for row in mining_params %}
+                <tr>
+                  <td>{{ row.strategy }}</td>
+                  <td>{{ row.base_yield_per_hash_per_day }}</td>
+                  <td>{{ row.difficulty_factor }}</td>
+                  <td>{{ row.price_factor }}</td>
+                  <td>{{ row.fee_factor }}</td>
+                  <td>{{ row.volatility_band }}</td>
+                  <td>{{ row.uptime_factor }}</td>
+                </tr>
+              {% else %}
+                <tr><td colspan="7">No strategy params</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mt-4">
+    <div class="card-header"><strong>Team applications inbox</strong></div>
+    <div class="card-body">
+      <table class="table table-sm">
+        <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Experience</th><th>Message</th><th>Email delivery</th><th>Created</th></tr></thead>
+        <tbody>
+          {% for row in team_applications %}
+            <tr>
+              <td>{{ row.id }}</td>
+              <td>{{ row.full_name }}</td>
+              <td>{{ row.email }}</td>
+              <td>{{ row.role }}</td>
+              <td>{{ row.experience }}</td>
+              <td style="max-width: 260px; word-break: break-word">{{ row.message or '-' }}</td>
+              <td>{{ row.email_delivery_status }}</td>
+              <td>{{ row.created_at }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="8">No team applications</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="withdrawalActionModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="withdrawalActionForm" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirm withdrawal action</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="withdrawal-action-id" />
+        <input type="hidden" id="withdrawal-action-type" />
+        <p id="withdrawal-action-summary" class="small text-muted mb-2"></p>
+        <p class="small text-muted mb-3">Record reason and hash before submit to keep audit trail complete.</p>
+        <div class="mb-3">
+          <label for="withdrawal-external-hash" class="form-label">External tx hash</label>
+          <input id="withdrawal-external-hash" class="form-control" />
+        </div>
+        <div>
+          <label for="withdrawal-admin-note" class="form-label">Admin note</label>
+          <textarea id="withdrawal-admin-note" class="form-control" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Submit action</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+async function submitJson(url, method, payload) {
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+  const res = await fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken },
+    credentials: "same-origin",
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Request failed");
+  }
+  return res.json().catch(() => ({}));
+}
+
+const adminFeedback = document.getElementById("admin-feedback");
+const tableBodies = document.querySelectorAll("table.table tbody");
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function showFeedback(message, tone = "success") {
+  if (!adminFeedback) return;
+  adminFeedback.className = `alert alert-${tone}`;
+  adminFeedback.textContent = message;
+}
+
+function markPending(button, pending) {
+  if (!button) return;
+  button.disabled = pending;
+  button.dataset.busy = pending ? "1" : "";
+  if (pending) {
+    button.dataset.originalLabel = button.textContent;
+    button.textContent = "Processing...";
+  } else if (button.dataset.originalLabel) {
+    button.textContent = button.dataset.originalLabel;
+  }
+}
+
+function markTableAsRefreshing() {
+  tableBodies.forEach((tbody) => {
+    tbody.style.opacity = "0.55";
+  });
+}
+
+function clearRefreshing() {
+  tableBodies.forEach((tbody) => {
+    tbody.style.opacity = "";
+  });
+}
+
+function removeRowByButton(button) {
+  button?.closest("tr")?.remove();
+}
+
+function bindSimpleForm(formId, url, mapper, successMessage) {
+  document.getElementById(formId)?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const submitButton = form.querySelector('button[type="submit"]');
+    markPending(submitButton, true);
+    try {
+      const payload = mapper ? mapper(new FormData(form)) : Object.fromEntries(new FormData(form).entries());
+      await submitJson(url, "POST", payload);
+      showFeedback(successMessage);
+      form.reset();
+      markTableAsRefreshing();
+    } catch (err) {
+      showFeedback(err.message || "Action failed", "danger");
+    } finally {
+      markPending(submitButton, false);
+      clearRefreshing();
+    }
+  });
+}
+
+bindSimpleForm("credentialForm", "/admin/api/credentials", null, "Credentials updated.");
+document.getElementById("walletForm")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const submitButton = form.querySelector('button[type="submit"]');
+  markPending(submitButton, true);
+  try {
+    const payload = Object.fromEntries(new FormData(form).entries());
+    payload.asset = "USDT";
+    payload.network = "TRX";
+    await submitJson("/admin/api/wallets", "POST", payload);
+    showFeedback("Wallet saved.");
+    form.reset();
+    await fetchWallets();
+  } catch (err) {
+    showFeedback(err.message || "Action failed", "danger");
+  } finally {
+    markPending(submitButton, false);
+  }
+});
+bindSimpleForm(
+  "referralRuleForm",
+  "/admin/api/referral/rules",
+  (fd) => {
+    const payload = Object.fromEntries(fd.entries());
+    payload.isActive = payload.isActive === "true";
+    return payload;
+  },
+  "Referral rule saved."
+);
+bindSimpleForm("miningPlanForm", "/admin/api/mining/plans", null, "Mining plan saved.");
+bindSimpleForm("miningParamForm", "/admin/api/mining/strategy-params", null, "Strategy params saved.");
+
+async function fetchWallets() {
+  if (!walletsTableBody) return;
+  try {
+    const rows = await submitJson("/admin/api/wallets", "GET");
+    if (!Array.isArray(rows) || !rows.length) {
+      walletsTableBody.innerHTML = `<tr><td colspan="5">No wallets</td></tr>`;
+      return;
+    }
+    walletsTableBody.innerHTML = rows.map((row) => `
+      <tr>
+        <td>${escapeHtml(row.asset)}</td>
+        <td>${escapeHtml(row.network)}</td>
+        <td style="max-width: 220px; word-break: break-all">${escapeHtml(row.address)}</td>
+        <td>${escapeHtml(row.onchainUsdtBalance ?? "-")}</td>
+        <td>${escapeHtml(row.isActive ? "active" : "inactive")}</td>
+      </tr>
+    `).join("");
+  } catch (err) {
+    showFeedback(err.message || "Wallet list loading failed", "danger");
+  }
+}
+
+async function retryTopupById(button, topupId) {
+  const allowed = window.confirm(`Retry top-up #${topupId}?`);
+  if (!allowed) return;
+  markPending(button, true);
+  try {
+    await submitJson(`/admin/api/topups/${topupId}/retry`, "POST", {});
+    showFeedback(`Top-up #${topupId} queued for retry.`);
+    removeRowByButton(button);
+  } catch (err) {
+    showFeedback(err.message || "Retry failed", "danger");
+  } finally {
+    markPending(button, false);
+  }
+}
+
+document.querySelectorAll(".retry-topup-btn").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const topupId = button.getAttribute("data-topup-id");
+    await retryTopupById(button, topupId);
+  });
+});
+
+const adminUsersFilterForm = document.getElementById("adminUsersFilterForm");
+const adminUsersTableBody = document.getElementById("adminUsersTableBody");
+const manualCreditForm = document.getElementById("manualCreditForm");
+const topupsFilterForm = document.getElementById("topupsFilterForm");
+const topupsFilterReset = document.getElementById("topupsFilterReset");
+const topupsTableBody = document.getElementById("topupsTableBody");
+const walletsTableBody = document.getElementById("walletsTableBody");
+const verificationFilterForm = document.getElementById("verificationFilterForm");
+const verificationFilterReset = document.getElementById("verificationFilterReset");
+const verificationTableBody = document.getElementById("verificationTableBody");
+const verificationDocsModalElement = document.getElementById("verificationDocsModal");
+const verificationDocsModalBody = document.getElementById("verificationDocsModalBody");
+const verificationDocsModal = verificationDocsModalElement ? new bootstrap.Modal(verificationDocsModalElement) : null;
+
+function topupsFiltersPayload() {
+  const fd = new FormData(topupsFilterForm);
+  return {
+    userId: (fd.get("userId") || "").toString().trim(),
+    status: (fd.get("status") || "").toString().trim(),
+    verificationStatus: (fd.get("verificationStatus") || "").toString().trim(),
+  };
+}
+
+function topupsQueryString(filters) {
+  const params = new URLSearchParams();
+  if (filters.userId) params.set("userId", filters.userId);
+  if (filters.status) params.set("status", filters.status);
+  if (filters.verificationStatus) params.set("verificationStatus", filters.verificationStatus);
+  return params.toString();
+}
+
+function renderTopupsRows(items) {
+  if (!topupsTableBody) return;
+  if (!items.length) {
+    topupsTableBody.innerHTML = `<tr><td colspan="11">No transactions</td></tr>`;
+    return;
+  }
+  topupsTableBody.innerHTML = items.map((row) => `
+    <tr>
+      <td>${escapeHtml(row.id)}</td>
+      <td>${escapeHtml(row.userId)}</td>
+      <td>${escapeHtml(row.asset)}</td>
+      <td>${escapeHtml(row.network)}</td>
+      <td style="max-width: 240px; word-break: break-all">${escapeHtml(row.txHash)}</td>
+      <td>${escapeHtml(row.amount)}</td>
+      <td>${escapeHtml(row.rawStatus)}</td>
+      <td>${escapeHtml(row.rawVerificationStatus)}</td>
+      <td>${escapeHtml(row.providerNote || row.lastErrorCode || "-")}</td>
+      <td>${escapeHtml(row.createdAt || "-")}</td>
+      <td>${row.rawStatus !== "confirmed" ? `<button class="btn btn-sm btn-outline-primary retry-topup-btn" data-topup-id="${row.id}">Retry</button>` : "-"}</td>
+    </tr>
+  `).join("");
+  topupsTableBody.querySelectorAll(".retry-topup-btn").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const topupId = button.getAttribute("data-topup-id");
+      await retryTopupById(button, topupId);
+    });
+  });
+}
+
+async function fetchTopups() {
+  if (!topupsFilterForm) return;
+  const filters = topupsFiltersPayload();
+  const query = topupsQueryString(filters);
+  const url = query ? `/admin/api/topups?${query}` : "/admin/api/topups";
+  try {
+    const rows = await submitJson(url, "GET");
+    renderTopupsRows(rows || []);
+  } catch (err) {
+    showFeedback(err.message || "Top-ups loading failed", "danger");
+  }
+}
+
+topupsFilterForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  await fetchTopups();
+});
+
+topupsFilterReset?.addEventListener("click", async () => {
+  topupsFilterForm?.reset();
+  await fetchTopups();
+});
+
+function usersFiltersPayload() {
+  const fd = new FormData(adminUsersFilterForm);
+  return {
+    q: (fd.get("q") || "").toString().trim(),
+    role: (fd.get("role") || "").toString().trim(),
+    isActive: (fd.get("isActive") || "").toString().trim(),
+    page: "1",
+    pageSize: "50",
+  };
+}
+
+async function fetchUsers() {
+  if (!adminUsersTableBody || !adminUsersFilterForm) return;
+  const filters = usersFiltersPayload();
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value) params.set(key, value);
+  });
+  try {
+    const data = await submitJson(`/admin/api/users?${params.toString()}`, "GET");
+    const items = data?.items || [];
+    if (!items.length) {
+      adminUsersTableBody.innerHTML = `<tr><td colspan="9">No users found</td></tr>`;
+      return;
+    }
+    adminUsersTableBody.innerHTML = items.map((row) => `
+      <tr>
+        <td>${escapeHtml(row.id)}</td>
+        <td>${escapeHtml(row.email)}</td>
+        <td>${escapeHtml(row.isAdmin ? "admin" : "user")}</td>
+        <td>${escapeHtml(row.isActive ? "active" : "inactive")}</td>
+        <td>${escapeHtml(row.availableBalanceUsdt)}</td>
+        <td>${escapeHtml(row.heldBalanceUsdt)}</td>
+        <td>${escapeHtml(row.withdrawableBalanceUsdt)}</td>
+        <td>${escapeHtml(row.purchaseOnlyBalanceUsdt)}</td>
+        <td class="d-flex gap-1">
+          <button type="button" class="btn btn-sm btn-outline-success manual-credit-prefill-btn" data-user-id="${row.id}">Manual credit</button>
+          <button type="button" class="btn btn-sm btn-outline-primary filter-topups-user-btn" data-user-id="${row.id}">Top-ups</button>
+        </td>
+      </tr>
+    `).join("");
+    adminUsersTableBody.querySelectorAll(".manual-credit-prefill-btn").forEach((button) => {
+      button.addEventListener("click", () => {
+        const userId = button.getAttribute("data-user-id") || "";
+        const userInput = manualCreditForm?.querySelector('[name="userId"]');
+        if (userInput) userInput.value = userId;
+      });
+    });
+    adminUsersTableBody.querySelectorAll(".filter-topups-user-btn").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const userId = button.getAttribute("data-user-id") || "";
+        const filterInput = topupsFilterForm?.querySelector('[name="userId"]');
+        if (filterInput) filterInput.value = userId;
+        await fetchTopups();
+      });
+    });
+  } catch (err) {
+    showFeedback(err.message || "Users loading failed", "danger");
+  }
+}
+
+function verificationFiltersPayload() {
+  const fd = new FormData(verificationFilterForm);
+  return {
+    q: (fd.get("q") || "").toString().trim(),
+    status: (fd.get("status") || "all").toString().trim(),
+    page: "1",
+    pageSize: "50",
+  };
+}
+
+async function openVerificationDocs(profileId) {
+  if (!profileId) {
+    verificationDocsModalBody.innerHTML = `<p class="text-muted">No profile and no uploaded documents for this user yet.</p>`;
+    verificationDocsModal?.show();
+    return;
+  }
+  verificationDocsModalBody.innerHTML = `<p class="text-muted">Loading...</p>`;
+  verificationDocsModal?.show();
+  try {
+    const profile = await submitJson(`/admin/api/kyc/${profileId}`, "GET");
+    const docs = profile?.documents || [];
+    if (!docs.length) {
+      verificationDocsModalBody.innerHTML = `<p class="text-muted">No uploaded documents.</p>`;
+      return;
+    }
+    verificationDocsModalBody.innerHTML = `
+      <div class="mb-2"><strong>User:</strong> ${escapeHtml(profile.userEmail || profile.userId)}</div>
+      <div class="mb-2"><strong>Status:</strong> ${escapeHtml(profile.rawStatus)}</div>
+      <table class="table table-sm">
+        <thead><tr><th>ID</th><th>Type</th><th>Mime</th><th>Date</th><th>Action</th></tr></thead>
+        <tbody>
+          ${docs.map((doc) => `
+            <tr>
+              <td>${escapeHtml(doc.id)}</td>
+              <td>${escapeHtml(doc.docType || "-")}</td>
+              <td>${escapeHtml(doc.mimeType || "-")}</td>
+              <td>${escapeHtml(doc.createdAt || "-")}</td>
+              <td><a class="btn btn-sm btn-outline-primary" target="_blank" rel="noreferrer" href="/admin/api/kyc/document/${doc.id}">Open</a></td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+  } catch (err) {
+    verificationDocsModalBody.innerHTML = `<p class="text-danger">${err.message || "Failed to load documents."}</p>`;
+  }
+}
+
+async function verificationAction(action, payload) {
+  if (action === "request") {
+    return submitJson("/admin/api/kyc/request-verification", "POST", payload);
+  }
+  return submitJson(`/admin/api/kyc/${payload.profileId}/review`, "POST", { decision: action });
+}
+
+async function fetchVerificationProfiles() {
+  if (!verificationFilterForm || !verificationTableBody) return;
+  const filters = verificationFiltersPayload();
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value) params.set(key, value);
+  });
+  try {
+    const data = await submitJson(`/admin/api/kyc/profiles?${params.toString()}`, "GET");
+    const items = data?.items || [];
+    if (!items.length) {
+      verificationTableBody.innerHTML = `<tr><td colspan="6">No verification rows found</td></tr>`;
+      return;
+    }
+    verificationTableBody.innerHTML = items.map((row) => `
+      <tr>
+        <td>${escapeHtml(row.userId)} ${row.userEmail ? `<div class="text-muted small">${escapeHtml(row.userEmail)}</div>` : ""}</td>
+        <td>${escapeHtml(row.country || "-")}</td>
+        <td>${escapeHtml(row.rawStatus)}</td>
+        <td>${row.verificationRequested ? '<span class="badge text-bg-warning">yes</span>' : '<span class="badge text-bg-secondary">no</span>'}</td>
+        <td>${escapeHtml(row.documentsCount)}</td>
+        <td class="d-flex flex-wrap gap-1">
+          <button type="button" class="btn btn-sm btn-outline-primary verification-docs-btn" data-profile-id="${row.profileId || ""}">Docs</button>
+          <button type="button" class="btn btn-sm btn-outline-warning verification-request-btn" data-user-id="${row.userId}">Request</button>
+          <button type="button" class="btn btn-sm btn-outline-success verification-approve-btn" data-profile-id="${row.profileId || ""}" ${row.profileId ? "" : "disabled"}>Approve</button>
+          <button type="button" class="btn btn-sm btn-outline-danger verification-reject-btn" data-profile-id="${row.profileId || ""}" ${row.profileId ? "" : "disabled"}>Reject</button>
+        </td>
+      </tr>
+    `).join("");
+    verificationTableBody.querySelectorAll(".verification-docs-btn").forEach((button) => {
+      button.addEventListener("click", async () => {
+        await openVerificationDocs(button.getAttribute("data-profile-id"));
+      });
+    });
+    verificationTableBody.querySelectorAll(".verification-request-btn").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const userId = Number(button.getAttribute("data-user-id") || "0");
+        if (!userId) return;
+        const reason = window.prompt(`Reason for verification request for user #${userId} (optional):`, "") || "";
+        markPending(button, true);
+        try {
+          await verificationAction("request", { userId, reason });
+          showFeedback(`Verification request created for user #${userId}.`);
+          await fetchVerificationProfiles();
+        } catch (err) {
+          showFeedback(err.message || "Verification request failed", "danger");
+        } finally {
+          markPending(button, false);
+        }
+      });
+    });
+    verificationTableBody.querySelectorAll(".verification-approve-btn,.verification-reject-btn").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const profileId = Number(button.getAttribute("data-profile-id") || "0");
+        if (!profileId) return;
+        const decision = button.classList.contains("verification-approve-btn") ? "approved" : "rejected";
+        const allowed = window.confirm(`Confirm KYC decision "${decision}" for profile #${profileId}?`);
+        if (!allowed) return;
+        markPending(button, true);
+        try {
+          await verificationAction(decision, { profileId });
+          showFeedback(`KYC profile #${profileId} updated: ${decision}.`);
+          await fetchVerificationProfiles();
+        } catch (err) {
+          showFeedback(err.message || "KYC action failed", "danger");
+        } finally {
+          markPending(button, false);
+        }
+      });
+    });
+  } catch (err) {
+    showFeedback(err.message || "Verification list loading failed", "danger");
+  }
+}
+
+adminUsersFilterForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  await fetchUsers();
+});
+
+manualCreditForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const submitButton = manualCreditForm.querySelector('button[type="submit"]');
+  const payload = Object.fromEntries(new FormData(manualCreditForm).entries());
+  const userId = Number(payload.userId || 0);
+  if (!userId) {
+    showFeedback("User ID is required", "warning");
+    return;
+  }
+  markPending(submitButton, true);
+  try {
+    await submitJson(`/admin/api/users/${userId}/manual-credit`, "POST", {
+      amount: payload.amount,
+      reason: payload.reason,
+    });
+    showFeedback(`Manual credit applied for user #${userId}.`);
+    manualCreditForm.reset();
+    await Promise.all([fetchUsers(), fetchTopups()]);
+  } catch (err) {
+    showFeedback(err.message || "Manual credit failed", "danger");
+  } finally {
+    markPending(submitButton, false);
+  }
+});
+
+fetchUsers();
+fetchWallets();
+fetchTopups();
+fetchVerificationProfiles();
+
+verificationFilterForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  await fetchVerificationProfiles();
+});
+
+verificationFilterReset?.addEventListener("click", async () => {
+  verificationFilterForm?.reset();
+  await fetchVerificationProfiles();
+});
+
+document.querySelectorAll(".support-action-btn").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const ticketId = button.getAttribute("data-ticket-id");
+    const action = button.getAttribute("data-action");
+    const allowed = window.confirm(`Apply action "${action}" to ticket #${ticketId}?`);
+    if (!allowed) return;
+    markPending(button, true);
+    try {
+      await submitJson(`/admin/api/support/tickets/${ticketId}/action`, "POST", { action });
+      showFeedback(`Ticket #${ticketId} updated with "${action}".`);
+    } catch (err) {
+      showFeedback(err.message || "Support action failed", "danger");
+    } finally {
+      markPending(button, false);
+    }
+  });
+});
+
+const withdrawalModalElement = document.getElementById("withdrawalActionModal");
+const withdrawalModal = withdrawalModalElement ? new bootstrap.Modal(withdrawalModalElement) : null;
+const withdrawalActionForm = document.getElementById("withdrawalActionForm");
+const withdrawalActionId = document.getElementById("withdrawal-action-id");
+const withdrawalActionType = document.getElementById("withdrawal-action-type");
+const withdrawalActionSummary = document.getElementById("withdrawal-action-summary");
+const withdrawalExternalHash = document.getElementById("withdrawal-external-hash");
+const withdrawalAdminNote = document.getElementById("withdrawal-admin-note");
+
+document.querySelectorAll(".withdrawal-action-btn").forEach((button) => {
+  button.addEventListener("click", () => {
+    const withdrawalId = button.getAttribute("data-withdrawal-id") || "";
+    const action = button.getAttribute("data-action") || "";
+    withdrawalActionId.value = withdrawalId;
+    withdrawalActionType.value = action;
+    withdrawalActionSummary.textContent = `Confirm action "${action}" for withdrawal #${withdrawalId}.`;
+    withdrawalExternalHash.value = "";
+    withdrawalAdminNote.value = "";
+    withdrawalExternalHash.required = action === "complete";
+    withdrawalModal?.show();
+  });
+});
+
+withdrawalActionForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const submitButton = withdrawalActionForm.querySelector('button[type="submit"]');
+  const action = withdrawalActionType.value;
+  const withdrawalId = withdrawalActionId.value;
+  const externalTxHash = withdrawalExternalHash.value.trim();
+  const adminNote = withdrawalAdminNote.value.trim();
+  if (action === "complete" && !externalTxHash) {
+    showFeedback("Tx hash is required for completion.", "warning");
+    return;
+  }
+  markPending(submitButton, true);
+  try {
+    await submitJson(`/admin/api/withdrawals/${withdrawalId}/action`, "POST", {
+      action,
+      externalTxHash,
+      adminNote,
+    });
+    showFeedback(`Withdrawal #${withdrawalId} updated with "${action}".`);
+    withdrawalModal?.hide();
+  } catch (err) {
+    showFeedback(err.message || "Withdrawal action failed", "danger");
+  } finally {
+    markPending(submitButton, false);
+  }
+});
+
+document.querySelectorAll(".mining-plan-toggle-btn").forEach((button) => {
+  button.addEventListener("click", async () => {
+    const planId = button.getAttribute("data-plan-id");
+    markPending(button, true);
+    try {
+      await submitJson(`/admin/api/mining/plans/${planId}/toggle`, "POST", {});
+      showFeedback(`Mining plan #${planId} toggled.`);
+    } catch (err) {
+      showFeedback(err.message || "Toggle failed", "danger");
+    } finally {
+      markPending(button, false);
+    }
+  });
+});
+
+const adminSocket = io("/", { withCredentials: true, transports: ["websocket", "polling"] });
+const realtimeTicketList = document.getElementById("realtimeTicketList");
+const realtimeChatBody = document.getElementById("realtimeChatBody");
+const realtimeChatForm = document.getElementById("realtimeChatForm");
+const realtimeChatInput = document.getElementById("realtimeChatInput");
+let activeTicketId = null;
+const ticketMap = new Map();
+
+function renderTicketList() {
+  if (!realtimeTicketList) return;
+  const rows = [...ticketMap.values()].sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
+  realtimeTicketList.innerHTML = rows
+    .map(
+      (row) => `
+      <button type="button" class="list-group-item list-group-item-action ${activeTicketId === row.id ? "active" : ""}" data-ticket-id="${row.id}">
+        <div class="d-flex justify-content-between">
+          <span>#${escapeHtml(row.id)} · user ${escapeHtml(row.requesterId)}</span>
+          <span>${escapeHtml(row.status)}</span>
+        </div>
+      </button>`
+    )
+    .join("");
+  realtimeTicketList.querySelectorAll("[data-ticket-id]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      activeTicketId = Number(btn.getAttribute("data-ticket-id"));
+      adminSocket.emit("support:admin:join", { ticketId: activeTicketId });
+      renderTicketList();
+    });
+  });
+}
+
+function renderMessages(messages) {
+  if (!realtimeChatBody) return;
+  realtimeChatBody.innerHTML = (messages || [])
+    .map(
+      (m) => `
+      <div class="mb-2 text-${m.senderType === "admin" ? "end" : "start"}" data-msg-id="${m.id}">
+        <span class="badge ${m.senderType === "admin" ? "bg-primary" : "bg-secondary"}">${escapeHtml(m.senderType)}</span>
+        <div>${escapeHtml(m.body)}</div>
+      </div>`
+    )
+    .join("");
+  realtimeChatBody.scrollTop = realtimeChatBody.scrollHeight;
+}
+
+adminSocket.on("connect", () => {
+  adminSocket.emit("support:admin:init");
+});
+
+adminSocket.on("support:admin:state", (payload) => {
+  (payload.tickets || []).forEach((row) => ticketMap.set(row.id, row));
+  renderTicketList();
+});
+
+adminSocket.on("support:admin:ticket_update", (payload) => {
+  if (payload.ticket) {
+    ticketMap.set(payload.ticket.id, payload.ticket);
+    renderTicketList();
+  }
+});
+
+adminSocket.on("support:admin:ticket_messages", (payload) => {
+  if (payload.ticket) {
+    ticketMap.set(payload.ticket.id, payload.ticket);
+  }
+  activeTicketId = payload.ticket?.id || activeTicketId;
+  renderTicketList();
+  renderMessages(payload.messages || []);
+});
+
+adminSocket.on("support:admin:new_message", (message) => {
+  if (message.ticketId === activeTicketId) {
+    const existing = [...(realtimeChatBody?.querySelectorAll("[data-msg-id]") || [])].map((n) => Number(n.getAttribute("data-msg-id")));
+    if (existing.includes(message.id)) return;
+    adminSocket.emit("support:admin:join", { ticketId: activeTicketId });
+  }
+});
+
+realtimeChatForm?.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const body = (realtimeChatInput?.value || "").trim();
+  if (!body || !activeTicketId) return;
+  adminSocket.emit("support:admin:message", { ticketId: activeTicketId, body });
+  realtimeChatInput.value = "";
+});
+</script>
+{% endblock %}

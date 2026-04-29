@@ -1,0 +1,17 @@
+export { HomePage } from "./HomePage";
+export { AboutPage } from "./AboutPage";
+export { AboutReadMorePage } from "./AboutReadMorePage";
+export { AmlPolicyPage } from "./AmlPolicyPage";
+export { ServicesPage } from "./ServicesPage";
+export { ServiceStrategyPage } from "./ServiceStrategyPage";
+export { WhyUsPage } from "./WhyUsPage";
+export { TeamPage } from "./TeamPage";
+export { PlansPage } from "./PlansPage";
+export { TermsPage } from "./TermsPage";
+export { PrivacyPolicyPage } from "./PrivacyPolicyPage";
+export { CookiePolicyPage } from "./CookiePolicyPage";
+export { DashboardPage } from "./DashboardPage";
+export { LoginPage } from "./LoginPage";
+export { RegisterPage } from "./RegisterPage";
+export { ForgotPasswordPage } from "./ForgotPasswordPage";
+export { ResetPasswordPage } from "./ResetPasswordPage";

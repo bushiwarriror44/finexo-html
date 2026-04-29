@@ -1,0 +1,21 @@
+---
+description: Use real-world source content for generated project copy
+alwaysApply: true
+---
+
+# Content Research Rule
+
+When the user asks to generate project content (texts, plan descriptions, feature copy, marketing blocks, FAQ, tariffs, or similar), always:
+
+- Start with web research of real, similar products/sites in the same domain.
+- Extract factual structure, terminology, and realistic value ranges from those sources.
+- Adapt the result to this project's context, architecture, and tone.
+- Do not fabricate "from scratch" generic copy if a researched baseline is possible.
+- Avoid direct plagiarism: rewrite and localize meaningfully for this product.
+- If exact numbers are uncertain, mark them as estimates and keep them conservative.
+
+Output expectations:
+
+- The produced content must read as realistic and market-consistent.
+- Keep wording coherent with current app sections and existing UX flow.
+- Preserve legal/safety positioning (no guaranteed ROI promises for mining).

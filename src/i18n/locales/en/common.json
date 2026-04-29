@@ -1,0 +1,1278 @@
+{
+  "brand": "CloudMine",
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "services": "Services",
+    "whyUs": "Why Us",
+    "team": "Team",
+    "plans": "Plans",
+    "calculator": "Calculator",
+    "dashboard": "Dashboard",
+    "login": "Sign in",
+    "logout": "Log out"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "createAccount": "Create account",
+    "passwordRecovery": "Password recovery",
+    "setNewPassword": "Set new password",
+    "email": "Email",
+    "password": "Password",
+    "newPassword": "New password",
+    "passwordStrength": "Password strength",
+    "passwordPolicyHint": "Password must contain at least 8 characters, 1 uppercase letter, and 1 digit.",
+    "rememberMe": "Remember me",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "country": "Country",
+    "selectCountry": "Select country",
+    "countrySearchPlaceholder": "Search country (EN/RU or code)",
+    "sendResetLink": "Send reset link",
+    "resetPassword": "Reset password",
+    "backToLogin": "Back to sign in",
+    "register": "Register",
+    "forgotPassword": "Forgot password?",
+    "accountCreated": "Account created. You can now sign in.",
+    "resetSent": "If the email exists, reset link has been sent.",
+    "passwordResetDone": "Password reset successful. Sign in with the new password.",
+    "result": {
+      "successTitle": "Success",
+      "errorTitle": "Error",
+      "ok": "OK",
+      "loginSuccess": "Authorization completed successfully.",
+      "registerSuccess": "Registration completed successfully."
+    },
+    "errors": {
+      "requestFailed": "Request failed. Please retry.",
+      "requiredFields": "Fill in all required fields.",
+      "weakPassword": "Password must be at least 8 characters.",
+      "invalidCountry": "Select a valid country from the list.",
+      "userExists": "Account with this email already exists.",
+      "invalidCredentials": "Invalid email or password.",
+      "userInactive": "Account is inactive. Contact support.",
+      "invalidToken": "Reset link is invalid.",
+      "tokenExpired": "Reset link has expired.",
+      "userNotFound": "Account not found.",
+      "emailSendFailed": "Unable to send reset email now.",
+      "invalidEmail": "Invalid email format.",
+      "network": "Network error. Check connection and retry."
+    },
+    "fieldErrors": {
+      "email": {
+        "required": "Enter email.",
+        "invalid": "Enter a valid email.",
+        "taken": "Email is already in use."
+      },
+      "password": {
+        "required": "Enter password.",
+        "invalid": "Check password.",
+        "tooShort": "Password must be at least 8 characters.",
+        "missingUppercase": "Add at least one uppercase letter.",
+        "missingDigit": "Add at least one digit."
+      },
+      "firstName": {
+        "required": "Enter first name.",
+        "invalid": "Check first name."
+      },
+      "lastName": {
+        "required": "Enter last name.",
+        "invalid": "Check last name."
+      },
+      "countryCode": {
+        "required": "Select country.",
+        "invalid": "Select a valid country."
+      },
+      "token": {
+        "required": "Reset token is required.",
+        "invalid": "Reset token is invalid."
+      }
+    }
+  },
+  "hero": {
+    "slides": [
+      {
+        "title": "Buy hashpower with transparent reward accounting",
+        "text": "Launch contracts using BTC SHA-256, LTC+DOGE Scrypt, and KAS kHeavyHash strategies with clear daily accrual tracking."
+      },
+      {
+        "title": "Profitability and risk signals in one dashboard",
+        "text": "Track active contracts, accrual history, and USDT balance dynamics with a flow aligned to established cloud-mining product patterns."
+      },
+      {
+        "title": "Conservative simulation without fixed-ROI promises",
+        "text": "Calculations include network parameters and platform fee so users can see realistic contract economics and payout history."
+      }
+    ],
+    "ctaPrimary": "Choose a Plan",
+    "ctaSecondary": "Open Calculator",
+    "prev": "Previous",
+    "next": "Next"
+  },
+  "stats": {
+    "title": "Our Statistics",
+    "items": [
+      {
+        "value": "3012",
+        "label": "users in the project"
+      },
+      {
+        "value": "$545K",
+        "label": "invested in the project"
+      },
+      {
+        "value": "2 years",
+        "label": "project operating time"
+      }
+    ]
+  },
+  "stakingPromo": {
+    "title": "USDT Staking Hot Action",
+    "lead": "Choose a fixed USDT tier and receive hourly credited staking profit to your main balance.",
+    "hot": "Hot action",
+    "day": "day",
+    "invest": "Invest"
+  },
+  "sections": {
+    "servicesTitle": "Mining Services",
+    "servicesSubtitle": "Infrastructure-backed products for reliable cloud mining operations.",
+    "aboutTitle": "About Us",
+    "aboutSubtitle": "Industrial-grade data centers for contract mining.",
+    "aboutHeading": "We Are CloudMine",
+    "aboutText1": "CloudMine delivers managed hashpower through audited mining pools and predictable payout cycles.",
+    "aboutText2": "Users choose a plan, monitor performance, and receive transparent reward reports in real time.",
+    "aboutText3": "Our operating model is built around infrastructure visibility, conservative scenario planning, and clear gross-to-net performance tracking, so clients can evaluate mining efficiency without hidden assumptions.",
+    "aboutText4": "From onboarding to support and payout history, every key action follows a structured workflow designed to improve reliability, simplify decision-making, and keep long-term portfolio management transparent.",
+    "whyTitle": "Why Choose Us",
+    "teamTitle": "Our Team",
+    "testimonialsTitle": "What Says Our Customers",
+    "plansTitle": "Mining Plans",
+    "calculatorTitle": "Profitability Calculator",
+    "dashboardTitle": "User Dashboard"
+  },
+  "servicesSeo": {
+    "lead": "CloudMine provides managed hashpower with transparent operations and auditable payout reporting.",
+    "tagsLabel": "Service highlights",
+    "tagUptime": "Infrastructure uptime focus",
+    "tagFees": "Transparent fee model",
+    "tagPayouts": "Daily accrual tracking",
+    "tagSupport": "24/7 operator support",
+    "trustText": "Built on risk-based operations, monitored infrastructure, and clear gross-to-net economics."
+  },
+  "servicesPage": {
+    "scopeMatrix": {
+      "title": "Service Scope Matrix",
+      "lead": "Clear boundaries for what each service line includes and what stays outside standard coverage.",
+      "includedLabel": "Included",
+      "excludedLabel": "Not included",
+      "items": [
+        {
+          "service": "BTC Pool Contracts",
+          "included": ["Managed contract activation", "Daily accrual visibility", "Contract status tracking"],
+          "excluded": ["Guaranteed fixed returns", "Personal investment advice"]
+        },
+        {
+          "service": "Security Storage",
+          "included": ["Custody controls for platform reserves", "Access-restricted operational workflows", "Audit trail for sensitive actions"],
+          "excluded": ["User-managed private key hosting", "External wallet insurance promises"]
+        },
+        {
+          "service": "Expert Support",
+          "included": ["24/7 first-line intake", "Case priority routing", "Escalation to operations/compliance"],
+          "excluded": ["Legal or tax consulting", "Third-party exchange support"]
+        }
+      ]
+    },
+    "controlsByService": {
+      "title": "Controls By Service",
+      "items": [
+        {
+          "service": "Contracts",
+          "controls": ["Onboarding checkpoints before contract activation", "Ledger-linked records for accrual events", "Policy-bound handling of payout-impacting actions"]
+        },
+        {
+          "service": "Custody",
+          "controls": ["Role-scoped access to critical operations", "Operator activity review trail", "Exception handling with documented approvals"]
+        },
+        {
+          "service": "Support",
+          "controls": ["Ticket-level categorization by severity", "Escalation matrix for security/compliance cases", "Structured closure notes for reviewability"]
+        }
+      ]
+    },
+    "operationalSla": {
+      "title": "Operational SLA Snapshot",
+      "items": [
+        { "metric": "Platform uptime target", "value": "99.9%" },
+        { "metric": "Critical incident triage target", "value": "< 15 min" },
+        { "metric": "High-priority first response target", "value": "< 1 h" },
+        { "metric": "Support coverage", "value": "24/7" }
+      ]
+    },
+    "timeline": {
+      "title": "Service Lifecycle Timeline",
+      "items": [
+        { "stage": "Onboarding", "text": "Account setup, baseline checks, and profile readiness." },
+        { "stage": "Funding", "text": "Top-up validation and ledger confirmation." },
+        { "stage": "Contract operations", "text": "Contract activation, monitoring, and accrual tracking." },
+        { "stage": "Withdrawal", "text": "Security and compliance checks before settlement." },
+        { "stage": "Support closure", "text": "Case resolution, summary logging, and closure confirmation." }
+      ]
+    },
+    "feeTransparency": {
+      "title": "Fee & Cost Transparency (Gross -> Net)",
+      "steps": [
+        { "label": "Gross model output", "text": "Base projection before operational deductions." },
+        { "label": "Operational deductions", "text": "Service fees, infrastructure overhead, and network-related factors." },
+        { "label": "Net result view", "text": "Estimated net outcome after documented cost layers." }
+      ],
+      "notes": [
+        "Displayed values are model-based estimates, not guaranteed outcomes.",
+        "Network conditions and market moves can materially shift net results.",
+        "All payout-impacting actions follow policy-bound controls."
+      ]
+    },
+    "incidentEscalation": {
+      "title": "Incident Escalation Flow",
+      "items": [
+        { "severity": "Critical", "target": "< 15 min triage", "flow": "Immediate incident command, user notice, recovery actions." },
+        { "severity": "High", "target": "< 1 h first response", "flow": "Operations and compliance review with tracked updates." },
+        { "severity": "Medium", "target": "< 4 h response", "flow": "Issue containment and monitored resolution window." },
+        { "severity": "Low", "target": "< 24 h response", "flow": "Planned fix cycle with documented closure notes." }
+      ]
+    },
+    "riskScenarios": {
+      "title": "Risk Scenarios",
+      "items": [
+        "Market volatility may materially change modeled outcomes.",
+        "Network difficulty shifts can reduce expected accrual rates.",
+        "Compliance and security checks may delay selected operations.",
+        "Third-party infrastructure events can impact processing windows."
+      ]
+    },
+    "serviceSuitability": {
+      "title": "Service Suitability",
+      "profiles": [
+        { "name": "Operations-focused user", "fit": "Needs transparent workflows, controls, and daily visibility." },
+        { "name": "Risk-aware planner", "fit": "Prefers conservative assumptions and gross-to-net reporting." },
+        { "name": "Process-driven team", "fit": "Requires SLA-oriented support and escalation clarity." }
+      ],
+      "notFit": "Not designed for users seeking fixed-return guarantees or speculative promises."
+    },
+    "policyHub": {
+      "title": "Policy & Escalation Links",
+      "links": [
+        { "label": "AML / CFT Policy", "to": "/aml-policy" },
+        { "label": "Terms of Service", "to": "/terms" },
+        { "label": "Privacy Policy", "to": "/privacy-policy" },
+        { "label": "Contact Operations", "to": "/team" }
+      ]
+    },
+    "trustCta": {
+      "title": "Review Controls Before You Commit",
+      "actions": [
+        { "label": "Review controls", "to": "/about/cloudmine" },
+        { "label": "See policy stack", "to": "/aml-policy" },
+        { "label": "Open dashboard", "to": "/dashboard" },
+        { "label": "Contact operations", "to": "/team" }
+      ]
+    },
+    "contentBands": {
+      "operations": {
+        "title": "Operational Coverage in Practice",
+        "lead": "A clear path from account readiness to contract activation and accrual visibility.",
+        "imageAlt": "Data center operations lane with managed infrastructure"
+      },
+      "controls": {
+        "title": "Controls, Escalation, and Ownership",
+        "lead": "Daily controls keep sensitive actions reviewed and accountability explicit.",
+        "imageAlt": "Operations control room with monitoring and incident handling"
+      },
+      "economics": {
+        "title": "Fee Transparency and Risk Context",
+        "lead": "Gross-to-net values are model-based and affected by costs, market moves, and compliance checks.",
+        "imageAlt": "Financial operations dashboard used for risk and economics review"
+      }
+    }
+  },
+  "serviceStrategies": {
+    "btc-pool-contracts": {
+      "title": "BTC Pool Contracts",
+      "subtitle": "Detailed overview of SHA-256 strategy logic, daily accruals, and contract operations.",
+      "intro": "BTC Pool Contracts are designed for users who want managed Bitcoin mining exposure without running hardware on their own. The contract follows a daily accrual model so users can track forecast and realized dynamics directly in the dashboard.",
+      "blocks": [
+        {
+          "heading": "How the strategy operates",
+          "text": "After activation, the contract is linked to SHA-256 pool infrastructure. Performance is modeled with market price inputs, network difficulty trends, and platform operating coefficients."
+        },
+        {
+          "heading": "What drives outcomes",
+          "text": "Final economics depend on BTC volatility, difficulty changes, infrastructure uptime, and service costs. The interface therefore uses conservative gross-to-net reporting rather than fixed-profit promises."
+        },
+        {
+          "heading": "Dashboard visibility",
+          "text": "Users can monitor contract status, daily accrual rows, cumulative net result, and breakeven projection. This supports decision-making based on real trajectory, not only entry assumptions."
+        }
+      ],
+      "forWhomTitle": "Best fit for",
+      "points": [
+        "Users seeking structured and predictable exposure to BTC mining strategy.",
+        "Users who want daily accrual visibility in a single account workflow.",
+        "Users who prefer conservative planning over aggressive ROI claims."
+      ],
+      "outro": "Important: BTC Pool Contracts remain market-sensitive. Final performance depends on live network and market conditions."
+    },
+    "security-storage": {
+      "title": "Security Storage",
+      "subtitle": "How cold-reserve controls, access policies, and audit trails support platform integrity.",
+      "intro": "Security Storage represents the operational custody layer for platform reserves. It is not just a wallet endpoint, but a structured control system covering access boundaries, sensitive actions, and event traceability.",
+      "blocks": [
+        {
+          "heading": "Custody architecture",
+          "text": "Reserve funds are handled in an isolated operational perimeter with restricted access paths. Critical operations are role-separated to reduce single-point failure risk and unauthorized manipulation."
+        },
+        {
+          "heading": "Operational safeguards",
+          "text": "Sensitive actions are governed by role-scoped permissions, approval routines, and exception handling policies. Non-standard operations require additional review and are documented for accountability."
+        },
+        {
+          "heading": "Auditability and response",
+          "text": "Security-relevant events are recorded in audit trails: actor, action, timing, and outcome. This improves traceability and speeds up incident response when anomalies appear."
+        }
+      ],
+      "forWhomTitle": "Best fit for",
+      "points": [
+        "Users prioritizing operational security posture over purely marketing metrics.",
+        "Teams that require verifiable action history and governance controls.",
+        "Users evaluating platform reliability through risk and control discipline."
+      ],
+      "outro": "Security Storage strengthens trust through a process-first model: controlled access, documented actions, and governed escalation."
+    },
+    "expert-support": {
+      "title": "Expert Support",
+      "subtitle": "How 24/7 support works: triage, SLA routing, escalation, and case closure.",
+      "intro": "Expert Support is the service layer for user requests across contracts, accruals, top-ups, and withdrawals. It operates 24/7 and follows structured triage, routing, and escalation policies to keep response quality stable.",
+      "blocks": [
+        {
+          "heading": "Initial ticket processing",
+          "text": "Each request enters triage first: category, priority, and severity are defined before assignment. This helps route the case into the right workflow and improves first meaningful response speed."
+        },
+        {
+          "heading": "SLA and escalation model",
+          "text": "Response targets vary by priority band. Complex or sensitive issues are escalated to operations/compliance while the user receives tracked progress updates through the ticket lifecycle."
+        },
+        {
+          "heading": "Communication transparency",
+          "text": "Message history, status transitions, and case outcomes are logged in one thread. This prevents context loss and keeps communication auditable for both users and internal teams."
+        }
+      ],
+      "forWhomTitle": "Best fit for",
+      "points": [
+        "Users who expect fast operational response across dashboard actions.",
+        "Users who need status visibility from first contact to final closure.",
+        "Users who want one coordinated support channel for technical and process questions."
+      ],
+      "outro": "Expert Support improves service predictability from first message to documented case resolution."
+    }
+  },
+  "aboutReadMore": {
+    "title": "CloudMine Infrastructure & Operating Model",
+    "subtitle": "How we structure managed hashpower, risk controls, and transparent payout reporting in simulation mode.",
+    "intro": "This page describes the operational logic behind our simulation environment: allocation of purchased capacity, conservative earnings assumptions, and transparent accounting for accruals and fees.",
+    "outro": "Important: all profitability values are model outputs, not fixed-return commitments. Real market conditions, network difficulty, and fee dynamics can materially change final outcomes.",
+    "blocks": [
+      {
+        "heading": "Managed Hashpower Allocation",
+        "text": "Contracts are mapped to strategy pools by algorithm profile (BTC SHA-256, LTC+DOGE Scrypt, KAS kHeavyHash). The allocation model targets stable daily accrual behavior while accounting for network condition shifts."
+      },
+      {
+        "heading": "Operational Risk Controls",
+        "text": "The platform tracks strategy-level fee factors, uptime assumptions, and volatility bands. This helps users evaluate contract economics through conservative assumptions instead of fixed-return promises."
+      },
+      {
+        "heading": "Transparent Reporting Workflow",
+        "text": "Users can monitor contract status, daily accrual rows, and aggregate mining performance inside one dashboard. Ledger-linked payout records are designed to keep deposits, purchases, accruals, and withdrawals auditable."
+      },
+      {
+        "heading": "Data Center & Power Assumptions",
+        "text": "Our simulation baseline reflects common industry practices: geographically distributed facilities, power-cost sensitivity, and periodic efficiency updates. Instead of assuming perfect conditions, the model uses buffered uptime and operating ranges."
+      },
+      {
+        "heading": "Fee Logic & Cost Breakdown",
+        "text": "Projected results include a layered cost structure inspired by public cloud-mining disclosures: infrastructure overhead, maintenance, and service operations. This allows users to compare gross vs net performance rather than seeing only headline returns."
+      },
+      {
+        "heading": "Monitoring, Alerts, and Audit Trail",
+        "text": "Each key event (deposit conversion, contract activation, accrual, withdrawal state changes) is recorded in the platform ledger. This creates a traceable history for users and administrators and improves operational accountability."
+      },
+      {
+        "heading": "Payout Timing & Scenario Modeling",
+        "text": "Expected payouts are shown as simulation intervals and may vary by strategy profile. The dashboard emphasizes scenario-based planning (base, conservative assumptions) to reduce over-optimistic forecasts."
+      },
+      {
+        "heading": "Support & Manual Operations",
+        "text": "For edge cases, users can open support conversations in real time. Manual review flows (for example, compliance checks or withdrawal handling) are logged to maintain transparency between user actions and operator responses."
+      }
+    ]
+  },
+  "whyItems": [
+    {
+      "title": "Expert Management",
+      "text": "Dedicated mining operations specialists optimize pool strategy and uptime."
+    },
+    {
+      "title": "Secure Investment",
+      "text": "Infrastructure and payout logic are continuously monitored with strict risk controls."
+    },
+    {
+      "title": "Instant Tracking",
+      "text": "Live contract statistics, hash rate, and reward history available from your dashboard."
+    },
+    {
+      "title": "Happy Customers",
+      "text": "Support and transparent reporting help customers scale confidently."
+    }
+  ],
+  "testimonials": [
+    {
+      "name": "Maksim, UAE",
+      "title": "Retail Investor",
+      "text": "The dashboard is the main reason I stayed: I can see daily accruals, contract status, and payout history in one place without hidden tabs."
+    },
+    {
+      "name": "Elena, Kazakhstan",
+      "title": "Data Analyst",
+      "text": "I like the conservative model. It does not promise fixed ROI and clearly shows the impact of difficulty, uptime, and service fee on net results."
+    },
+    {
+      "name": "Aydin, Turkey",
+      "title": "Crypto Portfolio User",
+      "text": "Top-ups, mining contracts, and withdrawals are connected in one flow. For planning monthly cashflow, this is much easier than juggling multiple services."
+    },
+    {
+      "name": "Natalia, Georgia",
+      "title": "Financial Consultant",
+      "text": "I like that plan cards show return structure and end-of-term capital clearly. It makes decision-making easier even for non-technical users."
+    },
+    {
+      "name": "Rustam, Azerbaijan",
+      "title": "Crypto Trader",
+      "text": "Realtime support chat and transparent operation history are key for me. Every request and reply is logged, which improves trust."
+    },
+    {
+      "name": "Olga, Latvia",
+      "title": "Product Manager",
+      "text": "The UI is clean and practical: calculator, contracts, applications, and support follow one consistent flow without unnecessary complexity."
+    }
+  ],
+  "teamApply": {
+    "cta": "Join the Team",
+    "title": "CloudMine Team Application",
+    "subtitle": "Leave your details and our recruitment team will contact you after initial review.",
+    "fullName": "Full name",
+    "email": "Email",
+    "role": "Target role",
+    "experience": "Industry experience (years)",
+    "message": "Briefly describe your background and relevant skills",
+    "submit": "Submit application",
+    "success": "Application submitted. We will contact you soon.",
+    "invalidEmail": "Please enter a valid email address.",
+    "error": "Could not submit application. Please try again later."
+  },
+  "teamPage": {
+    "roleMatrix": {
+      "title": "Role Accountability Matrix",
+      "lead": "The team is structured around operational ownership and clear decision boundaries.",
+      "items": {
+        "operations": {
+          "role": "Operations",
+          "owner": "Owner: runtime continuity and service execution",
+          "scope": "Monitors platform state, payout queues, and daily operational readiness."
+        },
+        "compliance": {
+          "role": "Compliance",
+          "owner": "Owner: policy controls and case escalation decisions",
+          "scope": "Runs AML/CFT checkpoints, reviews exceptions, and controls sensitive flow approvals."
+        },
+        "security": {
+          "role": "Security",
+          "owner": "Owner: access posture and incident containment",
+          "scope": "Maintains privileged access controls, event review, and response hardening."
+        },
+        "support": {
+          "role": "Support",
+          "owner": "Owner: user communication and case lifecycle",
+          "scope": "Handles first-line triage, routing, and documented closure updates."
+        }
+      }
+    },
+    "contentBands": {
+      "operations": {
+        "title": "Operations and Delivery Flow",
+        "lead": "The team coordinates runtime operations, support intake, and contract continuity in one delivery cycle.",
+        "imageAlt": "Operations team collaboration in a monitoring room"
+      },
+      "controls": {
+        "title": "Control Discipline and Risk Response",
+        "lead": "Compliance and security teams keep sensitive actions policy-bound and incident handling auditable.",
+        "imageAlt": "Risk and compliance specialists reviewing workflow controls"
+      }
+    },
+    "ownershipSla": {
+      "title": "Service Ownership & SLA",
+      "items": [
+        { "metric": "Critical triage target", "value": "< 15 min" },
+        { "metric": "High-priority first response", "value": "< 1 h" },
+        { "metric": "Standard case closure target", "value": "< 24 h" },
+        { "metric": "Operational coverage window", "value": "24/7" }
+      ]
+    },
+    "governance": {
+      "title": "Decision & Governance Controls",
+      "items": [
+        "Separation of duties for initiation, approval, and execution of sensitive actions.",
+        "Maker-checker approvals for policy-impacting operations.",
+        "Weekly control review for incidents, exceptions, and unresolved cases.",
+        "Monthly governance checkpoint for process updates and risk alignment."
+      ]
+    },
+    "escalation": {
+      "title": "Escalation Ladder",
+      "items": [
+        { "level": "L1", "target": "< 15 min acknowledge", "scope": "Frontline triage, incident tagging, and user intake updates." },
+        { "level": "L2", "target": "< 1 h specialist response", "scope": "Operations/compliance specialist review and containment actions." },
+        { "level": "L3", "target": "< 4 h command escalation", "scope": "Cross-functional decision with coordinated remediation plan." },
+        { "level": "Incident command", "target": "As required for critical events", "scope": "Executive-level coordination, status communication, and recovery oversight." }
+      ]
+    },
+    "cadence": {
+      "title": "Operational Cadence",
+      "items": [
+        { "period": "Daily", "focus": "Runtime checks, queue health, and active issue routing." },
+        { "period": "Weekly", "focus": "Incident recap, SLA variance review, and control tuning." },
+        { "period": "Monthly", "focus": "Governance review, escalation patterns, and policy adjustments." }
+      ]
+    }
+  },
+  "teamContact": {
+    "title": "Visit Our Office",
+    "subtitle": "For partnerships, corporate onboarding, and operational support, use the contacts below.",
+    "addressLabel": "Office address",
+    "addressValue": "Office 502, Aurora Business Tower, Downtown Dubai, UAE",
+    "emailLabel": "Email",
+    "emailValue": "office@cloudmine-support.com",
+    "phoneLabel": "Phone",
+    "phoneValue": "+971 4 001 23456",
+    "hotlineLabel": "Hotline",
+    "hotlineValue": "+971 4 009 87654",
+    "mapTitle": "CloudMine office map"
+  },
+  "supportWidget": {
+    "guestModeActive": "Guest mode is active. You can message support without sign in.",
+    "firstMessageHint": "Write the first message and operator will reply in real time.",
+    "guestUnavailable": "Guest chat is temporarily unavailable."
+  },
+  "teamStory": {
+    "title": "How Our Team Runs Daily Operations",
+    "paragraphs": [
+      "CloudMine runs as a cross-functional operating model where infrastructure, support, finance, and compliance work in one coordinated cycle.",
+      "Daily operations begin with a structured handoff: uptime, queue health, active alerts, and service readiness checkpoints.",
+      "Support and onboarding handle first response, route cases to owners, and keep communication traceable through the full lifecycle.",
+      "Compliance and security monitor policy triggers in parallel with operations to keep sensitive actions controlled and reviewable.",
+      "Financial operations reconcile deposits, accrual events, and withdrawal stages in a ledger-linked flow for transparent gross-to-net tracking."
+    ]
+  },
+  "footer": {
+    "address": "Address",
+    "location": "Dubai, UAE / Astana, KZ",
+    "call": "Call +971 000 000 000",
+    "email": "support@cloudmine.io",
+    "info": "Info",
+    "infoText": "Cloud mining contracts with transparent analytics and clear payout reporting.",
+    "links": "Links",
+    "amlPolicy": "AML Policy",
+    "terms": "Terms",
+    "privacyPolicy": "Privacy Policy",
+    "cookiePolicy": "Cookie Policy",
+    "subscribe": "Subscribe",
+    "emailPlaceholder": "Enter email",
+    "rights": "All Rights Reserved By",
+    "invalidEmail": "Please enter a valid email address.",
+    "subscribeSuccessTitle": "Subscription successful",
+    "subscribeSuccessText": "Thanks! You have been successfully subscribed to our newsletter.",
+    "subscribeSuccessOk": "Great"
+  },
+  "amlPolicy": {
+    "title": "AML / CFT Policy",
+    "updatedAt": "Last updated: April 2026",
+    "intro": "CloudMine applies a risk-based Anti-Money Laundering and Counter-Terrorist Financing framework designed for digital-asset services. This policy outlines customer due diligence, sanctions controls, transaction monitoring, and escalation procedures used on the platform.",
+    "sections": [
+      {
+        "heading": "1. Scope and Compliance Commitment",
+        "text": "This policy applies to account onboarding, wallet operations, deposits, mining contract purchases, and withdrawals. CloudMine implements AML/CFT controls in line with generally accepted compliance standards and cooperates with lawful requests from competent authorities."
+      },
+      {
+        "heading": "2. Risk-Based Customer Due Diligence (CDD)",
+        "text": "Users may be asked to provide identity and contact information based on risk level, transaction profile, and jurisdictional exposure. Enhanced due diligence may apply for higher-risk patterns, including source-of-funds clarifications and additional verification steps."
+      },
+      {
+        "heading": "3. Sanctions, PEP, and Restricted Jurisdiction Screening",
+        "text": "CloudMine performs sanctions and politically exposed person (PEP) checks during onboarding and throughout the relationship lifecycle. Accounts linked to sanctioned persons, prohibited entities, or restricted geographies may be declined, restricted, or suspended."
+      },
+      {
+        "heading": "4. Transaction Monitoring and Behavioral Controls",
+        "text": "The platform monitors deposits, transfers, and withdrawal requests for unusual behavior, velocity anomalies, structuring signals, and other AML red flags. Automated and manual controls are used to detect activity that may require review or escalation."
+      },
+      {
+        "heading": "5. Suspicious Activity Escalation",
+        "text": "If suspicious behavior is detected, CloudMine may request additional documents, delay processing, freeze selected operations, or reject transactions pending compliance review. Relevant cases can be escalated for internal investigation and regulatory reporting where required."
+      },
+      {
+        "heading": "6. Recordkeeping and Audit Trail",
+        "text": "CloudMine keeps auditable records of key compliance events, including verification outcomes, wallet activity metadata, and case actions. Data retention periods are determined by legal obligations, security requirements, and incident response practices."
+      },
+      {
+        "heading": "7. Ongoing Program Governance",
+        "text": "AML/CFT controls are reviewed periodically and adjusted for emerging risks, operational changes, and legal updates. Team members involved in support and operations follow internal procedures for alert triage, case handoff, and decision logging."
+      },
+      {
+        "heading": "8. User Responsibilities",
+        "text": "Users must provide accurate information, avoid circumvention attempts, and refrain from using the platform for illegal purposes, including laundering, sanctions evasion, fraud, or terror financing. Violations may result in immediate account restrictions."
+      }
+    ],
+    "outro": "CloudMine does not guarantee uninterrupted access to all features during compliance reviews. Risk controls are applied to protect users, the platform, and the broader ecosystem."
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "updatedAt": "Last updated: April 2026",
+    "sections": [
+      {
+        "heading": "1. Scope of Service",
+        "text": "CloudMine provides a cloud-mining simulation platform where users can purchase strategy-based contracts, view accrual analytics, and manage account balances. Access to specific features may depend on account verification, regional availability, and operational controls."
+      },
+      {
+        "heading": "2. Risk Disclosure",
+        "text": "Mining economics are inherently volatile and depend on asset prices, network difficulty, fee levels, and uptime conditions. Any projected yield, APY, or profitability metric is an estimate and does not constitute a guaranteed return."
+      },
+      {
+        "heading": "3. Payments, Accruals, and Withdrawals",
+        "text": "Deposits may be converted to USDT-equivalent accounting balances according to available pricing sources at processing time. Contract accruals are recorded by platform logic and may vary by strategy and network parameters. Withdrawals are subject to security checks, compliance controls, and platform limits."
+      },
+      {
+        "heading": "4. User Responsibilities",
+        "text": "Users must provide accurate registration data, protect account credentials, and comply with applicable laws in their jurisdiction. Accounts may be restricted if suspicious, abusive, or prohibited activity is detected."
+      },
+      {
+        "heading": "5. Compliance and Prohibited Use",
+        "text": "CloudMine reserves the right to request identity information for AML/KYC purposes where required. Use of the platform for money laundering, sanctions evasion, fraud, unauthorized automation, or harmful interference is strictly prohibited."
+      },
+      {
+        "heading": "6. Limitation of Liability",
+        "text": "To the maximum extent permitted by law, CloudMine is not liable for indirect losses, lost profits, or damages caused by market volatility, blockchain events, third-party infrastructure failures, or user-side security incidents."
+      },
+      {
+        "heading": "7. Changes to Terms",
+        "text": "These terms may be updated periodically to reflect legal, technical, or operational changes. Continued use of the platform after updates constitutes acceptance of the revised terms."
+      }
+    ]
+  },
+  "cta": {
+    "readMore": "Read More",
+    "viewAll": "View All"
+  },
+  "plans": {
+    "power": "Power",
+    "duration": "Duration",
+    "days": "days",
+    "price": "Price",
+    "roi": "Potential ROI",
+    "searchPlaceholder": "Search plans...",
+    "filterRiskAll": "All risk profiles",
+    "filterRiskLow": "Low",
+    "filterRiskLowMid": "Low-Mid",
+    "filterRiskMid": "Mid",
+    "filterRiskMidHigh": "Mid-High",
+    "filterRiskHigh": "High",
+    "sortPriceAsc": "Price: low to high",
+    "sortPriceDesc": "Price: high to low",
+    "sortApyDesc": "Projected APY",
+    "sortNetDesc": "Net/day",
+    "sortRiskAsc": "Risk score",
+    "noPlansFound": "No matching plans.",
+    "selectPlan": "Select",
+    "selected": "Selected",
+    "needTopup": "Insufficient available balance. Please top up to continue.",
+    "scenarioTitle": "Hashrate scenarios",
+    "scenario": {
+      "base": "Base",
+      "conservative": "Conservative",
+      "stress": "Stress"
+    },
+    "kpi": {
+      "netDaily": "Net/day (base)",
+      "netMonthly": "Net/month (base)",
+      "yearRange": "12M capital range",
+      "breakeven": "Breakeven",
+      "baseFinal": "Base final",
+      "conservativeFinal": "Conservative final"
+    },
+    "table": {
+      "plan": "Plan",
+      "strategy": "Strategy",
+      "risk": "Risk",
+      "hashrate": "Hashrate",
+      "term": "Term",
+      "price": "Price",
+      "apy": "Projected APY",
+      "netDaily": "Net/day",
+      "breakeven": "Breakeven",
+      "action": "Action"
+    },
+    "marketingTitle": "Build a resilient mining portfolio",
+    "marketingText": "Mix conservative and growth-oriented strategies to balance risk, smooth daily accrual dynamics, and target stable long-term capital growth. Use the plan cards as a benchmark model, then optimize allocation by your preferred risk profile and investment horizon."
+  },
+  "calculator": {
+    "subtitle": "Calculator flow follows common mining tools: hashrate estimate, electricity cost, service fee, and network adjustment factors.",
+    "subtitleSimple": "Choose an existing plan or use quick hashrate mode with a conservative market-average annual yield baseline.",
+    "modePlans": "By Existing Plans",
+    "modeQuickHashrate": "Quick Hashrate",
+    "choosePlan": "Choose plan",
+    "investmentUsdt": "Investment (USDT)",
+    "strategy": "Mining strategy",
+    "strategyBtc": "BTC SHA-256",
+    "strategyLtcDoge": "LTC + DOGE Scrypt",
+    "strategyKas": "KAS kHeavyHash",
+    "duration": "Contract duration (days)",
+    "electricityCost": "Electricity ($/kWh)",
+    "maintenanceFee": "Service fee ($/TH/day)",
+    "difficultyFactor": "Difficulty factor",
+    "priceFactor": "Price factor",
+    "uptime": "Uptime (%)",
+    "resultsTitle": "Profitability estimate",
+    "estimatedHashrate": "Estimated hashpower",
+    "grossDaily": "Gross daily revenue",
+    "powerDaily": "Daily power cost",
+    "maintenanceDaily": "Daily service fee",
+    "additionalCosts": "Additional",
+    "additionalBreakdownTitle": "Deduction breakdown",
+    "additionalMonthly": "Additional monthly",
+    "additionalTotal": "Additional total",
+    "netDaily": "Net daily revenue",
+    "netMonthly": "Net monthly revenue",
+    "netTotal": "Net contract revenue",
+    "projectedRoi": "Projected ROI",
+    "marketApyLabel": "Market-average annual yield",
+    "marketApyNote": "Research baseline: sustainable offers on established cloud-mining products are usually modeled conservatively, often around 5-10% APR. Quick mode uses 8.5% APY as a neutral planning assumption.",
+    "buySelectedPlan": "Buy selected plan",
+    "buyPlanSuccess": "Plan purchased successfully.",
+    "buyHashrateQuick": "Buy hashrate (quick mode)",
+    "quickHashrateHint": "Quick mode is a planning shortcut. For real purchase execution, select a concrete tariff plan above.",
+    "disclaimer": "Disclaimer: this is a simulation tool. Actual results depend on market price, network difficulty, uptime, and fee dynamics.",
+    "capitalGrowthTitle": "Capital Growth",
+    "finalCapital": "End-of-term capital",
+    "startCapital": "Starting capital",
+    "projectedProfit": "Projected profit",
+    "projectionModelLabel": "12-month projection model",
+    "bundleHint": "Bundle assumptions include pooled infrastructure, optimized power contracts, and managed service overhead.",
+    "quickModeHint2": "Quick mode is benchmark-driven and uses conservative APY planning to avoid overstating returns.",
+    "projected12mCapital": "Projected 12M capital",
+    "baselineApy": "Baseline APY",
+    "projected12mRoi": "12M projected ROI"
+  },
+  "dashboardCabinet": {
+    "tabs": {
+      "overview": "Overview",
+      "balance": "Balance & Ledger",
+      "topups": "Top-ups",
+      "buyPower": "Buy Power",
+      "contracts": "Mining Contracts",
+      "staking": "Staking",
+      "accruals": "Accruals",
+      "withdrawals": "Withdrawals",
+      "support": "Support"
+    },
+    "metrics": {
+      "balance": "Balance",
+      "available": "Available",
+      "held": "Held",
+      "activeContracts": "Active contracts",
+      "miningEarned": "Mining earned"
+    },
+    "messages": {
+      "loadingOverview": "Loading overview...",
+      "loadingBalance": "Loading balance...",
+      "loadingTopups": "Loading top-ups...",
+      "loadingContracts": "Loading contracts...",
+      "loadingAccruals": "Loading accruals...",
+      "loadingWithdrawals": "Loading withdrawals...",
+      "loadingSupport": "Loading support...",
+      "failedLoadOverview": "Failed to load overview",
+      "failedLoadBalance": "Failed to load balance",
+      "failedLoadTopups": "Failed to load top-ups",
+      "failedLoadContracts": "Failed to load contracts",
+      "failedLoadStaking": "Failed to load staking",
+      "failedLoadAccruals": "Failed to load accruals",
+      "failedLoadWithdrawals": "Failed to load withdrawals",
+      "failedLoadSupport": "Failed to load support",
+      "failedLoadMessages": "Failed to load messages",
+      "passwordUpdated": "Password updated.",
+      "passwordUpdateFailed": "Password update failed",
+      "selectKycDocument": "Select KYC document first.",
+      "kycSubmitted": "KYC submitted.",
+      "kycSubmitFailed": "KYC submit failed",
+      "regenerateCodeFailed": "Could not regenerate code",
+      "topupSubmitted": "Top-up submitted. In review.",
+      "topupSubmitFailed": "Top-up failed. Retry.",
+      "duplicateTopupHash": "This transaction hash already exists.",
+      "invalidTopupForm": "Enter wallet, transaction hash, and valid amount.",
+      "withdrawalSubmitted": "Withdrawal submitted. In review.",
+      "withdrawalCancelled": "Withdrawal cancelled.",
+      "withdrawalFailed": "Withdrawal failed. Retry.",
+      "cancelFailed": "Cancel failed. Retry.",
+      "invalidWithdrawalForm": "Enter a valid address and amount.",
+      "confirmWithdrawalRisk": "Confirm irreversible transaction risk first.",
+      "invalidSecurityCode": "Enter 6-digit security code.",
+      "insufficientBalance": "Insufficient balance.",
+      "invalidTicketForm": "Enter subject and message.",
+      "ticketCreateFailed": "Ticket creation failed.",
+      "ticketCloseFailed": "Could not close ticket.",
+      "messageSendFailed": "Message failed. Retry.",
+      "copyFailed": "Copy failed."
+    },
+    "nextActionTitle": "Next step:",
+    "trust": {
+      "verification": "Verification level",
+      "review": "Under review",
+      "verifiedOrBasic": "Verified / Basic",
+      "withdrawPolicy": "Withdrawal policy",
+      "policyFreeze": "Policy freeze",
+      "normal": "Normal",
+      "finality": "Finality",
+      "onchainRequired": "On-chain confirmation",
+      "sync": "Sync",
+      "finalizedAfterPosting": "Finalized after posting",
+      "policy": "Policy",
+      "complianceReview": "Compliance review"
+    },
+    "nextAction": {
+      "kyc": "Complete verification for higher limits.",
+      "topup": "Submit top-up to continue.",
+      "buyPower": "Start earning with a mining tariff.",
+      "contracts": "Review contract status.",
+      "withdrawals": "Review withdrawal status.",
+      "support": "Review support updates.",
+      "open": "Open"
+    },
+    "buyPower": {
+      "title": "Buy mining power",
+      "hint": "Select a tariff and start generating daily accruals.",
+      "buyCta": "Buy tariff",
+      "purchaseSuccess": "Tariff purchased successfully.",
+      "purchaseFailed": "Purchase failed.",
+      "insufficientTitle": "Insufficient balance",
+      "insufficientText": "Please top up your balance to buy tariffs.",
+      "goTopup": "Go to top-up",
+      "startEarningTitle": "Start earning!",
+      "startEarningText": "Open the tariff marketplace and buy mining power from your dashboard.",
+      "openMarket": "Open buy screen"
+    },
+    "overview": {
+      "referralTitle": "Referral",
+      "yourCode": "Your code",
+      "link": "Link",
+      "invites": "Invites",
+      "regenerateCode": "Regenerate code",
+      "regenerateConfirm": "Regenerate code? Previous links may stop working.",
+      "kycTitle": "KYC",
+      "status": "Status",
+      "required": "required",
+      "optional": "optional",
+      "country": "Country",
+      "document": "Document (jpg/png/pdf)",
+      "submitKyc": "Submit KYC",
+      "changePassword": "Change password",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "updatePassword": "Update password",
+      "securityTitle": "Security controls",
+      "enable2fa": "Enable 2FA for login sessions",
+      "enableStepUp": "Require security code for sensitive actions",
+      "securityHint": "Settings apply after server policy confirmation.",
+      "securityLocalOnly": "Local update saved. Server confirmation pending.",
+      "serverSecurityStatus": "Server policy: pending confirmation.",
+      "trustPanel": "Trust and security panel",
+      "lastLogin": "Last login",
+      "activeSessions": "Active sessions",
+      "security2fa": "2FA status",
+      "stepUpStatus": "Step-up status",
+      "securityLogSession": "Session authenticated",
+      "securityLogKyc": "KYC status synchronized",
+      "lastSync": "Last sync",
+      "kycLevelBasic": "Verification: Basic",
+      "kycLevelReview": "Verification: In review",
+      "kycLevelVerified": "Verification: Verified",
+      "kycLevelRejected": "Verification: Rejected",
+      "miniNavActivity": "Activity",
+      "miniNavReferral": "Referral",
+      "miniNavKyc": "KYC",
+      "miniNavSecurity": "Security",
+      "miniNavAria": "Overview section navigation",
+      "reviewTitle": "Review details before submit",
+      "screenHint": "Review account health, then proceed.",
+      "referralHint": "Use one active code for consistent tracking.",
+      "kycHint": "KYC status affects limits and reviews.",
+      "passwordHint": "Update password if access looks suspicious.",
+      "securityPanelHint": "Toggles apply locally first, then on server confirmation."
+      ,"hourlyUpdateHint": "Mining earnings are updated hourly and displayed with 4 decimal precision.",
+      "twoFactorEnrollStarted": "2FA enrollment started. Enter verification code.",
+      "twoFactorSecret": "2FA secret",
+      "trustCurrentDevice": "Trust current device",
+      "revokeAllSessions": "Revoke all sessions",
+      "sessionsRevoked": "All sessions revoked."
+    },
+    "balance": {
+      "ledgerHistory": "Ledger history",
+      "allTypes": "All types",
+      "running": "Running",
+      "exportCsv": "Export CSV",
+      "hint": "Filter entries and export the current view."
+    },
+    "contracts": {
+      "summaryTitle": "Mining summary",
+      "listTitle": "My mining contracts",
+      "invested": "Invested (USDT)",
+      "earned": "Earned (USDT)",
+      "activeHashrate": "Active hashrate",
+      "strategy": "Strategy",
+      "hashrate": "Hashrate",
+      "days": "Days",
+      "ends": "Ends",
+      "summaryHint": "Shows cumulative contract performance.",
+      "listHint": "Filter by status to track lifecycle and expiry."
+    },
+    "staking": {
+      "title": "USDT Staking",
+      "autoCreditHint": "Staking profit is accrued hourly and automatically credited to your main balance for normal withdrawal flow.",
+      "totalInvested": "Total Invested",
+      "totalEarned": "Total Earned",
+      "hourlyYield": "Hourly Yield",
+      "hotOffer": "Hot offer",
+      "day": "day",
+      "amountPlaceholder": "Amount in USDT",
+      "invest": "Invest",
+      "investSuccess": "Investment opened successfully.",
+      "investFailed": "Failed to open staking position.",
+      "invalidAmount": "Enter a valid amount.",
+      "positionsTitle": "Active staking positions",
+      "dailyRate": "Daily rate",
+      "earned": "Earned"
+    },
+    "accruals": {
+      "title": "Mining accruals",
+      "contract": "Contract",
+      "gross": "Gross USDT",
+      "net": "Net USDT",
+      "note": "Accruals are estimates and can vary with operational conditions.",
+      "allContracts": "All contracts",
+      "hint": "Compare 1D, 7D, and 30D net trend."
+    },
+    "topups": {
+      "title": "Balance top-up",
+      "wallet": "Wallet",
+      "sendTo": "Send to",
+      "txHash": "Transaction hash",
+      "submit": "Submit top-up",
+      "openModal": "Open top-up modal",
+      "modalTitle": "Top-up balance",
+      "statusTitle": "Top-up status",
+      "verification": "Verification",
+      "disclosure": "Funds are credited after blockchain confirmation and compliance checks.",
+      "pending": "Pending",
+      "failed": "Failed",
+      "reviewTitle": "Review top-up request",
+      "preActionHint": "Submit a valid hash to start verification.",
+      "tableHint": "Check status, ETA, and provider notes before action.",
+      "etaLabel": "ETA",
+      "etaValueRunning": "~5-15 min",
+      "etaValueIdle": "settled/queued",
+      "feeLabel": "Fee",
+      "feeNetworkDependent": "network dependent",
+      "lastSync": "Last sync",
+      "trustStrip": "Deposits are credited only after on-chain confirmation and compliance checks.",
+      "finalityStrip": "After confirmation and posting, reversal is not guaranteed. Verify tx hash and destination before submission.",
+      "attempts": "Verification attempts",
+      "nextRetry": "Next retry",
+      "deadLetter": "Dead letter",
+      "exactWithdrawable": "Exact withdrawable amount",
+      "bonusNonWithdrawable": "Bonus tokens are not withdrawable and can only be used for buying power/tariffs.",
+      "profitOnlyWithdrawableHint": "Only profit/withdrawable balance can be withdrawn."
+    },
+    "withdrawals": {
+      "title": "Withdraw funds",
+      "address": "Address",
+      "memo": "Memo / Tag (optional)",
+      "submit": "Submit withdrawal request",
+      "openModal": "Open withdrawal modal",
+      "modalTitle": "Withdraw funds",
+      "available": "Available to withdraw",
+      "requests": "Withdrawal requests",
+      "savedAddresses": "Saved addresses",
+      "saveAddress": "Save address",
+      "securityCode": "Security code",
+      "riskConfirm": "I understand withdrawals are irreversible after processing.",
+      "disclosure": "Withdrawal requests are reviewed for security and compliance before execution.",
+      "cancelConfirm": "Cancel this withdrawal request? This action cannot be undone.",
+      "reviewTitle": "Review withdrawal request",
+      "preActionHint": "Verify network and address before submit.",
+      "tableHint": "Use timeline and notes to track current stage.",
+      "stageRequested": "Requested",
+      "stageReview": "Review",
+      "stageSettled": "Settled",
+      "etaLabel": "ETA",
+      "etaValue": "up to 24h",
+      "etaNa": "n/a",
+      "feeLabel": "Fee",
+      "feeNetworkDependent": "network dependent",
+      "lastSync": "Last sync",
+      "trustStrip": "Withdrawals pass security and compliance review before settlement.",
+      "finalityStrip": "Completed withdrawals are final. Double-check destination address before confirming.",
+      "kycFreezeNotice": "Withdrawals are temporarily frozen until KYC verification is approved by administrator.",
+      "settlementStatus": "Settlement status",
+      "processedAt": "Processed at",
+      "externalTx": "External tx",
+      "riskTier": "Risk tier"
+    },
+    "support": {
+      "ticketsTitle": "Support tickets",
+      "chatTitle": "Support chat",
+      "subject": "Subject",
+      "describeIssue": "Describe issue",
+      "createTicket": "Create ticket",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "openTicket": "Open ticket",
+      "closeTicket": "Close ticket",
+      "closeTicketConfirm": "Close this ticket? You can open a new one later.",
+      "ticketCreated": "Ticket created.",
+      "ticketClosed": "Ticket closed.",
+      "messageSent": "Message sent.",
+      "attachmentHint": "Uploads are disabled. Filename is added to message text.",
+      "filenameOnly": "Filename only mode: the file itself is not uploaded.",
+      "lastSync": "Last sync",
+      "categoryGeneral": "General",
+      "categoryPayment": "Payments",
+      "categoryTechnical": "Technical",
+      "categoryCompliance": "Compliance",
+      "slaTimer": "SLA timer",
+      "ticketsHint": "Create clear tickets for faster triage.",
+      "chatHint": "Use chat only for the selected ticket.",
+      "selectTicket": "Select a ticket to open chat",
+      "typeMessage": "Type your message..."
+    },
+    "table": {
+      "type": "Type",
+      "amount": "Amount",
+      "reason": "Reason",
+      "asset": "Asset",
+      "network": "Network",
+      "status": "Status",
+      "note": "Note",
+      "action": "Action",
+      "date": "Date"
+    },
+    "status": {
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "pending": "Pending",
+      "processing": "Processing",
+      "completed": "Completed",
+      "failed": "Failed"
+    },
+    "statusSemantics": {
+      "title": "Status semantics",
+      "pending": "Queued or awaiting action.",
+      "processing": "Under review or currently processing.",
+      "completed": "Processed successfully.",
+      "failed": "Rejected, cancelled, or failed."
+    },
+    "empty": {
+      "noLedgerEntries": "No ledger entries yet",
+      "noTopups": "No top-ups yet",
+      "noContracts": "No mining contracts yet",
+      "noAccruals": "No accruals yet",
+      "noStakingPositions": "No staking positions yet",
+      "noWithdrawals": "No withdrawals yet",
+      "noTickets": "No tickets",
+      "noMessages": "No messages yet",
+      "noNotifications": "No notifications right now"
+    },
+    "actions": {
+      "retry": "Retry",
+      "cancel": "Cancel",
+      "back": "Back",
+      "confirm": "Confirm",
+      "continue": "Continue",
+      "send": "Send",
+      "sending": "Sending...",
+      "submitting": "Submitting...",
+      "copy": "Copy",
+      "copyCode": "Copy code",
+      "copyLink": "Copy link",
+      "copied": "Copied",
+      "expand": "Show details",
+      "collapse": "Hide details",
+      "explorer": "Explorer",
+      "search": "Search...",
+      "sortNewest": "Newest first",
+      "sortOldest": "Oldest first",
+      "sortAmountDesc": "Amount: high to low",
+      "sortAmountAsc": "Amount: low to high"
+    },
+    "activity": {
+      "kyc": "KYC",
+      "topupsPending": "Top-ups pending",
+      "withdrawalsPending": "Withdrawals pending",
+      "openTickets": "Open tickets"
+    },
+    "kyc": {
+      "enforcementTitle": "Please complete KYC verification.",
+      "enforcementMessage": "This is required for your safety. Withdrawal requests are temporarily frozen by administration until your verification is approved.",
+      "enforcementCta": "Go to KYC verification"
+    },
+    "accountHealth": "Account health",
+    "health": {
+      "stable": "Stable",
+      "attention": "Needs attention"
+    },
+    "pendingReviews": "Pending reviews",
+    "openCases": "Open cases",
+    "screenHint": {
+      "dashboard": "Review priority items, then open next action.",
+      "notifications": "Feed shows items that may need attention."
+    },
+    "notifications": "Notification center",
+    "savedPresets": "Saved presets"
+    ,
+    "lastUpdatedAgo": "{{value}}"
+  },
+  "dashboard": {
+    "balance": "Balance",
+    "hashrate": "Hash Rate",
+    "contracts": "Active Contracts",
+    "nextPayout": "Next Payout",
+    "notice": "Demo mode: data shown for prototype purposes."
+  },
+  "aboutPage": {
+    "whoWeAre": {
+      "title": "Who We Are",
+      "lead": "CloudMine operates as an infrastructure-led service with controlled risk posture and audit-oriented workflows.",
+      "items": [
+        { "title": "Mission", "text": "Deliver transparent cloud-mining operations with measurable controls and clear user visibility." },
+        { "title": "Operating model", "text": "Cross-functional cycle between operations, compliance, support, and financial controls." },
+        { "title": "Client focus", "text": "Decision-ready data for onboarding, contract monitoring, and support escalation." },
+        { "title": "Risk stance", "text": "Conservative assumptions, no fixed-return guarantees, and policy-first execution." }
+      ]
+    },
+    "contentBands": {
+      "operations": {
+        "title": "Operating Model",
+        "lead": "The service is built around a predictable operating cycle: from initial checks to contract activation and transparent stage tracking.",
+        "imageAlt": "Server racks and mining infrastructure"
+      },
+      "controls": {
+        "title": "Controls and Compliance",
+        "lead": "Control procedures are embedded in daily workflows: decisions are logged, sensitive actions are reviewed, and exceptions are escalated through defined ownership.",
+        "imageAlt": "Monitoring control room and security operations"
+      },
+      "reliability": {
+        "title": "Reliability and Risk Disclosure",
+        "lead": "We maintain uptime and resilience through monitoring, redundancy, and recovery playbooks, while clearly disclosing factors that can affect outcomes.",
+        "imageAlt": "Data center infrastructure for stable operations"
+      }
+    },
+    "trustMetrics": {
+      "title": "Trust Metrics",
+      "items": [
+        { "value": "99.95%", "label": "platform availability target" },
+        { "value": "< 15 min", "label": "critical incident triage target" },
+        { "value": "< 4 h", "label": "high-priority first response target" },
+        { "value": "24/7", "label": "operations and support coverage" },
+        { "value": "100%", "label": "sensitive actions with audit trail" }
+      ]
+    },
+    "compliance": {
+      "title": "Compliance & Security Snapshot",
+      "items": [
+        { "title": "AML/KYC controls", "text": "Risk-based verification and sanctions screening through lifecycle checkpoints." },
+        { "title": "Access control", "text": "Role-scoped privileges with accountability for administrative actions." },
+        { "title": "Incident response", "text": "Documented playbooks for detection, containment, communication, and recovery." },
+        { "title": "Audit logging", "text": "Operational and user-critical events are recorded for traceability and review." }
+      ]
+    },
+    "governance": {
+      "title": "Governance / Controls",
+      "items": [
+        "Separation of duties between operations, compliance, and financial actions.",
+        "Change approvals for sensitive configuration and policy updates.",
+        "Scheduled control reviews with documented outcomes.",
+        "Escalation matrix for compliance and operational incidents."
+      ]
+    },
+    "timeline": {
+      "title": "Operations Timeline",
+      "items": [
+        { "title": "Onboarding", "text": "Account setup and baseline risk checks." },
+        { "title": "Funding", "text": "Top-up validation and ledger synchronization." },
+        { "title": "Contract lifecycle", "text": "Activation, monitoring, and accrual reporting." },
+        { "title": "Withdrawal", "text": "Security and compliance verification before settlement." },
+        { "title": "Support", "text": "Case routing, SLA handling, and closure logging." }
+      ]
+    },
+    "reliability": {
+      "title": "Infrastructure & Reliability",
+      "items": [
+        "Continuous monitoring with alert-based escalation.",
+        "Redundancy strategy for service continuity under load.",
+        "Recovery playbooks for incident classes and dependencies.",
+        "Periodic resilience reviews and control tuning."
+      ]
+    },
+    "riskDisclosure": {
+      "title": "Risk Disclosure",
+      "items": [
+        "Market volatility can materially affect projected outcomes.",
+        "Network difficulty shifts may change accrual dynamics.",
+        "Security or compliance review can delay selected operations.",
+        "Third-party infrastructure events may impact processing windows."
+      ]
+    },
+    "teamAccountability": {
+      "title": "Team & Accountability",
+      "items": [
+        { "role": "Operations", "sla": "Monitors runtime state and service continuity.", "owner": "Owns incident command and recovery execution." },
+        { "role": "Compliance", "sla": "Reviews risk triggers and policy exceptions.", "owner": "Owns AML/KYC and escalation decisions." },
+        { "role": "Support", "sla": "Handles ticket triage and communication cadence.", "owner": "Owns first response and case lifecycle updates." },
+        { "role": "Security", "sla": "Maintains control posture for sensitive actions.", "owner": "Owns access controls and security event review." }
+      ]
+    },
+    "docsHub": {
+      "title": "Policy & Documentation",
+      "items": [
+        { "label": "AML / CFT Policy", "to": "/aml-policy" },
+        { "label": "Terms of Service", "to": "/terms" },
+        { "label": "Privacy Policy", "to": "/privacy-policy" },
+        { "label": "Support channel", "to": "/team" }
+      ]
+    },
+    "cta": {
+      "title": "Review Controls Before Action",
+      "actions": [
+        { "label": "Review controls", "to": "/about/cloudmine" },
+        { "label": "See policies", "to": "/aml-policy" },
+        { "label": "Open dashboard", "to": "/dashboard" },
+        { "label": "Contact operations", "to": "/team" }
+      ]
+    }
+  }
+}
