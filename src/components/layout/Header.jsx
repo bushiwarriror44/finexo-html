@@ -72,7 +72,10 @@ export function Header() {
                   <button
                     className="nav-link lang_switcher_btn nav-link-cta"
                     type="button"
-                    onClick={() => navigate("/?auth=login")}
+                    onClick={() => {
+                      setOpen(false);
+                      navigate("/?auth=login");
+                    }}
                   >
                     {t("nav.login")}
                   </button>

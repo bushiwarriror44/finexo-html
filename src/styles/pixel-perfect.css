@@ -38,6 +38,7 @@
 html {
   font-size: 16px;
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 @media (min-width: 768px) and (max-width: 1199.98px) {
@@ -61,10 +62,12 @@ textarea {
 }
 
 body {
+  margin: 0;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
 }
 
 h1,
@@ -354,7 +357,7 @@ h6 {
 .auth-modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 1200;
+  z-index: 1500;
   background:
     radial-gradient(circle at 20% 20%, rgba(0, 187, 240, 0.16) 0%, rgba(0, 187, 240, 0) 45%),
     radial-gradient(circle at 80% 10%, rgba(59, 130, 246, 0.14) 0%, rgba(59, 130, 246, 0) 42%),
@@ -647,7 +650,7 @@ h6 {
   position: fixed;
   right: 22px;
   bottom: 86px;
-  width: min(360px, calc(100vw - 24px));
+  width: min(360px, calc(100vw - 48px));
   max-height: min(520px, calc(100vh - 120px));
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
   border: 1px solid #d8e6f5;
