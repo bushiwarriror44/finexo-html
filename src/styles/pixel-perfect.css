@@ -799,6 +799,115 @@ h6 {
   color: rgba(255, 255, 255, 0.88);
 }
 
+.withdraw-ticker-section {
+  padding: 22px 0 14px;
+  background: linear-gradient(135deg, #031b44 0%, #072a5e 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.withdraw-ticker-shell {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(148, 197, 255, 0.38);
+  background: rgba(255, 255, 255, 0.08);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.withdraw-ticker-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 28px;
+  white-space: nowrap;
+  padding: 0 14px;
+  animation: withdrawTickerMove 52s linear infinite;
+}
+
+.withdraw-ticker-item {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 14px;
+  letter-spacing: 0.01em;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border: 1px solid rgba(148, 197, 255, 0.24);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.withdraw-ticker-item::after {
+  content: "•";
+  margin-left: 14px;
+  color: rgba(125, 211, 252, 0.9);
+}
+
+.withdraw-ticker-user {
+  color: #e2f0ff;
+  font-weight: 700;
+}
+
+.withdraw-ticker-verb {
+  color: rgba(215, 231, 250, 0.84);
+}
+
+.withdraw-ticker-amount {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.withdraw-ticker-asset {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 2px 6px;
+  border: 1px solid transparent;
+}
+
+.withdraw-ticker-asset.is-btc {
+  color: #f7931a;
+  border-color: rgba(247, 147, 26, 0.5);
+  background: rgba(247, 147, 26, 0.1);
+}
+
+.withdraw-ticker-asset.is-usdt {
+  color: #26a17b;
+  border-color: rgba(38, 161, 123, 0.5);
+  background: rgba(38, 161, 123, 0.12);
+}
+
+.withdraw-ticker-asset.is-ltc {
+  color: #b9c3cf;
+  border-color: rgba(185, 195, 207, 0.5);
+  background: rgba(185, 195, 207, 0.1);
+}
+
+.withdraw-ticker-asset.is-kas {
+  color: #6fc7ba;
+  border-color: rgba(111, 199, 186, 0.5);
+  background: rgba(111, 199, 186, 0.12);
+}
+
+.withdraw-ticker-asset.is-doge {
+  color: #c3a634;
+  border-color: rgba(195, 166, 52, 0.5);
+  background: rgba(195, 166, 52, 0.12);
+}
+
+.withdraw-ticker-shell:hover .withdraw-ticker-track {
+  animation-play-state: paused;
+}
+
+@keyframes withdrawTickerMove {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
 .staking_promo_section {
   padding: 28px 0 20px;
   background: linear-gradient(180deg, rgba(4, 23, 56, 0.96) 0%, rgba(3, 15, 40, 0.98) 100%);
@@ -3904,6 +4013,15 @@ h6 {
 }
 
 @media (max-width: 640px) {
+  .withdraw-ticker-track {
+    gap: 20px;
+    animation-duration: 46s;
+  }
+
+  .withdraw-ticker-item {
+    font-size: 13px;
+  }
+
   .dashboard-trust-strip {
     gap: 6px;
     padding: 6px;

@@ -109,23 +109,6 @@
     "prev": "Previous",
     "next": "Next"
   },
-  "stats": {
-    "title": "Our Statistics",
-    "items": [
-      {
-        "value": "3012",
-        "label": "users in the project"
-      },
-      {
-        "value": "$545K",
-        "label": "invested in the project"
-      },
-      {
-        "value": "2 years",
-        "label": "project operating time"
-      }
-    ]
-  },
   "stakingPromo": {
     "title": "USDT Staking Hot Action",
     "lead": "Choose a fixed USDT tier and receive hourly credited staking profit to your main balance.",
