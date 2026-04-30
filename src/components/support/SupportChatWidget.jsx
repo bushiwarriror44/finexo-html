@@ -16,8 +16,13 @@ export function SupportChatWidget() {
   const [guestError, setGuestError] = useState("");
   const socketRef = useRef(null);
   const bottomRef = useRef(null);
+  const openRef = useRef(open);
 
   const sortedMessages = useMemo(() => [...messages].sort((a, b) => a.id - b.id), [messages]);
+
+  useEffect(() => {
+    openRef.current = open;
+  }, [open]);
 
   useEffect(() => {
     if (user) {
@@ -72,7 +77,7 @@ export function SupportChatWidget() {
     });
     socket.on("support:user:new_message", (message) => {
       setMessages((prev) => [...prev, message]);
-      if (!open && message.senderType === "admin") {
+      if (!openRef.current && message.senderType === "admin") {
         setUnread((v) => v + 1);
       }
     });
@@ -81,7 +86,7 @@ export function SupportChatWidget() {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [guestReady, open, user]);
+  }, [guestReady, user]);
 
   useEffect(() => {
     if (!open) return;

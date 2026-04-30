@@ -99,13 +99,7 @@ export function DashboardOverviewPage() {
       {error ? <p className="dash-alert is-error">{error}</p> : null}
       {status ? <p className="dash-alert is-success">{status}</p> : null}
       {loading ? <p className="dash-muted">{t("dashboardCabinet.messages.loadingOverview")}</p> : null}
-      <ActionPopupCard
-        icon={FiTrendingUp}
-        title={t("dashboardCabinet.buyPower.startEarningTitle", { defaultValue: "Start earning!" })}
-        description={t("dashboardCabinet.buyPower.startEarningText", { defaultValue: "Open the tariff marketplace and buy mining power from your dashboard." })}
-        ctaLabel={t("dashboardCabinet.buyPower.openMarket", { defaultValue: "Open buy screen" })}
-        onClick={() => navigate("/dashboard/buy-power")}
-      />
+      
       <p className="dash-help">{t("dashboardCabinet.overview.hourlyUpdateHint", { defaultValue: "Mining earnings are updated hourly and displayed with 4 decimal precision." })}</p>
       <div className="dashboard-trust-strip">
         <div className="dashboard-trust-strip-item">
