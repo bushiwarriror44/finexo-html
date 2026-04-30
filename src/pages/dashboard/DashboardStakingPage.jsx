@@ -23,10 +23,13 @@ export function DashboardStakingPage() {
 	const [confirmAmount, setConfirmAmount] = useState('');
 	const [resultOpen, setResultOpen] = useState(false);
 	const [resultMessage, setResultMessage] = useState('');
+	const [initialLoaded, setInitialLoaded] = useState(false);
 
-	const load = useCallback(async () => {
-		setLoading(true);
-		setError('');
+	const load = useCallback(async ({ silent = false } = {}) => {
+		if (!silent) {
+			setLoading(true);
+			setError('');
+		}
 		try {
 			const [tiersData, positionsData, summaryData] = await Promise.all([
 				apiGet('/api/user/staking/tiers'),
@@ -36,25 +39,32 @@ export function DashboardStakingPage() {
 			setTiers(Array.isArray(tiersData) ? tiersData : []);
 			setPositions(Array.isArray(positionsData) ? positionsData : []);
 			setSummary(summaryData || { totalInvestedUsdt: 0, totalEarnedUsdt: 0, activePositions: 0 });
+			setInitialLoaded(true);
 		} catch (err) {
-			setError(
-				getSafeErrorMessage(
-					err,
-					t('dashboardCabinet.messages.failedLoadStaking', {
-						defaultValue: 'Failed to load staking data.',
-					}),
-				),
-			);
+			if (!silent) {
+				setError(
+					getSafeErrorMessage(
+						err,
+						t('dashboardCabinet.messages.failedLoadStaking', {
+							defaultValue: 'Failed to load staking data.',
+						}),
+					),
+				);
+			}
 		} finally {
-			setLoading(false);
+			if (!silent) {
+				setLoading(false);
+			}
 		}
 	}, [t]);
 
 	useEffect(() => {
 		const runLoad = () => {
-			load().catch(() => {});
+			load({ silent: true }).catch(() => {});
 		};
-		const timer = setTimeout(runLoad, 0);
+		const timer = setTimeout(() => {
+			load().catch(() => {});
+		}, 0);
 		const interval = setInterval(runLoad, 15000);
 		return () => {
 			clearTimeout(timer);
@@ -194,7 +204,7 @@ export function DashboardStakingPage() {
 				retryLabel={t('dashboardCabinet.actions.retry')}
 			/>
 			{status ? <p className="dash-alert is-success">{status}</p> : null}
-			{loading ? <LoadingSkeleton rows={3} /> : null}
+			{loading && !initialLoaded ? <LoadingSkeleton rows={3} /> : null}
 			<div className="dashboard-panel">
 				<div className="dashboard-panel-header">
 					<h5>{t('dashboardCabinet.staking.title', { defaultValue: 'USDT Staking' })}</h5>
@@ -339,7 +349,7 @@ export function DashboardStakingPage() {
 			{confirmTier ? (
 				<div className="auth-modal-backdrop" onClick={closeConfirm}>
 					<div
-						className="auth-modal-card topup-withdraw-modal"
+						className="auth-modal-card topup-withdraw-modal staking-confirm-modal"
 						role="dialog"
 						aria-modal="true"
 						onClick={(e) => e.stopPropagation()}>
@@ -459,13 +469,7 @@ export function DashboardStakingPage() {
 								})}
 							</p>
 						</div>
-						<p className="dash-alert is-warning">
-							{t('dashboardCabinet.staking.lockNotice', {
-								defaultValue:
-									'Important: principal amount is locked for {{days}} days. Dividends are credited to your main balance and stay available for normal use.',
-								days: confirmTermDays,
-							})}
-						</p>
+						
 						<div className="dash-actions-cell" style={{ marginTop: 10 }}>
 							<button
 								className="dash-btn is-secondary"

@@ -29,10 +29,13 @@ export function DashboardSupportPage() {
 	const [presetName, setPresetName] = useState('');
 	const [presets, setPresets] = useState([]);
 	const [supportTraces, setSupportTraces] = useState([]);
+	const [initialLoaded, setInitialLoaded] = useState(false);
 
-	const loadTickets = useCallback(async () => {
-		setLoading(true);
-		setError('');
+	const loadTickets = useCallback(async ({ silent = false } = {}) => {
+		if (!silent) {
+			setLoading(true);
+			setError('');
+		}
 		try {
 			const query = new URLSearchParams();
 			if (statusFilter !== 'all') query.set('status', statusFilter);
@@ -47,10 +50,15 @@ export function DashboardSupportPage() {
 			setPresets(Array.isArray(presetData) ? presetData : []);
 			setSupportTraces(Array.isArray(traceData) ? traceData : []);
 			setSupportSyncAt(new Date().toISOString());
+			setInitialLoaded(true);
 		} catch (err) {
-			setError(getSafeErrorMessage(err, t('dashboardCabinet.messages.failedLoadSupport')));
+			if (!silent) {
+				setError(getSafeErrorMessage(err, t('dashboardCabinet.messages.failedLoadSupport')));
+			}
 		} finally {
-			setLoading(false);
+			if (!silent) {
+				setLoading(false);
+			}
 		}
 	}, [dateFrom, dateTo, statusFilter, t]);
 
@@ -147,7 +155,7 @@ export function DashboardSupportPage() {
 			setTicketMessage('');
 			setTicketAttachment(null);
 			setStatus(t('dashboardCabinet.support.ticketCreated', { defaultValue: 'Ticket created successfully.' }));
-			await loadTickets();
+			await loadTickets({ silent: true });
 		} catch (err) {
 			setError(getSafeErrorMessage(err, t('dashboardCabinet.messages.ticketCreateFailed')));
 		}
@@ -183,7 +191,7 @@ export function DashboardSupportPage() {
 		try {
 			await apiPost(`/api/user/support/tickets/${ticketId}/close`, {});
 			setStatus(t('dashboardCabinet.support.ticketClosed', { defaultValue: 'Ticket closed.' }));
-			await loadTickets();
+			await loadTickets({ silent: true });
 			if (activeTicketId === ticketId) setActiveTicketId(null);
 		} catch (err) {
 			setError(
@@ -231,7 +239,7 @@ export function DashboardSupportPage() {
 				retryLabel={t('dashboardCabinet.actions.retry')}
 			/>
 			{status ? <p className="dash-alert is-success">{status}</p> : null}
-			{loading ? <LoadingSkeleton rows={3} /> : null}
+			{loading && !initialLoaded ? <LoadingSkeleton rows={3} /> : null}
 			<div className="dashboard-grid dashboard-grid-2">
 				<div className="dashboard-panel">
 					<div className="dashboard-panel-header">
@@ -319,7 +327,7 @@ export function DashboardSupportPage() {
 								if (!presetName.trim()) return;
 								await apiPost('/api/user/dashboard/filter-presets', { scope: 'support', name: presetName.trim(), payload: { statusFilter, dateFrom, dateTo } });
 								setPresetName('');
-								await loadTickets();
+								await loadTickets({ silent: true });
 							}}>{t('dashboardCabinet.actions.save', { defaultValue: 'Save' })}</button>
 						</div>
 						<select className="dash-input dash-select-sm" defaultValue="" onChange={(e) => {

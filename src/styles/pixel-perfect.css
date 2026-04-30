@@ -1509,6 +1509,39 @@ h6 {
   max-width: 560px;
 }
 
+@media (max-width: 767px) {
+  .auth-modal-backdrop {
+    align-items: flex-start;
+    padding: 10px;
+    overflow-y: auto;
+  }
+
+  .staking-confirm-modal {
+    width: 100%;
+    max-height: calc(100dvh - 20px);
+    overflow-y: auto;
+    padding: 16px 12px 12px;
+  }
+
+  .staking-confirm-modal .auth-modal-close {
+    position: sticky;
+    top: 0;
+    margin-left: auto;
+    right: auto;
+    z-index: 3;
+    display: block;
+  }
+
+  .staking-confirm-modal .dash-actions-cell {
+    position: sticky;
+    bottom: 0;
+    margin-top: 10px !important;
+    padding-top: 8px;
+    background: linear-gradient(180deg, rgba(248, 251, 255, 0.72), #f8fbff 32%);
+    z-index: 2;
+  }
+}
+
 .team_section .team_cta_wrap {
   margin-top: 26px;
   display: flex;
@@ -2839,6 +2872,10 @@ h6 {
   min-width: 0;
 }
 
+.contracts-layout-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .contracts-panel-body {
   width: 100%;
   min-width: 0;
@@ -2846,6 +2883,7 @@ h6 {
 
 .contracts-balance-grid {
   width: 100%;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .contracts-balance-grid .metric-card {
@@ -4077,6 +4115,7 @@ h6 {
 
   .dashboard-subnav {
     order: 1;
+    width: 100%;
   }
 
   .dashboard-content {

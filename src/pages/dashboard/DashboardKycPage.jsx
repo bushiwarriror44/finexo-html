@@ -20,12 +20,15 @@ export function DashboardKycPage() {
   const [kycWizardStep, setKycWizardStep] = useState(1);
   const [kycTraces, setKycTraces] = useState([]);
   const [countrySelectorKey, setCountrySelectorKey] = useState(0);
+  const [initialLoaded, setInitialLoaded] = useState(false);
   const countryLabels = useMemo(() => getCountryDisplayLabels(), []);
   const countryCodes = useMemo(() => Object.keys(countryLabels), [countryLabels]);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const load = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) {
+      setLoading(true);
+      setError("");
+    }
     try {
       const [kycData, kycTraceData] = await Promise.all([
         apiGet("/api/user/kyc"),
@@ -34,10 +37,15 @@ export function DashboardKycPage() {
       setKyc(kycData || null);
       setKycTraces(Array.isArray(kycTraceData) ? kycTraceData : []);
       setOverviewSyncAt(new Date().toISOString());
+      setInitialLoaded(true);
     } catch (err) {
-      setError(getSafeErrorMessage(err, t("dashboardCabinet.messages.failedLoadOverview")));
+      if (!silent) {
+        setError(getSafeErrorMessage(err, t("dashboardCabinet.messages.failedLoadOverview")));
+      }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }, [t]);
 
@@ -51,7 +59,7 @@ export function DashboardKycPage() {
   useEffect(() => {
     if (!kyc || !["review", "submitted", "pending"].includes(String(kyc.status || "").toLowerCase())) return undefined;
     const interval = setInterval(() => {
-      load().catch(() => {});
+      load({ silent: true }).catch(() => {});
     }, 15000);
     return () => clearInterval(interval);
   }, [kyc, load]);
@@ -133,7 +141,7 @@ export function DashboardKycPage() {
     <>
       {error ? <p className="dash-alert is-error">{error}</p> : null}
       {status ? <p className="dash-alert is-success">{status}</p> : null}
-      {loading ? <p className="dash-muted">{t("dashboardCabinet.messages.loadingOverview")}</p> : null}
+      {loading && !initialLoaded ? <p className="dash-muted">{t("dashboardCabinet.messages.loadingOverview")}</p> : null}
       <div className="dashboard-panel is-accent">
         <div className="dashboard-panel-header"><h5>{t("dashboardCabinet.overview.kycTitle")}</h5></div>
         <div className="dashboard-panel-body">

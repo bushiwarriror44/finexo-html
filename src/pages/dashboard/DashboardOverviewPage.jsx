@@ -20,10 +20,13 @@ export function DashboardOverviewPage() {
   const [miningSummary, setMiningSummary] = useState(null);
   const [confirmRegenerate, setConfirmRegenerate] = useState(false);
   const [copyToastVisible, setCopyToastVisible] = useState(false);
+  const [initialLoaded, setInitialLoaded] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const load = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) {
+      setLoading(true);
+      setError("");
+    }
     try {
       const [balanceData, referralData, kycData, summaryData] = await Promise.all([
         apiGet("/api/user/balance"),
@@ -37,10 +40,15 @@ export function DashboardOverviewPage() {
       setReferral(referralData || null);
       setKyc(kycData || null);
       setMiningSummary(summaryData || null);
+      setInitialLoaded(true);
     } catch (err) {
-      setError(getSafeErrorMessage(err, t("dashboardCabinet.messages.failedLoadOverview")));
+      if (!silent) {
+        setError(getSafeErrorMessage(err, t("dashboardCabinet.messages.failedLoadOverview")));
+      }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }, [t]);
 
@@ -54,7 +62,7 @@ export function DashboardOverviewPage() {
   useEffect(() => {
     if (!kyc || !["review", "submitted", "pending"].includes(String(kyc.status || "").toLowerCase())) return undefined;
     const interval = setInterval(() => {
-      load().catch(() => {});
+      load({ silent: true }).catch(() => {});
     }, 15000);
     return () => clearInterval(interval);
   }, [kyc, load]);
@@ -84,7 +92,7 @@ export function DashboardOverviewPage() {
     <>
       {error ? <p className="dash-alert is-error">{error}</p> : null}
       {status ? <p className="dash-alert is-success">{status}</p> : null}
-      {loading ? <p className="dash-muted">{t("dashboardCabinet.messages.loadingOverview")}</p> : null}
+      {loading && !initialLoaded ? <p className="dash-muted">{t("dashboardCabinet.messages.loadingOverview")}</p> : null}
       
       <p className="dash-help">{t("dashboardCabinet.overview.hourlyUpdateHint", { defaultValue: "Mining earnings are updated hourly and displayed with 4 decimal precision." })}</p>
       <div className="dashboard-priority-grid dashboard-priority-grid-compact">
