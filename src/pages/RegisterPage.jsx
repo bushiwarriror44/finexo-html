@@ -75,7 +75,7 @@ export function RegisterPage() {
     if (countryCode || autoSelectedCountryRef.current) return;
     const detected = detectDefaultCountryCode();
     if (detected) {
-      setCountryCode(detected);
+      setTimeout(() => setCountryCode(detected), 0);
       autoSelectedCountryRef.current = true;
     }
   }, [countryCode]);

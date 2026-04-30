@@ -21,26 +21,31 @@ export function SupportChatWidget() {
 
   useEffect(() => {
     if (user) {
-      setGuestReady(false);
-      setGuestError("");
-      return;
+      const timer = setTimeout(() => {
+        setGuestReady(false);
+        setGuestError("");
+      }, 0);
+      return () => clearTimeout(timer);
     }
     let mounted = true;
-    apiPost("/api/user/support/guest-session", {})
-      .then(() => {
+    const run = async () => {
+      try {
+        await apiPost("/api/user/support/guest-session", {});
         if (!mounted) return;
         setGuestReady(true);
         setGuestError("");
-      })
-      .catch((err) => {
+      } catch (err) {
         if (!mounted) return;
         setGuestReady(false);
         setGuestError(err.message || t("supportWidget.guestUnavailable"));
-      });
+      }
+    };
+    const timer = setTimeout(run, 0);
     return () => {
       mounted = false;
+      clearTimeout(timer);
     };
-  }, [user]);
+  }, [t, user]);
 
   useEffect(() => {
     if (!user && !guestReady) {
@@ -48,10 +53,12 @@ export function SupportChatWidget() {
         socketRef.current.disconnect();
         socketRef.current = null;
       }
-      setMessages([]);
-      setTicket(null);
-      setUnread(0);
-      return;
+      const timer = setTimeout(() => {
+        setMessages([]);
+        setTicket(null);
+        setUnread(0);
+      }, 0);
+      return () => clearTimeout(timer);
     }
     const socket = io("/", { withCredentials: true, transports: ["websocket", "polling"] });
     socketRef.current = socket;
@@ -78,8 +85,9 @@ export function SupportChatWidget() {
 
   useEffect(() => {
     if (!open) return;
-    setUnread(0);
+    const timer = setTimeout(() => setUnread(0), 0);
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    return () => clearTimeout(timer);
   }, [open, sortedMessages.length]);
 
   const sendMessage = (e) => {

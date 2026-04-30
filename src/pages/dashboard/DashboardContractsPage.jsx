@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiGet } from "../../api/client";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -15,8 +15,9 @@ export function DashboardContractsPage() {
   const [miningContracts, setMiningContracts] = useState([]);
   const [statusFilter, setStatusFilter] = useState("all");
   const [loaded, setLoaded] = useState(false);
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -32,10 +33,18 @@ export function DashboardContractsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
-    load().catch(() => {});
+    const timer = setTimeout(() => {
+      load().catch(() => {});
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [load]);
+
+  useEffect(() => {
+    const interval = setInterval(() => setNowMs(Date.now()), 60000);
+    return () => clearInterval(interval);
   }, []);
 
   const visibleContracts = miningContracts.filter((row) => {
@@ -99,7 +108,7 @@ export function DashboardContractsPage() {
                       <td data-label={t("dashboardCabinet.contracts.strategy")}>{row.strategy}</td>
                       <td data-label={t("dashboardCabinet.contracts.hashrate")}>{row.hashrateValue} {row.hashrateUnit}</td>
                       <td data-label={t("dashboardCabinet.contracts.days")}>{row.durationDays}</td>
-                      <td data-label={t("dashboardCabinet.contracts.remaining", { defaultValue: "Remaining" })}>{Math.max(Math.ceil((new Date(row.endsAt).getTime() - Date.now()) / 86400000), 0)}d</td>
+                      <td data-label={t("dashboardCabinet.contracts.remaining", { defaultValue: "Remaining" })}>{Math.max(Math.ceil((new Date(row.endsAt).getTime() - nowMs) / 86400000), 0)}d</td>
                       <td data-label={t("dashboardCabinet.contracts.invested")}>{money(row.investedUsdt)}</td>
                       <td data-label={t("dashboardCabinet.table.status")}><span className={statusBadgeClass(row.status)}>{row.status}</span></td>
                       <td data-label={t("dashboardCabinet.contracts.ends")}>{new Date(row.endsAt).toLocaleDateString()}</td>

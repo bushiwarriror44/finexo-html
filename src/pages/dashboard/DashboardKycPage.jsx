@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { apiGet, apiPostForm } from "../../api/client";
 import { formatLastUpdatedLabel, getSafeErrorMessage } from "./utils";
@@ -13,7 +13,7 @@ export function DashboardKycPage() {
   const [status, setStatus] = useState("");
   const [kyc, setKyc] = useState(null);
   const [overviewSyncAt, setOverviewSyncAt] = useState("");
-  const [kycCountry, setKycCountry] = useState("");
+  const [kycCountry, setKycCountry] = useState(() => detectDefaultCountryCode() || "");
   const [kycDocType, setKycDocType] = useState("id_card");
   const [kycFile, setKycFile] = useState(null);
   const [kycDragActive, setKycDragActive] = useState(false);
@@ -23,7 +23,7 @@ export function DashboardKycPage() {
   const countryLabels = useMemo(() => getCountryDisplayLabels(), []);
   const countryCodes = useMemo(() => Object.keys(countryLabels), [countryLabels]);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -39,11 +39,14 @@ export function DashboardKycPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
-    load().catch(() => {});
-  }, []);
+    const timer = setTimeout(() => {
+      load().catch(() => {});
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [load]);
 
   useEffect(() => {
     if (!kyc || !["review", "submitted", "pending"].includes(String(kyc.status || "").toLowerCase())) return undefined;
@@ -51,13 +54,7 @@ export function DashboardKycPage() {
       load().catch(() => {});
     }, 15000);
     return () => clearInterval(interval);
-  }, [kyc]);
-
-  useEffect(() => {
-    if (kycCountry) return;
-    const detected = detectDefaultCountryCode();
-    if (detected) setKycCountry(detected);
-  }, [kycCountry]);
+  }, [kyc, load]);
 
   const submitKyc = async (e) => {
     e.preventDefault();
@@ -157,7 +154,7 @@ export function DashboardKycPage() {
           </p>
           {(kycTraces || []).slice(0, 4).map((trace) => (
             <p key={trace.id} className="dash-help">
-              {new Date(trace.createdAt || Date.now()).toLocaleString()} | {trace.actorType}: {trace.event} {trace.details ? `- ${trace.details}` : ""}
+              {trace.createdAt ? new Date(trace.createdAt).toLocaleString() : "-"} | {trace.actorType}: {trace.event} {trace.details ? `- ${trace.details}` : ""}
             </p>
           ))}
           <div className="dash-kyc-timeline">

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiGet } from "../../api/client";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -16,7 +16,7 @@ export function DashboardAccrualsPage() {
   const [contractFilter, setContractFilter] = useState("all");
   const [loaded, setLoaded] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -28,11 +28,14 @@ export function DashboardAccrualsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
-    load().catch(() => {});
-  }, []);
+    const timer = setTimeout(() => {
+      load().catch(() => {});
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [load]);
 
   const visibleAccruals = miningAccruals.filter((row) => {
     if (contractFilter === "all") return true;

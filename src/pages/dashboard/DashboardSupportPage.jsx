@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { apiGet, apiPost } from '../../api/client';
 import { useTranslation } from 'react-i18next';
 import { formatLastUpdatedLabel, getSafeErrorMessage, normalizeApiList, statusBadgeClass } from './utils';
@@ -20,7 +20,7 @@ export function DashboardSupportPage() {
 	const [messages, setMessages] = useState([]);
 	const [newMessage, setNewMessage] = useState('');
 	const [search, setSearch] = useState('');
-	const [nowTs, setNowTs] = useState(Date.now());
+	const [nowTs, setNowTs] = useState(() => Date.now());
 	const [supportSyncAt, setSupportSyncAt] = useState('');
 	const [expandedTicketId, setExpandedTicketId] = useState(null);
 	const [statusFilter, setStatusFilter] = useState('all');
@@ -30,7 +30,7 @@ export function DashboardSupportPage() {
 	const [presets, setPresets] = useState([]);
 	const [supportTraces, setSupportTraces] = useState([]);
 
-	const loadTickets = async () => {
+	const loadTickets = useCallback(async () => {
 		setLoading(true);
 		setError('');
 		try {
@@ -52,24 +52,31 @@ export function DashboardSupportPage() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [dateFrom, dateTo, statusFilter, t]);
 
-	const loadMessages = async (ticketId) => {
+	const loadMessages = useCallback(async (ticketId) => {
 		try {
 			const data = await apiGet(`/api/user/support/tickets/${ticketId}/messages`);
 			setMessages(normalizeApiList(data.messages));
 		} catch (err) {
 			setError(getSafeErrorMessage(err, t('dashboardCabinet.messages.failedLoadMessages')));
 		}
-	};
+	}, [t]);
 
 	useEffect(() => {
 		const persistedSearch = window.localStorage.getItem('cm_support_search');
-		if (persistedSearch) setSearch(persistedSearch);
 		const persistedActiveTicket = window.localStorage.getItem('cm_support_active_ticket');
-		if (persistedActiveTicket) setActiveTicketId(Number(persistedActiveTicket));
-		loadTickets().catch(() => {});
-	}, [statusFilter, dateFrom, dateTo]);
+		if (persistedSearch) {
+			setTimeout(() => setSearch(persistedSearch), 0);
+		}
+		if (persistedActiveTicket) {
+			setTimeout(() => setActiveTicketId(Number(persistedActiveTicket)), 0);
+		}
+		const timer = setTimeout(() => {
+			loadTickets().catch(() => {});
+		}, 0);
+		return () => clearTimeout(timer);
+	}, [loadTickets]);
 
 	useEffect(() => {
 		window.localStorage.setItem('cm_support_search', search);
@@ -83,12 +90,17 @@ export function DashboardSupportPage() {
 	useEffect(() => {
 		if (!activeTicketId) return undefined;
 		window.localStorage.setItem('cm_support_active_ticket', String(activeTicketId));
-		loadMessages(activeTicketId).catch(() => {});
+		const timer = setTimeout(() => {
+			loadMessages(activeTicketId).catch(() => {});
+		}, 0);
 		const interval = setInterval(() => {
 			loadMessages(activeTicketId).catch(() => {});
 		}, 4000);
-		return () => clearInterval(interval);
-	}, [activeTicketId]);
+		return () => {
+			clearTimeout(timer);
+			clearInterval(interval);
+		};
+	}, [activeTicketId, loadMessages]);
 
 	useEffect(() => {
 		if (!status) return undefined;
@@ -184,7 +196,8 @@ export function DashboardSupportPage() {
 	});
 
 	const formatSlaBucket = (ticket) => {
-		const dueAt = new Date(ticket.firstResponseDueAt || Date.now() + 3600000).getTime();
+		const fallbackDueAt = nowTs + 3600000;
+		const dueAt = ticket.firstResponseDueAt ? new Date(ticket.firstResponseDueAt).getTime() : fallbackDueAt;
 		const seconds = Math.max(0, Math.floor((dueAt - nowTs) / 1000));
 		if (seconds <= 300) return t('dashboardCabinet.support.slaCritical', { defaultValue: 'critical < 5m' });
 		if (seconds <= 1800) return t('dashboardCabinet.support.slaWarning', { defaultValue: 'warning < 30m' });
@@ -348,7 +361,7 @@ export function DashboardSupportPage() {
 															</div>
 															{(supportTraces || []).filter((trace) => Number(trace.entityId) === Number(ticket.id)).slice(0, 4).map((trace) => (
 																<div key={trace.id} className="dash-help">
-																	{new Date(trace.createdAt || Date.now()).toLocaleString()} | {trace.actorType}: {trace.event} {trace.details ? `- ${trace.details}` : ''}
+																	{trace.createdAt ? new Date(trace.createdAt).toLocaleString() : '-'} | {trace.actorType}: {trace.event} {trace.details ? `- ${trace.details}` : ''}
 																</div>
 															))}
 														</div>

@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { apiGet, apiPost } from "../api/client";
 
 const AuthContext = createContext(null);
@@ -7,7 +8,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     setLoading(true);
     try {
       const data = await apiGet("/api/auth/me");
@@ -17,11 +18,14 @@ export function AuthProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    refresh();
-  }, []);
+    const timer = setTimeout(() => {
+      refresh();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [refresh]);
 
   const login = async (email, password, rememberMe = false, captchaId = "", captchaAnswer = "") => {
     const data = await apiPost("/api/auth/login", { email, password, rememberMe, captchaId, captchaAnswer });
@@ -58,7 +62,7 @@ export function AuthProvider({ children }) {
 
   const value = useMemo(
     () => ({ user, loading, login, register, logout, refresh }),
-    [user, loading]
+    [user, loading, refresh]
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -32,9 +32,13 @@ export function TopupModal({ isOpen, wallets, onClose, onSubmit, t }) {
 
   useEffect(() => {
     if (!isOpen) {
-      setStep("form");
-      setError("");
+      const timer = setTimeout(() => {
+        setStep("form");
+        setError("");
+      }, 0);
+      return () => clearTimeout(timer);
     }
+    return undefined;
   }, [isOpen]);
 
   const submit = async (e) => {

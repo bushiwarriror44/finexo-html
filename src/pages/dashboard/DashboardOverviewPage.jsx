@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiGet, apiPost } from "../../api/client";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -25,7 +25,7 @@ export function DashboardOverviewPage() {
   const [overviewSyncAt, setOverviewSyncAt] = useState("");
   const [copyToastVisible, setCopyToastVisible] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -47,11 +47,14 @@ export function DashboardOverviewPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
-    load().catch(() => {});
-  }, []);
+    const timer = setTimeout(() => {
+      load().catch(() => {});
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [load]);
 
   useEffect(() => {
     if (!kyc || !["review", "submitted", "pending"].includes(String(kyc.status || "").toLowerCase())) return undefined;
@@ -59,7 +62,7 @@ export function DashboardOverviewPage() {
       load().catch(() => {});
     }, 15000);
     return () => clearInterval(interval);
-  }, [kyc]);
+  }, [kyc, load]);
 
   useEffect(() => {
     if (!status) return undefined;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiGet, apiPost } from '../../api/client';
 import { EmptyState, ErrorState, LoadingSkeleton } from '../../components/dashboard/StateBlocks';
@@ -26,7 +26,7 @@ export function DashboardStakingPage() {
 	const [resultOpen, setResultOpen] = useState(false);
 	const [resultMessage, setResultMessage] = useState('');
 
-	const load = async () => {
+	const load = useCallback(async () => {
 		setLoading(true);
 		setError('');
 		try {
@@ -50,13 +50,19 @@ export function DashboardStakingPage() {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [t]);
 
 	useEffect(() => {
-		load().catch(() => {});
-		const interval = setInterval(() => load().catch(() => {}), 15000);
-		return () => clearInterval(interval);
-	}, []);
+		const runLoad = () => {
+			load().catch(() => {});
+		};
+		const timer = setTimeout(runLoad, 0);
+		const interval = setInterval(runLoad, 15000);
+		return () => {
+			clearTimeout(timer);
+			clearInterval(interval);
+		};
+	}, [load]);
 
 	useEffect(() => {
 		if (!status) return undefined;

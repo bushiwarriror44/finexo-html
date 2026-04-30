@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FiActivity, FiAlertCircle, FiBarChart2, FiCheckCircle, FiClock, FiCreditCard, FiDollarSign, FiGrid, FiLifeBuoy, FiLoader, FiShield, FiShoppingBag, FiStar, FiTrendingUp, FiUserCheck, FiLock } from "react-icons/fi";
 import { SectionHeading } from "../components/ui/SectionHeading";
@@ -31,9 +31,7 @@ export function DashboardPage() {
   const [kycEnforcementActive, setKycEnforcementActive] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [realtimeConnected, setRealtimeConnected] = useState(false);
-
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -64,24 +62,26 @@ export function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [notificationFilters.category, notificationFilters.priority, notificationFilters.read, t]);
 
   useEffect(() => {
-    load().catch(() => {});
-  }, [notificationFilters.category, notificationFilters.priority, notificationFilters.read]);
+    const timer = setTimeout(() => {
+      load().catch(() => {});
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [load]);
 
   useEffect(() => {
     const es = new EventSource("/api/user/realtime/stream", { withCredentials: true });
-    es.onopen = () => setRealtimeConnected(true);
-    es.onerror = () => setRealtimeConnected(false);
+    es.onopen = () => {};
+    es.onerror = () => {};
     es.addEventListener("dashboard", () => {
       load().catch(() => {});
     });
     return () => {
       es.close();
-      setRealtimeConnected(false);
     };
-  }, []);
+  }, [load]);
 
   const badgeByRoute = useMemo(
     () => ({
@@ -199,7 +199,9 @@ export function DashboardPage() {
                       onClick={async () => {
                         try {
                           await apiPost(`/api/user/dashboard/notifications/${item.id}/read`, { isRead: true });
-                        } catch {}
+                        } catch (_err) {
+                          void _err;
+                        }
                         if (item.deepLink) navigate(item.deepLink);
                         load().catch(() => {});
                       }}

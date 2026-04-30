@@ -30,9 +30,13 @@ export function WithdrawModal({ isOpen, withdrawableBalance, purchaseOnlyBalance
 
   useEffect(() => {
     if (!isOpen) {
-      setStep("form");
-      setError("");
+      const timer = setTimeout(() => {
+        setStep("form");
+        setError("");
+      }, 0);
+      return () => clearTimeout(timer);
     }
+    return undefined;
   }, [isOpen]);
 
   const submit = async (e) => {

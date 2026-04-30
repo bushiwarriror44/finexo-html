@@ -42,7 +42,6 @@ export function AuthModal() {
   const isOpen = MODES.has(mode || "");
   const token = search.get("token") || "";
   const referralCode = search.get("ref") || "";
-  const nextPath = search.get("next") || "";
   const countryLabels = useMemo(() => getCountryDisplayLabels(), []);
   const countryCodes = useMemo(() => Object.keys(countryLabels), [countryLabels]);
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
@@ -202,13 +201,14 @@ export function AuthModal() {
         lastFocusedRef.current.focus();
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen || mode !== "register" || countryCode || autoSelectedCountryRef.current) return;
     const detected = detectDefaultCountryCode();
     if (detected) {
-      setCountryCode(detected);
+      setTimeout(() => setCountryCode(detected), 0);
       autoSelectedCountryRef.current = true;
     }
   }, [countryCode, isOpen, mode]);

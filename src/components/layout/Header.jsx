@@ -28,7 +28,8 @@ export function Header() {
   }, [open]);
 
   useEffect(() => {
-    setOpen(false);
+    const timer = setTimeout(() => setOpen(false), 0);
+    return () => clearTimeout(timer);
   }, [location.pathname]);
 
   return (

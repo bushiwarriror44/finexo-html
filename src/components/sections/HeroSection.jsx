@@ -13,32 +13,24 @@ export function HeroSection() {
     [t]
   );
   const [activeIndex, setActiveIndex] = useState(0);
+  const safeSlides = Array.isArray(slides) ? slides : [];
+  const normalizedActiveIndex = safeSlides.length === 0 ? 0 : activeIndex % safeSlides.length;
 
   useEffect(() => {
-    if (!Array.isArray(slides) || slides.length < 2) return undefined;
+    if (safeSlides.length < 2) return undefined;
     const interval = window.setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % slides.length);
+      setActiveIndex((prev) => (prev + 1) % safeSlides.length);
     }, 5000);
     return () => window.clearInterval(interval);
-  }, [slides]);
-
-  useEffect(() => {
-    if (!Array.isArray(slides) || slides.length === 0) {
-      setActiveIndex(0);
-      return;
-    }
-    if (activeIndex >= slides.length) {
-      setActiveIndex(0);
-    }
-  }, [activeIndex, slides]);
+  }, [safeSlides.length]);
 
   return (
     <section className="slider_section">
       <div id="customCarousel1" className="carousel slide">
         <div className="carousel-inner">
-          {slides.map((slide, index) => (
+          {safeSlides.map((slide, index) => (
             <div
-              className={`carousel-item ${index === activeIndex ? "active" : ""}`}
+              className={`carousel-item ${index === normalizedActiveIndex ? "active" : ""}`}
               key={`${slide.title}-${index}`}
             >
               <div className="container ">
@@ -68,10 +60,10 @@ export function HeroSection() {
           ))}
         </div>
         <ol className="carousel-indicators">
-          {slides.map((slide, index) => (
+          {safeSlides.map((slide, index) => (
             <li
               key={`indicator-${slide.title}-${index}`}
-              className={index === activeIndex ? "active" : ""}
+              className={index === normalizedActiveIndex ? "active" : ""}
               onClick={() => setActiveIndex(index)}
             />
           ))}

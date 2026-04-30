@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiGet } from "../../api/client";
 
 export function AuthCaptcha({ t, value, onChange, onMetaChange, className = "mb-3" }) {
@@ -6,7 +6,7 @@ export function AuthCaptcha({ t, value, onChange, onMetaChange, className = "mb-
   const [captchaId, setCaptchaId] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const refreshCaptcha = async () => {
+  const refreshCaptcha = useCallback(async () => {
     setLoading(true);
     try {
       const data = await apiGet("/api/auth/captcha");
@@ -20,12 +20,14 @@ export function AuthCaptcha({ t, value, onChange, onMetaChange, className = "mb-
     } finally {
       setLoading(false);
     }
-  };
+  }, [onMetaChange]);
 
   useEffect(() => {
-    refreshCaptcha();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const timer = setTimeout(() => {
+      refreshCaptcha();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [refreshCaptcha]);
 
   return (
     <div className={className}>

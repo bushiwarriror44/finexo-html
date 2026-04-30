@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiGet, apiPost } from "../../api/client";
 import { useTranslation } from "react-i18next";
 import { copyTextWithFeedback, formatLastUpdatedLabel, getSafeErrorMessage, normalizeApiList, shortenHash, statusBadgeClass } from "./utils";
@@ -13,7 +13,6 @@ export function DashboardTopupsPage() {
   const [status, setStatus] = useState("");
   const [wallets, setWallets] = useState([]);
   const [topups, setTopups] = useState([]);
-  const [submitting, setSubmitting] = useState(false);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("id_desc");
   const [quickFilter, setQuickFilter] = useState("all");
@@ -59,7 +58,7 @@ export function DashboardTopupsPage() {
     });
   }, [topups, search, sortBy, quickFilter]);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -83,18 +82,21 @@ export function DashboardTopupsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [amountMax, amountMin, dateFrom, dateTo, quickFilter, t]);
 
   useEffect(() => {
     const persistedSearch = window.localStorage.getItem("cm_topups_search");
     const persistedSort = window.localStorage.getItem("cm_topups_sort");
-    if (persistedSearch) setSearch(persistedSearch);
-    if (persistedSort) setSortBy(persistedSort);
-    load().catch(() => {});
+    if (persistedSearch) setTimeout(() => setSearch(persistedSearch), 0);
+    if (persistedSort) setTimeout(() => setSortBy(persistedSort), 0);
+    return undefined;
   }, []);
   useEffect(() => {
-    load().catch(() => {});
-  }, [quickFilter, dateFrom, dateTo, amountMin, amountMax]);
+    const timer = setTimeout(() => {
+      load().catch(() => {});
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [load]);
 
   useEffect(() => {
     window.localStorage.setItem("cm_topups_search", search);
@@ -111,7 +113,7 @@ export function DashboardTopupsPage() {
       load().catch(() => {});
     }, 5000);
     return () => clearInterval(interval);
-  }, [topups]);
+  }, [load, topups]);
 
   useEffect(() => {
     if (!status) return undefined;
@@ -274,15 +276,14 @@ export function DashboardTopupsPage() {
         wallets={supportedWallets}
         onClose={() => setShowTopupModal(false)}
         onSubmit={async (payload) => {
-          setSubmitting(true);
           try {
             await apiPost("/api/wallet/topup", payload);
             setStatus(t("dashboardCabinet.messages.topupSubmitted"));
             await load();
           } catch (err) {
-            throw new Error(getSafeErrorMessage(err, t("dashboardCabinet.messages.topupSubmitFailed")));
-          } finally {
-            setSubmitting(false);
+            throw new Error(getSafeErrorMessage(err, t("dashboardCabinet.messages.topupSubmitFailed")), {
+              cause: err,
+            });
           }
         }}
         t={t}

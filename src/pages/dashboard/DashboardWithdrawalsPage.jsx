@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiGet, apiPost } from "../../api/client";
 import { useTranslation } from "react-i18next";
 import { formatLastUpdatedLabel, getSafeErrorMessage, money, normalizeApiList, statusBadgeClass } from "./utils";
@@ -12,7 +12,6 @@ export function DashboardWithdrawalsPage() {
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [withdrawals, setWithdrawals] = useState([]);
-  const [availableBalance, setAvailableBalance] = useState(0);
   const [withdrawableBalance, setWithdrawableBalance] = useState(0);
   const [purchaseOnlyBalance, setPurchaseOnlyBalance] = useState(0);
   const [withdrawAddress, setWithdrawAddress] = useState("");
@@ -34,7 +33,7 @@ export function DashboardWithdrawalsPage() {
   const [risk, setRisk] = useState(null);
   const [withdrawalTraces, setWithdrawalTraces] = useState([]);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -51,7 +50,6 @@ export function DashboardWithdrawalsPage() {
         apiGet("/api/user/dashboard/filter-presets?scope=withdrawals"),
         apiGet("/api/user/dashboard/audit-traces?scope=withdrawals"),
       ]);
-      setAvailableBalance(balanceData.availableBalance || 0);
       setWithdrawableBalance(balanceData.withdrawableBalance || 0);
       setPurchaseOnlyBalance(balanceData.purchaseOnlyBalance || 0);
       setWithdrawals(normalizeApiList(withdrawalData));
@@ -65,19 +63,22 @@ export function DashboardWithdrawalsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [amountMax, amountMin, dateFrom, dateTo, quickFilter, t]);
 
   useEffect(() => {
     const persistedSearch = window.localStorage.getItem("cm_withdrawals_search");
-    if (persistedSearch) setSearch(persistedSearch);
-    load().catch(() => {});
+    if (persistedSearch) setTimeout(() => setSearch(persistedSearch), 0);
+    const timer = setTimeout(() => {
+      load().catch(() => {});
+    }, 0);
     try {
       const persisted = JSON.parse(window.localStorage.getItem("cm_withdraw_address_book") || "[]");
-      if (Array.isArray(persisted)) setAddressBook(persisted);
+      if (Array.isArray(persisted)) setTimeout(() => setAddressBook(persisted), 0);
     } catch {
-      setAddressBook([]);
+      setTimeout(() => setAddressBook([]), 0);
     }
-  }, [quickFilter, dateFrom, dateTo, amountMin, amountMax]);
+    return () => clearTimeout(timer);
+  }, [load]);
 
   useEffect(() => {
     window.localStorage.setItem("cm_withdrawals_search", search);
@@ -320,7 +321,7 @@ export function DashboardWithdrawalsPage() {
                             </div>
                             {(withdrawalTraces || []).filter((trace) => Number(trace.entityId) === Number(row.id)).slice(0, 4).map((trace) => (
                               <div key={trace.id} className="dash-help">
-                                {new Date(trace.createdAt || Date.now()).toLocaleString()} | {trace.actorType}: {trace.event} {trace.details ? `- ${trace.details}` : ""}
+                                {trace.createdAt ? new Date(trace.createdAt).toLocaleString() : "-"} | {trace.actorType}: {trace.event} {trace.details ? `- ${trace.details}` : ""}
                               </div>
                             ))}
                             {row.adminNote || "-"}

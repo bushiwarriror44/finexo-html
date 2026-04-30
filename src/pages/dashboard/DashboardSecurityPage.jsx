@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { apiGet, apiPost } from "../../api/client";
 import { getSafeErrorMessage } from "./utils";
@@ -32,7 +32,7 @@ export function DashboardSecurityPage() {
   ]);
   const newPasswordStrength = useMemo(() => getPasswordStrength(newPassword), [newPassword]);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       const [secData, sessionData] = await Promise.all([
         apiGet("/api/user/security/settings"),
@@ -45,11 +45,14 @@ export function DashboardSecurityPage() {
     } catch (err) {
       setError(getSafeErrorMessage(err, t("dashboardCabinet.messages.failedLoadOverview")));
     }
-  };
+  }, [t]);
 
   useEffect(() => {
-    load().catch(() => {});
-  }, []);
+    const timer = setTimeout(() => {
+      load().catch(() => {});
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [load]);
 
   const submitPassword = async (e) => {
     e.preventDefault();
@@ -212,7 +215,7 @@ export function DashboardSecurityPage() {
                   ))}
                   {sessions.map((item) => (
                     <tr key={`session-${item.id}`}>
-                      <td data-label={t("dashboardCabinet.table.date")}>{new Date(item.createdAt || Date.now()).toLocaleString()}</td>
+                      <td data-label={t("dashboardCabinet.table.date")}>{item.createdAt ? new Date(item.createdAt).toLocaleString() : "-"}</td>
                       <td data-label={t("dashboardCabinet.table.note")}>{item.isRevoked ? "revoked" : "active"} | {item.ipAddress || "-"} | {(item.userAgent || "").slice(0, 50)}</td>
                     </tr>
                   ))}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiGet } from "../../api/client";
 import { useTranslation } from "react-i18next";
 import { getSafeErrorMessage, money, normalizeApiList } from "./utils";
@@ -40,7 +40,7 @@ export function DashboardBalancePage() {
   };
 
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -55,11 +55,14 @@ export function DashboardBalancePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
-    load().catch(() => {});
-  }, []);
+    const timer = setTimeout(() => {
+      load().catch(() => {});
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [load]);
 
   return (
     <>

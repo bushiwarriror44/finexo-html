@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiAlertCircle, FiShoppingCart } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
@@ -24,7 +24,7 @@ export function DashboardBuyPowerPage() {
   const [purchaseOnlyBalance, setPurchaseOnlyBalance] = useState(0);
   const [showInsufficientPopup, setShowInsufficientPopup] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -37,11 +37,14 @@ export function DashboardBuyPowerPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
-    load().catch(() => {});
-  }, []);
+    const timer = setTimeout(() => {
+      load().catch(() => {});
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [load]);
 
   const purchase = async (plan) => {
     setError("");

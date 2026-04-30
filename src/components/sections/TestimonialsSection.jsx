@@ -5,6 +5,8 @@ export function TestimonialsSection() {
   const { t } = useTranslation();
   const testimonials = t("testimonials", { returnObjects: true, defaultValue: [] });
   const [activeIndex, setActiveIndex] = useState(0);
+  const normalizedActiveIndex = safeTestimonials.length === 0 ? 0 : activeIndex % safeTestimonials.length;
+
   const safeTestimonials = useMemo(
     () => (Array.isArray(testimonials) ? testimonials : []),
     [testimonials]
@@ -18,18 +20,12 @@ export function TestimonialsSection() {
     return () => window.clearInterval(timer);
   }, [safeTestimonials.length]);
 
-  useEffect(() => {
-    if (activeIndex >= safeTestimonials.length) {
-      setActiveIndex(0);
-    }
-  }, [activeIndex, safeTestimonials.length]);
-
   const visibleItems = useMemo(() => {
     if (safeTestimonials.length === 0) return [];
-    const first = safeTestimonials[activeIndex];
-    const second = safeTestimonials[(activeIndex + 1) % safeTestimonials.length];
+    const first = safeTestimonials[normalizedActiveIndex];
+    const second = safeTestimonials[(normalizedActiveIndex + 1) % safeTestimonials.length];
     return [first, second];
-  }, [activeIndex, safeTestimonials]);
+  }, [normalizedActiveIndex, safeTestimonials]);
 
   return (
     <section className="client_section layout_padding">
@@ -53,7 +49,7 @@ export function TestimonialsSection() {
               {visibleItems.map((item, idx) => (
                 <article
                   className={`testimonial_card ${idx === 1 ? "is-secondary" : ""}`}
-                  key={`${item.name}-${activeIndex}-${idx}`}
+                  key={`${item.name}-${normalizedActiveIndex}-${idx}`}
                 >
                   <div className="testimonial_head">
                     <h6>{item.name}</h6>
@@ -78,7 +74,7 @@ export function TestimonialsSection() {
             <button
               type="button"
               key={`${item.name}-${index}`}
-              className={`testimonials_dot ${index === activeIndex ? "is-active" : ""}`}
+              className={`testimonials_dot ${index === normalizedActiveIndex ? "is-active" : ""}`}
               onClick={() => setActiveIndex(index)}
               aria-label={`Open testimonial ${index + 1}`}
             />
