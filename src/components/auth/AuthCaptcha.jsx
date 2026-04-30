@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { apiGet } from "../../api/client";
 
 export function AuthCaptcha({ t, value, onChange, onMetaChange, className = "mb-3" }) {
@@ -6,8 +6,17 @@ export function AuthCaptcha({ t, value, onChange, onMetaChange, className = "mb-
   const [captchaId, setCaptchaId] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState("");
+  const mountedRef = useRef(false);
+  const inFlightRef = useRef(false);
+  const onMetaChangeRef = useRef(onMetaChange);
+
+  useEffect(() => {
+    onMetaChangeRef.current = onMetaChange;
+  }, [onMetaChange]);
 
   const refreshCaptcha = useCallback(async () => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     setLoading(true);
     try {
       const data = await apiGet("/api/auth/captcha");
@@ -16,22 +25,23 @@ export function AuthCaptcha({ t, value, onChange, onMetaChange, className = "mb-
       setCaptchaImage(nextImage);
       setCaptchaId(nextId);
       setLoadError(nextImage && nextId ? "" : t("auth.captchaLoadFailed", { defaultValue: "Failed to load captcha" }));
-      onMetaChange?.({ captchaId: nextId });
+      onMetaChangeRef.current?.({ captchaId: nextId });
     } catch {
       setCaptchaImage("");
       setCaptchaId("");
       setLoadError(t("auth.captchaLoadFailed", { defaultValue: "Failed to load captcha" }));
-      onMetaChange?.({ captchaId: "" });
+      onMetaChangeRef.current?.({ captchaId: "" });
     } finally {
+      inFlightRef.current = false;
       setLoading(false);
     }
-  }, [onMetaChange, t]);
+  }, [t]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      refreshCaptcha();
-    }, 0);
-    return () => clearTimeout(timer);
+    if (mountedRef.current) return undefined;
+    mountedRef.current = true;
+    refreshCaptcha();
+    return undefined;
   }, [refreshCaptcha]);
 
   return (

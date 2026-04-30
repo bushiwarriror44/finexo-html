@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { apiPost } from "../../api/client";
@@ -45,6 +45,9 @@ export function AuthModal() {
   const countryLabels = useMemo(() => getCountryDisplayLabels(), []);
   const countryCodes = useMemo(() => Object.keys(countryLabels), [countryLabels]);
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
+  const handleCaptchaMetaChange = useCallback(({ captchaId: nextId }) => {
+    setCaptchaId(nextId);
+  }, []);
 
   const updateMode = (nextMode, extras = {}) => {
     const params = new URLSearchParams(location.search);
@@ -275,7 +278,7 @@ export function AuthModal() {
               t={t}
               value={captchaAnswer}
               onChange={setCaptchaAnswer}
-              onMetaChange={({ captchaId: nextId }) => setCaptchaId(nextId)}
+              onMetaChange={handleCaptchaMetaChange}
               className="mb-2"
             />
           ) : null}

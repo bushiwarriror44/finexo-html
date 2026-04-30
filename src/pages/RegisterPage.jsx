@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
@@ -31,6 +31,9 @@ export function RegisterPage() {
   const countryLabels = useMemo(() => getCountryDisplayLabels(), []);
   const countryCodes = useMemo(() => Object.keys(countryLabels), [countryLabels]);
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
+  const handleCaptchaMetaChange = useCallback(({ captchaId: nextId }) => {
+    setCaptchaId(nextId);
+  }, []);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -134,7 +137,7 @@ export function RegisterPage() {
             t={t}
             value={captchaAnswer}
             onChange={setCaptchaAnswer}
-            onMetaChange={({ captchaId: nextId }) => setCaptchaId(nextId)}
+            onMetaChange={handleCaptchaMetaChange}
           />
           <button className="btn btn-info text-white w-100" type="submit">{t("auth.createAccount")}</button>
           <div className="mt-3">
