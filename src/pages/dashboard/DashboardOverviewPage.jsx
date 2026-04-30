@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiGet, apiPost } from "../../api/client";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import { copyTextWithFeedback, formatLastUpdatedLabel, getSafeErrorMessage, money } from "./utils";
 import { FiCheckCircle, FiCreditCard, FiDollarSign, FiLock, FiTrendingUp, FiUserCheck } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
@@ -9,7 +8,6 @@ import { ActionPopupCard } from "../../components/dashboard/ActionPopupCard";
 
 export function DashboardOverviewPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

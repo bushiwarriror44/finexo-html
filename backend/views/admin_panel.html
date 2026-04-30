@@ -27,8 +27,8 @@
         <div class="card-header"><strong>API-учетные данные</strong></div>
         <div class="card-body">
           <form id="credentialForm" class="row g-2 mb-3">
-            <div class="col-md-4"><input class="form-control" name="provider" placeholder="Провайдер: tron/evm/btc" required /></div>
-            <div class="col-md-4"><input class="form-control" name="apiUrl" placeholder="URL API" /></div>
+            <div class="col-md-4"><input class="form-control" name="provider" placeholder="Провайдер: tron/evm/btc" value="tron" required /></div>
+            <div class="col-md-4"><input class="form-control" name="apiUrl" placeholder="URL API" value="https://api.trongrid.io" /></div>
             <div class="col-md-4"><input class="form-control" name="apiKey" placeholder="API ключ" /></div>
             <div class="col-12"><button class="btn btn-primary" type="submit">Сохранить</button></div>
           </form>
@@ -61,7 +61,7 @@
           <form id="walletForm" class="row g-2 mb-3">
             <div class="col-md-4"><input class="form-control" name="asset" value="USDT" readonly required /></div>
             <div class="col-md-4"><input class="form-control" name="network" value="TRX" readonly required /></div>
-            <div class="col-md-4"><input class="form-control" name="address" placeholder="Адрес кошелька" required /></div>
+            <div class="col-md-4"><input class="form-control" name="address" placeholder="Адрес кошелька" value="TQq2xFNkcEhAhzVPhY3y1EifaRNgtwthAd" required /></div>
             <div class="col-12"><button class="btn btn-primary" type="submit">Добавить кошелек</button></div>
           </form>
           <table class="table table-sm">

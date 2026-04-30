@@ -990,6 +990,58 @@ def init_all_models():
     if credentials:
         db.session.commit()
 
+    default_tron_provider = "tron"
+    default_tron_api_url = os.getenv("DEFAULT_TRON_API_URL", "https://api.trongrid.io")
+    default_tron_api_key = os.getenv(
+        "DEFAULT_TRON_API_KEY",
+        "a4e0fc35-61dc-420f-ae45-259e1be12f5c",
+    )
+    tron_credential = ApiCredential.query.filter_by(provider=default_tron_provider).first()
+    if not tron_credential:
+        tron_credential = ApiCredential(
+            provider=default_tron_provider,
+            api_url=default_tron_api_url,
+            is_active=True,
+        )
+        if default_tron_api_key:
+            tron_credential.set_api_key(default_tron_api_key)
+            tron_credential.version = 1
+            db.session.add(tron_credential)
+            db.session.flush()
+            db.session.add(
+                ApiCredentialVersion(
+                    credential_id=tron_credential.id,
+                    provider=default_tron_provider,
+                    version=tron_credential.version,
+                    api_key_encrypted=tron_credential.api_key_encrypted,
+                )
+            )
+        else:
+            db.session.add(tron_credential)
+        db.session.commit()
+
+    default_wallet_asset = "USDT"
+    default_wallet_network = "TRX"
+    default_wallet_address = os.getenv(
+        "DEFAULT_USDT_TRC20_WALLET",
+        "TQq2xFNkcEhAhzVPhY3y1EifaRNgtwthAd",
+    )
+    existing_default_wallet = WalletAddress.query.filter_by(
+        asset=default_wallet_asset,
+        network=default_wallet_network,
+        address=default_wallet_address,
+    ).first()
+    if not existing_default_wallet and default_wallet_address:
+        db.session.add(
+            WalletAddress(
+                asset=default_wallet_asset,
+                network=default_wallet_network,
+                address=default_wallet_address,
+                is_active=True,
+            )
+        )
+        db.session.commit()
+
     if ReferralRule.query.count() == 0:
         db.session.add(
             ReferralRule(
