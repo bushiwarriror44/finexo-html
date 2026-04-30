@@ -149,6 +149,89 @@ class SmokeTestCase(unittest.TestCase):
         self.assertEqual(versions.status_code, 200)
         self.assertGreaterEqual(len(versions.get_json()), 1)
 
+    def test_admin_credentials_update_success(self):
+        with app.app_context():
+            admin = User.query.filter_by(is_admin=True).first()
+            admin_id = admin.id
+            old_email = admin.email
+        with self.client.session_transaction() as sess:
+            sess["admin_user_id"] = admin_id
+        response = self.client.post(
+            "/admin/api/account/credentials",
+            json={
+                "currentPassword": "admin123",
+                "newEmail": "admin.updated@test.com",
+                "newPassword": "Admin1234",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertTrue(payload.get("success"))
+        self.assertEqual(payload.get("updatedEmail"), "admin.updated@test.com")
+        self.assertTrue(payload.get("passwordUpdated"))
+        self.client.get("/admin/logout")
+        login_new = self.client.post(
+            "/admin/login",
+            data={"email": "admin.updated@test.com", "password": "Admin1234"},
+            follow_redirects=False,
+        )
+        self.assertEqual(login_new.status_code, 302)
+        with app.app_context():
+            admin_row = User.query.get(admin_id)
+            self.assertNotEqual(admin_row.email, old_email)
+
+    def test_admin_credentials_update_invalid_current_password(self):
+        with app.app_context():
+            admin = User.query.filter_by(is_admin=True).first()
+            admin_id = admin.id
+        with self.client.session_transaction() as sess:
+            sess["admin_user_id"] = admin_id
+        response = self.client.post(
+            "/admin/api/account/credentials",
+            json={
+                "currentPassword": "wrong-pass",
+                "newEmail": "admin.fail@test.com",
+                "newPassword": "Admin1234",
+            },
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.get_json().get("code"), "ADMIN_INVALID_CURRENT_PASSWORD")
+
+    def test_admin_credentials_update_email_taken(self):
+        self.register_user("occupied@test.com")
+        with app.app_context():
+            admin = User.query.filter_by(is_admin=True).first()
+            admin_id = admin.id
+        with self.client.session_transaction() as sess:
+            sess["admin_user_id"] = admin_id
+        response = self.client.post(
+            "/admin/api/account/credentials",
+            json={
+                "currentPassword": "admin123",
+                "newEmail": "occupied@test.com",
+                "newPassword": "",
+            },
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.get_json().get("code"), "ADMIN_EMAIL_TAKEN")
+
+    def test_admin_credentials_update_weak_password(self):
+        with app.app_context():
+            admin = User.query.filter_by(is_admin=True).first()
+            admin_id = admin.id
+        with self.client.session_transaction() as sess:
+            sess["admin_user_id"] = admin_id
+        response = self.client.post(
+            "/admin/api/account/credentials",
+            json={
+                "currentPassword": "admin123",
+                "newEmail": "",
+                "newPassword": "short",
+            },
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.get_json().get("code"), "ADMIN_PASSWORD_POLICY_FAILED")
+
     def test_admin_users_list_and_detail(self):
         self.register_user("userslist@test.com")
         with app.app_context():

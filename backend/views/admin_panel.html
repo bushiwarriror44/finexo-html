@@ -27,6 +27,23 @@
       <div class="card shadow-sm">
         <div class="card-header"><strong>API-учетные данные</strong></div>
         <div class="card-body">
+          <form id="adminCredentialsForm" class="row g-2 mb-4">
+            <div class="col-md-4">
+              <label class="form-label mb-1">Новый email (логин)</label>
+              <input class="form-control" name="newEmail" type="email" value="{{ admin_email or '' }}" placeholder="admin@cloud-mine.com" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label mb-1">Текущий пароль (обязательно)</label>
+              <input class="form-control" name="currentPassword" type="password" required />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label mb-1">Новый пароль (опционально)</label>
+              <input class="form-control" name="newPassword" type="password" placeholder="Оставьте пустым, если не меняете" />
+            </div>
+            <div class="col-12">
+              <button class="btn btn-outline-primary" type="submit">Обновить логин/пароль админки</button>
+            </div>
+          </form>
           <form id="credentialForm" class="row g-2 mb-3">
             <div class="col-md-4"><input class="form-control" name="provider" placeholder="Провайдер: tron/evm/btc" value="tron" required /></div>
             <div class="col-md-4"><input class="form-control" name="apiUrl" placeholder="URL API" value="https://api.trongrid.io" /></div>
@@ -331,7 +348,8 @@
     <div class="card-header"><strong>Очередь выводов</strong></div>
     <div class="card-body">
       <p class="text-muted small mb-2">Confirm network, amount, and compliance note before changing withdrawal state.</p>
-      <table class="table table-sm">
+      <div class="admin-withdrawals-table-shell">
+      <table class="table table-sm admin-withdrawals-table">
         <thead><tr><th>ID</th><th>User</th><th>Asset</th><th>Network</th><th>Address</th><th>Amount</th><th>Status</th><th>Source</th><th>Tx hash</th><th>Note</th><th>Actions</th></tr></thead>
         <tbody>
           {% for row in withdrawals %}
@@ -340,7 +358,7 @@
               <td>{{ row.user_id }}</td>
               <td>{{ row.asset }}</td>
               <td>{{ row.network }}</td>
-              <td style="max-width: 220px; word-break: break-all">{{ row.address }}</td>
+              <td class="admin-withdrawals-cell-address">{{ row.address }}</td>
               <td>{{ row.amount }}</td>
               <td>{{ row.status }}</td>
               <td>
@@ -350,8 +368,8 @@
                   <span class="badge text-bg-secondary">standard</span>
                 {% endif %}
               </td>
-              <td style="max-width: 140px; word-break: break-all">{{ row.external_tx_hash or '-' }}</td>
-              <td>{{ row.admin_note or '-' }}</td>
+              <td class="admin-withdrawals-cell-hash" data-withdrawal-field="externalTxHash">{{ row.external_tx_hash or '-' }}</td>
+              <td class="admin-withdrawals-cell-note" data-withdrawal-field="adminNote">{{ row.admin_note or '-' }}</td>
               <td>
                 <div class="d-flex flex-wrap gap-1">
                   <button class="btn btn-sm btn-outline-primary withdrawal-action-btn" data-withdrawal-id="{{ row.id }}" data-action="approve">Approve</button>
@@ -366,6 +384,7 @@
           {% endfor %}
         </tbody>
       </table>
+      </div>
     </div>
   </div>
 
@@ -819,6 +838,7 @@ document.querySelectorAll(".retry-topup-btn").forEach((button) => {
 });
 
 const adminUsersFilterForm = document.getElementById("adminUsersFilterForm");
+const adminCredentialsForm = document.getElementById("adminCredentialsForm");
 const adminUsersTableBody = document.getElementById("adminUsersTableBody");
 const manualCreditForm = document.getElementById("manualCreditForm");
 const topupsFilterForm = document.getElementById("topupsFilterForm");
@@ -1131,6 +1151,42 @@ manualCreditForm?.addEventListener("submit", async (e) => {
   }
 });
 
+adminCredentialsForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const submitButton = form.querySelector('button[type="submit"]');
+  const payload = {
+    newEmail: (form.querySelector('[name="newEmail"]')?.value || "").trim(),
+    currentPassword: form.querySelector('[name="currentPassword"]')?.value || "",
+    newPassword: form.querySelector('[name="newPassword"]')?.value || "",
+  };
+  if (!payload.currentPassword) {
+    showFeedback("Текущий пароль обязателен.", "warning");
+    return;
+  }
+  if (!payload.newEmail && !payload.newPassword) {
+    showFeedback("Укажите новый email или новый пароль.", "warning");
+    return;
+  }
+  markPending(submitButton, true);
+  try {
+    const result = await submitJson("/admin/api/account/credentials", "POST", payload);
+    showFeedback("Учетные данные администратора обновлены.");
+    if (result?.updatedEmail) {
+      const emailInput = form.querySelector('[name="newEmail"]');
+      if (emailInput) emailInput.value = result.updatedEmail;
+    }
+    const currentPasswordInput = form.querySelector('[name="currentPassword"]');
+    const newPasswordInput = form.querySelector('[name="newPassword"]');
+    if (currentPasswordInput) currentPasswordInput.value = "";
+    if (newPasswordInput) newPasswordInput.value = "";
+  } catch (err) {
+    showFeedback(err.message || "Не удалось обновить учетные данные.", "danger");
+  } finally {
+    markPending(submitButton, false);
+  }
+});
+
 function renderBotSettings(data) {
   if (botConfiguredStatus) botConfiguredStatus.textContent = data?.configured ? "сохранен" : "не сохранен";
   if (botLastChatId) botLastChatId.textContent = data?.lastChatId || "не найден";
@@ -1382,10 +1438,68 @@ const withdrawalActionSummary = document.getElementById("withdrawal-action-summa
 const withdrawalExternalHash = document.getElementById("withdrawal-external-hash");
 const withdrawalAdminNote = document.getElementById("withdrawal-admin-note");
 
+async function submitWithdrawalAction({ withdrawalId, action, externalTxHash = "", adminNote = "" }) {
+  const result = await submitJson(`/admin/api/withdrawals/${withdrawalId}/action`, "POST", {
+    action,
+    externalTxHash,
+    adminNote,
+  });
+  showFeedback(`Withdrawal #${withdrawalId} updated with "${action}".`);
+  markTableAsRefreshing();
+  return result || {};
+}
+
+function updateWithdrawalRow(withdrawalId, payload) {
+  const row = document.querySelector(`[data-withdrawal-row-id="${withdrawalId}"]`);
+  if (!row) return;
+  const statusCell = row.querySelector('[data-withdrawal-field="status"]');
+  const hashCell = row.querySelector('[data-withdrawal-field="externalTxHash"]');
+  const noteCell = row.querySelector('[data-withdrawal-field="adminNote"]');
+  if (statusCell) {
+    const nextStatus = payload?.rawStatus || payload?.status || "-";
+    statusCell.textContent = String(nextStatus);
+  }
+  if (hashCell) {
+    const nextHash = payload?.externalTxHash;
+    hashCell.textContent = nextHash ? String(nextHash) : "-";
+  }
+  if (noteCell && typeof payload?.adminNote !== "undefined") {
+    noteCell.textContent = payload.adminNote ? String(payload.adminNote) : "-";
+  }
+}
+
+async function runWithdrawalActionFallback(button, { withdrawalId, action }) {
+  const allowed = window.confirm(`Apply action "${action}" to withdrawal #${withdrawalId}?`);
+  if (!allowed) return;
+  let externalTxHash = "";
+  if (action === "complete") {
+    externalTxHash = (window.prompt(`Enter external tx hash for withdrawal #${withdrawalId}:`, "") || "").trim();
+    if (!externalTxHash) {
+      showFeedback("Tx hash is required for completion.", "warning");
+      return;
+    }
+  }
+  const adminNote = (window.prompt(`Admin note for withdrawal #${withdrawalId} (optional):`, "") || "").trim();
+  markPending(button, true);
+  try {
+    const result = await submitWithdrawalAction({ withdrawalId, action, externalTxHash, adminNote });
+    updateWithdrawalRow(withdrawalId, { ...result, adminNote });
+  } catch (err) {
+    showFeedback(err.message || "Withdrawal action failed", "danger");
+  } finally {
+    markPending(button, false);
+    clearRefreshing();
+  }
+}
+
 document.querySelectorAll(".withdrawal-action-btn").forEach((button) => {
-  button.addEventListener("click", () => {
+  button.addEventListener("click", async () => {
     const withdrawalId = button.getAttribute("data-withdrawal-id") || "";
     const action = button.getAttribute("data-action") || "";
+    if (!withdrawalModal) {
+      await runWithdrawalActionFallback(button, { withdrawalId, action });
+      return;
+    }
     withdrawalActionId.value = withdrawalId;
     withdrawalActionType.value = action;
     withdrawalActionSummary.textContent = `Confirm action "${action}" for withdrawal #${withdrawalId}.`;
@@ -1409,17 +1523,14 @@ withdrawalActionForm?.addEventListener("submit", async (e) => {
   }
   markPending(submitButton, true);
   try {
-    await submitJson(`/admin/api/withdrawals/${withdrawalId}/action`, "POST", {
-      action,
-      externalTxHash,
-      adminNote,
-    });
-    showFeedback(`Withdrawal #${withdrawalId} updated with "${action}".`);
+    const result = await submitWithdrawalAction({ withdrawalId, action, externalTxHash, adminNote });
+    updateWithdrawalRow(withdrawalId, { ...result, adminNote });
     withdrawalModal?.hide();
   } catch (err) {
     showFeedback(err.message || "Withdrawal action failed", "danger");
   } finally {
     markPending(submitButton, false);
+    clearRefreshing();
   }
 });
 

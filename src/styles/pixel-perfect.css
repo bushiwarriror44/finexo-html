@@ -1386,6 +1386,23 @@ h6 {
   background: var(--ui-surface);
 }
 
+.admin-withdrawals-table-shell {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.admin-withdrawals-table {
+  min-width: 1120px;
+}
+
+.admin-withdrawals-cell-address,
+.admin-withdrawals-cell-hash,
+.admin-withdrawals-cell-note {
+  max-width: 220px;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
 .plans-table thead th {
   position: sticky;
   top: 0;
@@ -4111,6 +4128,23 @@ h6 {
     height: 16px;
     font-size: 10px;
     padding: 0 4px;
+  }
+
+  .admin-section-block[data-section='withdrawals'] .card-body {
+    overflow: hidden;
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+  }
+
+  .admin-withdrawals-table-shell {
+    -webkit-overflow-scrolling: touch;
+    margin-left: -0.15rem;
+    margin-right: -0.15rem;
+    padding-bottom: 4px;
+  }
+
+  .admin-withdrawals-table {
+    min-width: 980px;
   }
 
   .dashboard-subnav {

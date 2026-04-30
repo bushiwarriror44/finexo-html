@@ -101,6 +101,8 @@ def admin_login():
 @admin_bp.route("/admin/panel")
 @require_login
 def admin_panel():
+    admin_id = session.get("admin_user_id")
+    current_admin = User.query.get(admin_id) if admin_id else None
     wallets = WalletAddress.query.order_by(WalletAddress.asset.asc(), WalletAddress.network.asc()).all()
     credentials = ApiCredential.query.order_by(ApiCredential.provider.asc()).all()
     topups = TopUpTransaction.query.order_by(TopUpTransaction.created_at.desc()).limit(100).all()
@@ -131,6 +133,7 @@ def admin_panel():
     response = make_response(
         render_template(
             "admin_panel.html",
+            admin_email=(current_admin.email if current_admin else ""),
             wallets=wallets,
             credentials=credentials,
             topups=topups,

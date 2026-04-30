@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from decimal import Decimal
+import re
 
 from flask import Blueprint, jsonify, request, send_file, session
 
@@ -35,6 +36,8 @@ from models import (
 )
 from services.audit_service import write_audit
 from services.dashboard_contract import api_error, map_kyc_status, map_ticket_status, map_topup_status, map_topup_verification_status, map_withdrawal_status
+from services.password_policy import validate_password_policy
+from services.security import hash_password, verify_password
 from services.withdrawal_service import transition_withdrawal_status
 from services.wallet_verifier import process_topup
 from services.providers.tron_provider import get_tron_usdt_wallet_balance
@@ -42,6 +45,7 @@ from services.telegram_service import sync_last_chat_id
 
 admin_api_bp = Blueprint("admin_api", __name__, url_prefix="/admin/api")
 MANUAL_CREDIT_REASON_PREFIX = "MANUAL_CREDIT_PURCHASE_ONLY:"
+EMAIL_RE = re.compile(r"^[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}$", re.IGNORECASE)
 
 
 def _require_admin():
@@ -66,6 +70,10 @@ def _parse_int(value, default=None):
         return int(value)
     except (TypeError, ValueError):
         return None
+
+
+def _is_valid_email(email: str) -> bool:
+    return bool(EMAIL_RE.match((email or "").strip()))
 
 
 def _get_bot_settings(create=False):
@@ -186,6 +194,75 @@ def admin_user_detail(user_id: int):
             },
         }
     )
+
+
+@admin_api_bp.post("/account/credentials")
+def admin_update_credentials():
+    admin = _require_admin()
+    if not admin:
+        return _json_error("forbidden", "FORBIDDEN", 403)
+    data = request.get_json(silent=True) or {}
+    current_password = str(data.get("currentPassword") or "")
+    new_email = str(data.get("newEmail") or "").strip().lower()
+    new_password = str(data.get("newPassword") or "")
+
+    if not current_password:
+        return _json_error(
+            "current password is required",
+            "ADMIN_CURRENT_PASSWORD_REQUIRED",
+            400,
+            {"fields": {"currentPassword": "REQUIRED"}},
+        )
+    if not verify_password(admin.password_hash, current_password):
+        return _json_error(
+            "invalid current password",
+            "ADMIN_INVALID_CURRENT_PASSWORD",
+            400,
+            {"fields": {"currentPassword": "INVALID"}},
+        )
+    if not new_email and not new_password:
+        return _json_error(
+            "at least one field is required",
+            "ADMIN_NOTHING_TO_UPDATE",
+            400,
+            {"fields": {"newEmail": "EMPTY", "newPassword": "EMPTY"}},
+        )
+
+    if new_email:
+        if not _is_valid_email(new_email):
+            return _json_error(
+                "invalid email",
+                "ADMIN_EMAIL_INVALID",
+                400,
+                {"fields": {"newEmail": "INVALID"}},
+            )
+        existing_user = User.query.filter(User.email == new_email, User.id != admin.id).first()
+        if existing_user:
+            return _json_error(
+                "email already in use",
+                "ADMIN_EMAIL_TAKEN",
+                400,
+                {"fields": {"newEmail": "TAKEN"}},
+            )
+
+    if new_password:
+        is_valid_password, password_code = validate_password_policy(new_password)
+        if not is_valid_password:
+            return _json_error(
+                "password policy validation failed",
+                "ADMIN_PASSWORD_POLICY_FAILED",
+                400,
+                {"fields": {"newPassword": password_code}},
+            )
+
+    if new_email:
+        admin.email = new_email
+    if new_password:
+        admin.password_hash = hash_password(new_password)
+
+    db.session.commit()
+    write_audit("admin", admin.id, "admin_credentials_update", f"email_updated={bool(new_email)}; password_updated={bool(new_password)}")
+    return jsonify({"success": True, "updatedEmail": admin.email, "passwordUpdated": bool(new_password)})
 
 
 @admin_api_bp.get("/credentials")
