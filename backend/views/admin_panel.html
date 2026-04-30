@@ -21,7 +21,7 @@
   </ul>
 
   <div class="row g-4 admin-section-block" data-section="settings">
-    <div class="col-lg-6">
+    <div class="col-12">
       <div class="card shadow-sm">
         <div class="card-header"><strong>API-учетные данные</strong></div>
         <div class="card-body">
@@ -50,7 +50,7 @@
       </div>
     </div>
 
-    <div class="col-lg-6">
+    <div class="col-12">
       <div class="card shadow-sm">
         <div class="card-header"><strong>Адреса кошельков</strong></div>
         <div class="card-body">
@@ -171,7 +171,7 @@
   </div>
 
   <div class="row g-4 mt-1">
-    <div class="col-lg-6">
+    <div class="col-12">
       <div class="card shadow-sm admin-section-block" data-section="settings">
         <div class="card-header"><strong>Реферальные правила</strong></div>
         <div class="card-body">
@@ -205,7 +205,7 @@
         </div>
       </div>
     </div>
-    <div class="col-lg-6">
+    <div class="col-12">
       <div class="card shadow-sm admin-section-block" data-section="kyc">
         <div class="card-header"><strong>Верификация (KYC)</strong></div>
         <div class="card-body">
@@ -660,7 +660,11 @@ const verificationFilterReset = document.getElementById("verificationFilterReset
 const verificationTableBody = document.getElementById("verificationTableBody");
 const verificationDocsModalElement = document.getElementById("verificationDocsModal");
 const verificationDocsModalBody = document.getElementById("verificationDocsModalBody");
-const verificationDocsModal = verificationDocsModalElement ? new bootstrap.Modal(verificationDocsModalElement) : null;
+const bootstrapModalFactory = window.bootstrap?.Modal || null;
+const verificationDocsModal =
+  verificationDocsModalElement && bootstrapModalFactory
+    ? new bootstrapModalFactory(verificationDocsModalElement)
+    : null;
 
 function topupsFiltersPayload() {
   const fd = new FormData(topupsFilterForm);
@@ -987,7 +991,10 @@ document.querySelectorAll(".support-action-btn").forEach((button) => {
 });
 
 const withdrawalModalElement = document.getElementById("withdrawalActionModal");
-const withdrawalModal = withdrawalModalElement ? new bootstrap.Modal(withdrawalModalElement) : null;
+const withdrawalModal =
+  withdrawalModalElement && bootstrapModalFactory
+    ? new bootstrapModalFactory(withdrawalModalElement)
+    : null;
 const withdrawalActionForm = document.getElementById("withdrawalActionForm");
 const withdrawalActionId = document.getElementById("withdrawal-action-id");
 const withdrawalActionType = document.getElementById("withdrawal-action-type");
