@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FiActivity, FiAlertCircle, FiBarChart2, FiCheckCircle, FiClock, FiCreditCard, FiDollarSign, FiGrid, FiLifeBuoy, FiLoader, FiShield, FiShoppingBag, FiStar, FiTrendingUp, FiUserCheck, FiLock } from "react-icons/fi";
 import { SectionHeading } from "../components/ui/SectionHeading";
@@ -30,10 +30,14 @@ export function DashboardPage() {
   const [notificationFilters, setNotificationFilters] = useState({ category: "all", priority: "all", read: "all" });
   const [kycEnforcementActive, setKycEnforcementActive] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [initialLoaded, setInitialLoaded] = useState(false);
   const [error, setError] = useState("");
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const lastLoadAtRef = useRef(0);
+  const load = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) {
+      setLoading(true);
+      setError("");
+    }
     try {
       const [topups, withdrawals, tickets, kyc, notifications] = await Promise.all([
         apiGet("/api/wallet/topups"),
@@ -54,13 +58,19 @@ export function DashboardPage() {
       const rawKyc = String(kyc?.rawStatus || kyc?.status || "not_started").toLowerCase();
       setKycEnforcementActive(Boolean(kyc?.verificationRequested) && rawKyc !== "approved");
       setActivityFeed(Array.isArray(notifications?.items) ? notifications.items : []);
+      lastLoadAtRef.current = Date.now();
+      setInitialLoaded(true);
     } catch {
-      setCounters({ topups: 0, withdrawals: 0, support: 0 });
-      setActivityFeed([]);
-      setKycEnforcementActive(false);
-      setError(t("dashboardCabinet.messages.failedLoadOverview", { defaultValue: "Failed to load dashboard data." }));
+      if (!silent) {
+        setCounters({ topups: 0, withdrawals: 0, support: 0 });
+        setActivityFeed([]);
+        setKycEnforcementActive(false);
+        setError(t("dashboardCabinet.messages.failedLoadOverview", { defaultValue: "Failed to load dashboard data." }));
+      }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }, [notificationFilters.category, notificationFilters.priority, notificationFilters.read, t]);
 
@@ -72,11 +82,20 @@ export function DashboardPage() {
   }, [load]);
 
   useEffect(() => {
+    const interval = setInterval(() => {
+      load({ silent: true }).catch(() => {});
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [load]);
+
+  useEffect(() => {
     const es = new EventSource("/api/user/realtime/stream", { withCredentials: true });
     es.onopen = () => {};
     es.onerror = () => {};
     es.addEventListener("dashboard", () => {
-      load().catch(() => {});
+      const now = Date.now();
+      if (now - lastLoadAtRef.current < 60000) return;
+      load({ silent: true }).catch(() => {});
     });
     return () => {
       es.close();
@@ -145,7 +164,7 @@ export function DashboardPage() {
           </div>
         ) : null}
         <ErrorState message={error} onRetry={() => load().catch(() => {})} retryLabel={t("dashboardCabinet.actions.retry")} />
-        {loading ? <LoadingSkeleton rows={2} /> : null}
+        {loading && !initialLoaded ? <LoadingSkeleton rows={2} /> : null}
         <ActionPopupCard
           icon={FiTrendingUp}
           title={t("dashboardCabinet.nextAction.buyPower", { defaultValue: "Start earning!" })}

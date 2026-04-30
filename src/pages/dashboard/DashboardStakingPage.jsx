@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiGet, apiPost } from '../../api/client';
 import { EmptyState, ErrorState, LoadingSkeleton } from '../../components/dashboard/StateBlocks';
-import { getSafeErrorMessage, money } from './utils';
+import { formatDateTimeRu, getSafeErrorMessage, money } from './utils';
 import { FiCheckCircle, FiClock, FiDollarSign, FiTrendingUp } from 'react-icons/fi';
 
 const STAKING_TERM_DAYS = 30;
@@ -319,7 +319,7 @@ export function DashboardStakingPage() {
 											<td>{money(row.amount)}</td>
 											<td>{(Number(row.dailyRate) * 100).toFixed(1)}%</td>
 											<td>{money(row.earned)}</td>
-											<td>{row.lockUntil ? new Date(row.lockUntil).toLocaleString() : '-'}</td>
+											<td>{row.lockUntil ? formatDateTimeRu(row.lockUntil) : '-'}</td>
 											<td>
 												<span
 													className={`dash-badge ${String(row.status || '').toLowerCase() === 'completed' ? 'is-success' : 'is-info'}`}>
@@ -401,7 +401,7 @@ export function DashboardStakingPage() {
 											defaultValue: 'Start date',
 										})}
 									</strong>
-									: {confirmSchedule ? confirmSchedule.start.toLocaleString() : '—'}
+									: {confirmSchedule ? formatDateTimeRu(confirmSchedule.start) : '—'}
 								</li>
 								<li>
 									<strong>
@@ -411,7 +411,7 @@ export function DashboardStakingPage() {
 									</strong>
 									<span className="dash-end-date-highlight">
 										<FiCheckCircle className="me-1" aria-hidden style={{ verticalAlign: 'text-bottom' }} />
-										{confirmSchedule ? confirmSchedule.end.toLocaleString() : '—'}
+										{confirmSchedule ? formatDateTimeRu(confirmSchedule.end) : '—'}
 									</span>
 								</li>
 								<li>

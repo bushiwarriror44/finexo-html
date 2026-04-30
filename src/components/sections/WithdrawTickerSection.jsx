@@ -31,18 +31,16 @@ export function WithdrawTickerSection() {
   const loopRows = [...TICKER_ROWS, ...TICKER_ROWS];
   return (
     <section className="withdraw-ticker-section" aria-label="Лента выводов">
-      <div className="container">
-        <div className="withdraw-ticker-shell">
-          <div className="withdraw-ticker-track">
-            {loopRows.map((row, index) => (
-              <span className="withdraw-ticker-item" key={`${row.name}-${row.asset}-${index}`}>
-                <span className="withdraw-ticker-user">{row.name}</span>
-                <span className="withdraw-ticker-verb">вывел</span>
-                <span className="withdraw-ticker-amount">{row.amount}</span>
-                <span className={`withdraw-ticker-asset is-${row.asset.toLowerCase()}`}>{row.asset}</span>
-              </span>
-            ))}
-          </div>
+      <div className="withdraw-ticker-shell">
+        <div className="withdraw-ticker-track">
+          {loopRows.map((row, index) => (
+            <span className="withdraw-ticker-item" key={`${row.name}-${row.asset}-${index}`}>
+              <span className="withdraw-ticker-user">{row.name}</span>
+              <span className="withdraw-ticker-verb">вывел</span>
+              <span className="withdraw-ticker-amount">{row.amount}</span>
+              <span className={`withdraw-ticker-asset is-${row.asset.toLowerCase()}`}>{row.asset}</span>
+            </span>
+          ))}
         </div>
       </div>
     </section>

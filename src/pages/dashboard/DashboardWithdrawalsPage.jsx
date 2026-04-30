@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { apiGet, apiPost } from "../../api/client";
 import { useTranslation } from "react-i18next";
-import { formatLastUpdatedLabel, getSafeErrorMessage, money, normalizeApiList, statusBadgeClass } from "./utils";
+import { formatDateTimeRu, formatLastUpdatedLabel, getSafeErrorMessage, money, normalizeApiList, statusBadgeClass } from "./utils";
 import { EmptyState, ErrorState, LoadingSkeleton } from "../../components/dashboard/StateBlocks";
 import { WithdrawModal } from "../../components/dashboard/WithdrawModal";
 import { FiAlertTriangle, FiClock, FiShield } from "react-icons/fi";
@@ -314,14 +314,14 @@ export function DashboardWithdrawalsPage() {
                               {t("dashboardCabinet.withdrawals.etaLabel", { defaultValue: "ETA" })}: {["approved", "processing"].includes(String(row.status || "").toLowerCase()) ? t("dashboardCabinet.withdrawals.etaValue", { defaultValue: "up to 24h" }) : t("dashboardCabinet.withdrawals.etaNa", { defaultValue: "n/a" })} | {t("dashboardCabinet.withdrawals.feeLabel", { defaultValue: "Fee" })}: {row.feeAmount || t("dashboardCabinet.withdrawals.feeNetworkDependent", { defaultValue: "network dependent" })}
                             </div>
                             <div className="dash-help">
-                              {t("dashboardCabinet.withdrawals.settlementStatus", { defaultValue: "Settlement status" })}: {row.status || "-"} | {t("dashboardCabinet.withdrawals.processedAt", { defaultValue: "Processed at" })}: {row.processedAt ? new Date(row.processedAt).toLocaleString() : "-"}
+                              {t("dashboardCabinet.withdrawals.settlementStatus", { defaultValue: "Settlement status" })}: {row.status || "-"} | {t("dashboardCabinet.withdrawals.processedAt", { defaultValue: "Processed at" })}: {row.processedAt ? formatDateTimeRu(row.processedAt) : "-"}
                             </div>
                             <div className="dash-help">
                               {t("dashboardCabinet.withdrawals.externalTx", { defaultValue: "External tx" })}: {row.externalTxHash || "-"}
                             </div>
                             {(withdrawalTraces || []).filter((trace) => Number(trace.entityId) === Number(row.id)).slice(0, 4).map((trace) => (
                               <div key={trace.id} className="dash-help">
-                                {trace.createdAt ? new Date(trace.createdAt).toLocaleString() : "-"} | {trace.actorType}: {trace.event} {trace.details ? `- ${trace.details}` : ""}
+                                {trace.createdAt ? formatDateTimeRu(trace.createdAt) : "-"} | {trace.actorType}: {trace.event} {trace.details ? `- ${trace.details}` : ""}
                               </div>
                             ))}
                             {row.adminNote || "-"}

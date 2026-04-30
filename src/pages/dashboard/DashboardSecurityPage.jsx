@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { apiGet, apiPost } from "../../api/client";
-import { getSafeErrorMessage } from "./utils";
+import { formatDateTimeRu, getSafeErrorMessage } from "./utils";
 import { getPasswordStrength } from "../../utils/passwordStrength";
 
 export function DashboardSecurityPage() {
@@ -180,7 +180,7 @@ export function DashboardSecurityPage() {
             <div className="dashboard-grid dashboard-grid-5">
               <article className="dashboard-panel metric-card">
                 <p className="metric-label">{t("dashboardCabinet.overview.lastLogin", { defaultValue: "Last login" })}</p>
-                <h4 className="metric-value">{new Date(lastLoginAt).toLocaleString()}</h4>
+                <h4 className="metric-value">{formatDateTimeRu(lastLoginAt)}</h4>
               </article>
               <article className="dashboard-panel metric-card">
                 <p className="metric-label">{t("dashboardCabinet.overview.activeSessions", { defaultValue: "Active sessions" })}</p>
@@ -209,13 +209,13 @@ export function DashboardSecurityPage() {
                 <tbody>
                   {securityEvents.map((event) => (
                     <tr key={event.id}>
-                      <td data-label={t("dashboardCabinet.table.date")}>{new Date(event.createdAt).toLocaleString()}</td>
+                      <td data-label={t("dashboardCabinet.table.date")}>{formatDateTimeRu(event.createdAt)}</td>
                       <td data-label={t("dashboardCabinet.table.note")}>{event.label}</td>
                     </tr>
                   ))}
                   {sessions.map((item) => (
                     <tr key={`session-${item.id}`}>
-                      <td data-label={t("dashboardCabinet.table.date")}>{item.createdAt ? new Date(item.createdAt).toLocaleString() : "-"}</td>
+                      <td data-label={t("dashboardCabinet.table.date")}>{item.createdAt ? formatDateTimeRu(item.createdAt) : "-"}</td>
                       <td data-label={t("dashboardCabinet.table.note")}>{item.isRevoked ? "revoked" : "active"} | {item.ipAddress || "-"} | {(item.userAgent || "").slice(0, 50)}</td>
                     </tr>
                   ))}

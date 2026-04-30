@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { apiGet } from "../../api/client";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { getSafeErrorMessage, money, normalizeApiList, statusBadgeClass } from "./utils";
+import { formatDateRu, getSafeErrorMessage, money, normalizeApiList, statusBadgeClass } from "./utils";
 import { EmptyState, ErrorState, LoadingSkeleton } from "../../components/dashboard/StateBlocks";
 import { FiActivity, FiBarChart2, FiDollarSign, FiTrendingUp } from "react-icons/fi";
 
@@ -111,7 +111,7 @@ export function DashboardContractsPage() {
                       <td data-label={t("dashboardCabinet.contracts.remaining", { defaultValue: "Remaining" })}>{Math.max(Math.ceil((new Date(row.endsAt).getTime() - nowMs) / 86400000), 0)}d</td>
                       <td data-label={t("dashboardCabinet.contracts.invested")}>{money(row.investedUsdt)}</td>
                       <td data-label={t("dashboardCabinet.table.status")}><span className={statusBadgeClass(row.status)}>{row.status}</span></td>
-                      <td data-label={t("dashboardCabinet.contracts.ends")}>{new Date(row.endsAt).toLocaleDateString()}</td>
+                      <td data-label={t("dashboardCabinet.contracts.ends")}>{formatDateRu(row.endsAt)}</td>
                     </tr>
                   ))}
                 </tbody>

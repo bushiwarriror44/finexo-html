@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiGet, apiPost } from '../../api/client';
 import { useTranslation } from 'react-i18next';
-import { formatLastUpdatedLabel, getSafeErrorMessage, normalizeApiList, statusBadgeClass } from './utils';
+import { formatDateTimeRu, formatLastUpdatedLabel, getSafeErrorMessage, normalizeApiList, statusBadgeClass } from './utils';
 import { EmptyState, ErrorState, LoadingSkeleton } from '../../components/dashboard/StateBlocks';
 
 export function DashboardSupportPage() {
@@ -361,7 +361,7 @@ export function DashboardSupportPage() {
 															</div>
 															{(supportTraces || []).filter((trace) => Number(trace.entityId) === Number(ticket.id)).slice(0, 4).map((trace) => (
 																<div key={trace.id} className="dash-help">
-																	{trace.createdAt ? new Date(trace.createdAt).toLocaleString() : '-'} | {trace.actorType}: {trace.event} {trace.details ? `- ${trace.details}` : ''}
+																	{trace.createdAt ? formatDateTimeRu(trace.createdAt) : '-'} | {trace.actorType}: {trace.event} {trace.details ? `- ${trace.details}` : ''}
 																</div>
 															))}
 														</div>

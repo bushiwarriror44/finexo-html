@@ -822,7 +822,7 @@ h6 {
   gap: 28px;
   white-space: nowrap;
   padding: 0 14px;
-  animation: withdrawTickerMove 52s linear infinite;
+  animation: withdrawTickerMove 156s linear infinite;
 }
 
 .withdraw-ticker-item {
@@ -4111,7 +4111,7 @@ h6 {
 @media (max-width: 640px) {
   .withdraw-ticker-track {
     gap: 20px;
-    animation-duration: 46s;
+    animation-duration: 138s;
   }
 
   .withdraw-ticker-item {

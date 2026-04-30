@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiGet, apiPost } from "../../api/client";
 import { useTranslation } from "react-i18next";
-import { copyTextWithFeedback, formatLastUpdatedLabel, getSafeErrorMessage, normalizeApiList, shortenHash, statusBadgeClass } from "./utils";
+import { copyTextWithFeedback, formatDateTimeRu, formatLastUpdatedLabel, getSafeErrorMessage, normalizeApiList, shortenHash, statusBadgeClass } from "./utils";
 import { EmptyState, ErrorState, LoadingSkeleton } from "../../components/dashboard/StateBlocks";
 import { TopupModal } from "../../components/dashboard/TopupModal";
 import { FiAlertTriangle, FiClock, FiFilter, FiShield } from "react-icons/fi";
@@ -229,7 +229,7 @@ export function DashboardTopupsPage() {
                               {t("dashboardCabinet.topups.feeLabel", { defaultValue: "Fee" })}: {topup.feeAmount ? `${topup.feeAmount} ${topup.asset || ""}` : t("dashboardCabinet.topups.feeNetworkDependent", { defaultValue: "network dependent" })}
                             </div>
                             <div className="dash-help">
-                              {t("dashboardCabinet.topups.attempts", { defaultValue: "Verification attempts" })}: {Number(topup.attempts || 0)} | {t("dashboardCabinet.topups.nextRetry", { defaultValue: "Next retry" })}: {topup.nextRetryAt ? new Date(topup.nextRetryAt).toLocaleString() : "-"}
+                              {t("dashboardCabinet.topups.attempts", { defaultValue: "Verification attempts" })}: {Number(topup.attempts || 0)} | {t("dashboardCabinet.topups.nextRetry", { defaultValue: "Next retry" })}: {topup.nextRetryAt ? formatDateTimeRu(topup.nextRetryAt) : "-"}
                             </div>
                             <div className="dash-help">
                               {t("dashboardCabinet.topups.deadLetter", { defaultValue: "Dead letter" })}: {topup.isDeadLetter ? t("dashboardCabinet.status.enabled", { defaultValue: "Enabled" }) : t("dashboardCabinet.status.disabled", { defaultValue: "Disabled" })}

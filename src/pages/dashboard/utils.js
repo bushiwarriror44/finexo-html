@@ -45,8 +45,29 @@ export function formatLastUpdatedLabel(timestamp, t, options = {}) {
       : secondsAgo < 3600
       ? `${Math.floor(secondsAgo / 60)}m ago`
       : `${Math.floor(secondsAgo / 3600)}h ago`;
-  if (options.withRelativeHint === false) return date.toLocaleTimeString();
-  return `${date.toLocaleTimeString()} (${t(options.relativeKey || "dashboardCabinet.lastUpdatedAgo", { defaultValue: shortAgo, value: shortAgo })})`;
+  if (options.withRelativeHint === false) return formatTimeRu(date);
+  return `${formatTimeRu(date)} (${t(options.relativeKey || "dashboardCabinet.lastUpdatedAgo", { defaultValue: shortAgo, value: shortAgo })})`;
+}
+
+export function formatDateTimeRu(value) {
+  if (!value) return "-";
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString("ru-RU");
+}
+
+export function formatDateRu(value) {
+  if (!value) return "-";
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("ru-RU");
+}
+
+export function formatTimeRu(value) {
+  if (!value) return "-";
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleTimeString("ru-RU");
 }
 
 export async function copyTextWithFeedback(text, { onSuccess, onError } = {}) {

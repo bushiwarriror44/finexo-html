@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { apiGet, apiPostForm } from "../../api/client";
-import { formatLastUpdatedLabel, getSafeErrorMessage } from "./utils";
+import { formatDateTimeRu, formatLastUpdatedLabel, getSafeErrorMessage } from "./utils";
 import { FiCheckCircle, FiClock, FiShield } from "react-icons/fi";
 import ReactFlagsSelect from "react-flags-select";
 import { detectDefaultCountryCode, getCountryDisplayLabels } from "../../utils/countryCatalog";
@@ -154,7 +154,7 @@ export function DashboardKycPage() {
           </p>
           {(kycTraces || []).slice(0, 4).map((trace) => (
             <p key={trace.id} className="dash-help">
-              {trace.createdAt ? new Date(trace.createdAt).toLocaleString() : "-"} | {trace.actorType}: {trace.event} {trace.details ? `- ${trace.details}` : ""}
+              {trace.createdAt ? formatDateTimeRu(trace.createdAt) : "-"} | {trace.actorType}: {trace.event} {trace.details ? `- ${trace.details}` : ""}
             </p>
           ))}
           <div className="dash-kyc-timeline">
@@ -278,7 +278,7 @@ export function DashboardKycPage() {
                   <tr key={doc.id}>
                     <td data-label={t("dashboardCabinet.overview.document", { defaultValue: "Document" })}>{doc.docType}</td>
                     <td data-label={t("dashboardCabinet.table.type", { defaultValue: "Type" })}>{doc.mimeType || "-"}</td>
-                    <td data-label={t("dashboardCabinet.table.date", { defaultValue: "Date" })}>{doc.createdAt ? new Date(doc.createdAt).toLocaleString() : "-"}</td>
+                    <td data-label={t("dashboardCabinet.table.date", { defaultValue: "Date" })}>{doc.createdAt ? formatDateTimeRu(doc.createdAt) : "-"}</td>
                     <td data-label={t("dashboardCabinet.table.action", { defaultValue: "Action" })}>
                       <a className="dash-btn is-secondary is-sm" href={`/api/user/kyc/document/${doc.id}`} target="_blank" rel="noreferrer">
                         {t("dashboardCabinet.actions.download", { defaultValue: "Download" })}

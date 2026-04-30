@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { apiGet } from "../../api/client";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { getSafeErrorMessage, money, normalizeApiList, statusBadgeClass } from "./utils";
+import { formatDateTimeRu, getSafeErrorMessage, money, normalizeApiList, statusBadgeClass } from "./utils";
 import { EmptyState, ErrorState, LoadingSkeleton } from "../../components/dashboard/StateBlocks";
 import { MiniTrendChart } from "../../components/dashboard/MiniTrendChart";
 import { FiBarChart2, FiCalendar, FiTrendingUp } from "react-icons/fi";
@@ -81,7 +81,7 @@ export function DashboardAccrualsPage() {
                     <tr><td colSpan={5}><EmptyState title={t("dashboardCabinet.empty.noAccruals")} actionLabel={t("dashboardCabinet.buyPower.openMarket", { defaultValue: "Open buy screen" })} onAction={() => navigate("/dashboard/buy-power")} /></td></tr>
                   ) : visibleAccruals.slice(0, 200).map((row) => (
                     <tr key={row.id}>
-                      <td data-label={t("dashboardCabinet.table.date")}>{row.accrualAt ? new Date(row.accrualAt).toLocaleString() : row.accrualDate}</td>
+                      <td data-label={t("dashboardCabinet.table.date")}>{row.accrualAt ? formatDateTimeRu(row.accrualAt) : row.accrualDate}</td>
                       <td data-label={t("dashboardCabinet.accruals.contract")}>{row.contractId}</td>
                       <td data-label={t("dashboardCabinet.accruals.gross")}>{money(row.grossUsdt)}</td>
                       <td data-label={t("dashboardCabinet.accruals.net")}>{money(row.netUsdt)}</td>
