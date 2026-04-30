@@ -1277,6 +1277,40 @@ def admin_staking_tier_update():
         if dr < Decimal("0") or dr > Decimal("0.5"):
             return _json_error("dailyRate out of allowed range (0 - 0.5)", "STAKING_RATE_RANGE", 400)
         tier.daily_rate = dr
+    next_min = tier.min_amount
+    next_max = tier.max_amount
+    if "minAmount" in data and data.get("minAmount") is not None:
+        try:
+            next_min = Decimal(str(data.get("minAmount")))
+        except Exception:
+            return _json_error("invalid minAmount", "STAKING_INVALID_MIN_AMOUNT", 400)
+    if "maxAmount" in data and data.get("maxAmount") is not None:
+        try:
+            next_max = Decimal(str(data.get("maxAmount")))
+        except Exception:
+            return _json_error("invalid maxAmount", "STAKING_INVALID_MAX_AMOUNT", 400)
+    if next_min < Decimal("0"):
+        return _json_error("minAmount must be >= 0", "STAKING_MIN_AMOUNT_RANGE", 400)
+    if next_max <= next_min:
+        return _json_error("maxAmount must be greater than minAmount", "STAKING_INVALID_RANGE", 400)
+    overlap = (
+        StakingTier.query.filter(
+            StakingTier.id != tier.id,
+            StakingTier.asset == tier.asset,
+            StakingTier.is_active.is_(True),
+            StakingTier.max_amount >= next_min,
+            StakingTier.min_amount <= next_max,
+        )
+        .first()
+    )
+    if overlap:
+        return _json_error(
+            "staking range overlaps an existing active tier",
+            "STAKING_RANGE_OVERLAP",
+            400,
+        )
+    tier.min_amount = next_min
+    tier.max_amount = next_max
     if "isActive" in data:
         tier.is_active = bool(data.get("isActive"))
     if "isHotOffer" in data:
@@ -1286,7 +1320,7 @@ def admin_staking_tier_update():
         "admin",
         admin.id,
         "staking_tier_update",
-        f"tier_id={tier.id}; daily_rate={float(tier.daily_rate)}; active={tier.is_active}",
+        f"tier_id={tier.id}; min={float(tier.min_amount)}; max={float(tier.max_amount)}; daily_rate={float(tier.daily_rate)}; active={tier.is_active}",
     )
     return jsonify(
         {

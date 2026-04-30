@@ -451,19 +451,27 @@
           <label class="form-label small mb-0">ID tier</label>
           <input class="form-control" name="tierId" type="number" min="1" required />
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
+          <label class="form-label small mb-0">Min USDT</label>
+          <input class="form-control" name="minAmount" type="number" min="0" step="0.00000001" required />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small mb-0">Max USDT</label>
+          <input class="form-control" name="maxAmount" type="number" min="0" step="0.00000001" required />
+        </div>
+        <div class="col-md-2">
           <label class="form-label small mb-0">Daily rate (0.01 = 1%/день)</label>
           <input class="form-control" name="dailyRate" type="number" step="0.00000001" required />
         </div>
-        <div class="col-md-2 form-check mb-2">
+        <div class="col-md-1 form-check mb-2">
           <input class="form-check-input" type="checkbox" name="isActive" id="stakingTierActive" checked />
           <label class="form-check-label" for="stakingTierActive">Активен</label>
         </div>
-        <div class="col-md-2 form-check mb-2">
+        <div class="col-md-1 form-check mb-2">
           <input class="form-check-input" type="checkbox" name="isHotOffer" id="stakingTierHot" />
           <label class="form-check-label" for="stakingTierHot">Hot offer</label>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
           <button class="btn btn-primary w-100" type="submit">Сохранить</button>
         </div>
       </form>
@@ -1122,6 +1130,8 @@ function renderStakingTiers(rows) {
         <td>
           <button type="button" class="btn btn-sm btn-outline-secondary staking-tier-prefill-btn"
             data-tier-id="${escapeHtml(r.id)}"
+            data-min-amount="${escapeHtml(r.minAmount)}"
+            data-max-amount="${escapeHtml(r.maxAmount)}"
             data-daily-rate="${escapeHtml(r.dailyRate)}"
             data-active="${r.isActive ? "1" : "0"}"
             data-hot="${r.isHotOffer ? "1" : "0"}">Заполнить</button>
@@ -1134,8 +1144,12 @@ function renderStakingTiers(rows) {
       const form = document.getElementById("stakingTierForm");
       if (!form) return;
       const id = btn.getAttribute("data-tier-id");
+      const minAmount = btn.getAttribute("data-min-amount");
+      const maxAmount = btn.getAttribute("data-max-amount");
       const dr = btn.getAttribute("data-daily-rate");
       form.querySelector('[name="tierId"]').value = id || "";
+      form.querySelector('[name="minAmount"]').value = minAmount || "";
+      form.querySelector('[name="maxAmount"]').value = maxAmount || "";
       form.querySelector('[name="dailyRate"]').value = dr || "";
       const activeBox = form.querySelector('[name="isActive"]');
       const hotBox = form.querySelector('[name="isHotOffer"]');
@@ -1198,10 +1212,12 @@ document.getElementById("stakingTierForm")?.addEventListener("submit", async (e)
   markPending(submitButton, true);
   try {
     const tierId = Number(form.querySelector('[name="tierId"]').value || 0);
+    const minAmount = Number(form.querySelector('[name="minAmount"]').value);
+    const maxAmount = Number(form.querySelector('[name="maxAmount"]').value);
     const dailyRate = Number(form.querySelector('[name="dailyRate"]').value);
     const isActive = !!form.querySelector('[name="isActive"]')?.checked;
     const isHotOffer = !!form.querySelector('[name="isHotOffer"]')?.checked;
-    await submitJson("/admin/api/staking/tiers", "POST", { tierId, dailyRate, isActive, isHotOffer });
+    await submitJson("/admin/api/staking/tiers", "POST", { tierId, minAmount, maxAmount, dailyRate, isActive, isHotOffer });
     showFeedback("Стейкинг tier обновлён.");
     await Promise.all([fetchStakingMetrics(), fetchStakingTiers()]);
   } catch (err) {

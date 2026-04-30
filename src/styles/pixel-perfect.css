@@ -822,7 +822,7 @@ h6 {
   gap: 28px;
   white-space: nowrap;
   padding: 0 14px;
-  animation: withdrawTickerMove 156s linear infinite;
+  animation: withdrawTickerMove 312s linear infinite;
 }
 
 .withdraw-ticker-item {
@@ -863,6 +863,14 @@ h6 {
   letter-spacing: 0.02em;
   padding: 2px 6px;
   border: 1px solid transparent;
+}
+
+.withdraw-ticker-asset-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .withdraw-ticker-asset.is-btc {
@@ -4111,7 +4119,7 @@ h6 {
 @media (max-width: 640px) {
   .withdraw-ticker-track {
     gap: 20px;
-    animation-duration: 138s;
+    animation-duration: 276s;
   }
 
   .withdraw-ticker-item {

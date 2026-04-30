@@ -1,4 +1,5 @@
 from datetime import datetime
+import base64
 import re
 import secrets
 import time
@@ -71,6 +72,22 @@ def _verify_captcha(captcha_id: str, captcha_answer: str) -> bool:
     expected = str(payload.get("answer") or "").strip()
     provided = str(captcha_answer or "").strip()
     return bool(expected) and provided == expected
+
+
+def _build_captcha_image_data_url(challenge: str) -> str:
+    safe_text = (challenge or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    noise = " ".join(str(secrets.randbelow(10)) for _ in range(8))
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="180" height="56" viewBox="0 0 180 56">'
+        '<rect width="180" height="56" fill="#f4f7ff"/>'
+        '<path d="M0 14 C30 30, 60 0, 90 16 S150 34, 180 16" stroke="#c6d4ff" stroke-width="2" fill="none"/>'
+        '<path d="M0 38 C30 20, 60 50, 90 36 S150 18, 180 36" stroke="#d7e2ff" stroke-width="2" fill="none"/>'
+        f'<text x="12" y="35" font-family="monospace" font-size="26" font-weight="700" fill="#21366f">{safe_text}</text>'
+        f'<text x="10" y="52" font-family="monospace" font-size="10" fill="#7f90c2">{noise}</text>'
+        "</svg>"
+    )
+    encoded = base64.b64encode(svg.encode("utf-8")).decode("ascii")
+    return f"data:image/svg+xml;base64,{encoded}"
 
 
 def _ensure_schema():
@@ -216,28 +233,6 @@ def login():
             last_seen_at=datetime.utcnow(),
         )
     )
-
-
-@auth_bp.get("/captcha")
-@rate_limit(60, 300)
-def issue_captcha():
-    left = secrets.randbelow(9) + 1
-    right = secrets.randbelow(9) + 1
-    answer = str(left + right)
-    captcha_id = secrets.token_urlsafe(12)
-    store = _cleanup_captcha_store(_captcha_store())
-    store[captcha_id] = {
-        "answer": answer,
-        "expiresAt": int(time.time()) + CAPTCHA_TTL_SECONDS,
-    }
-    session[CAPTCHA_SESSION_KEY] = store
-    return jsonify(
-        {
-            "captchaId": captcha_id,
-            "challenge": f"{left} + {right} = ?",
-            "ttlSeconds": CAPTCHA_TTL_SECONDS,
-        }
-    )
     if profile and profile.trusted_devices_only:
         fingerprint = session["session_token"][:64]
         known = UserTrustedDevice.query.filter_by(user_id=user.id, device_fingerprint=fingerprint).first()
@@ -257,6 +252,29 @@ def issue_captcha():
                 "country_code": user.country_code,
                 "is_admin": user.is_admin,
             },
+        }
+    )
+
+
+@auth_bp.get("/captcha")
+@rate_limit(60, 300)
+def issue_captcha():
+    left = secrets.randbelow(9) + 1
+    right = secrets.randbelow(9) + 1
+    answer = str(left + right)
+    captcha_id = secrets.token_urlsafe(12)
+    store = _cleanup_captcha_store(_captcha_store())
+    store[captcha_id] = {
+        "answer": answer,
+        "expiresAt": int(time.time()) + CAPTCHA_TTL_SECONDS,
+    }
+    session[CAPTCHA_SESSION_KEY] = store
+    challenge = f"{left} + {right} = ?"
+    return jsonify(
+        {
+            "captchaId": captcha_id,
+            "captchaImage": _build_captcha_image_data_url(challenge),
+            "ttlSeconds": CAPTCHA_TTL_SECONDS,
         }
     )
 

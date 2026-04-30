@@ -398,6 +398,8 @@ class UserStakingPosition(db.Model):
     tier_id = db.Column(db.Integer, db.ForeignKey("staking_tier.id"), nullable=False, index=True)
     amount = db.Column(Numeric(24, 8), nullable=False)
     locked_daily_rate = db.Column(Numeric(12, 8), nullable=True)
+    locked_min_amount = db.Column(Numeric(24, 8), nullable=True)
+    locked_max_amount = db.Column(Numeric(24, 8), nullable=True)
     status = db.Column(db.String(20), nullable=False, default="active", index=True)
     lock_until = db.Column(db.DateTime, nullable=True, index=True)
     released_at = db.Column(db.DateTime, nullable=True)
@@ -897,6 +899,8 @@ def init_all_models():
         "ALTER TABLE user_staking_position ADD COLUMN lock_until DATETIME",
         "ALTER TABLE user_staking_position ADD COLUMN released_at DATETIME",
         "ALTER TABLE user_staking_position ADD COLUMN locked_daily_rate NUMERIC(12,8)",
+        "ALTER TABLE user_staking_position ADD COLUMN locked_min_amount NUMERIC(24,8)",
+        "ALTER TABLE user_staking_position ADD COLUMN locked_max_amount NUMERIC(24,8)",
     ]:
         try:
             db.session.execute(text(sql))
@@ -909,6 +913,28 @@ def init_all_models():
                 "UPDATE user_staking_position SET locked_daily_rate = "
                 "(SELECT daily_rate FROM staking_tier WHERE staking_tier.id = user_staking_position.tier_id) "
                 "WHERE locked_daily_rate IS NULL"
+            )
+        )
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    try:
+        db.session.execute(
+            text(
+                "UPDATE user_staking_position SET locked_min_amount = "
+                "(SELECT min_amount FROM staking_tier WHERE staking_tier.id = user_staking_position.tier_id) "
+                "WHERE locked_min_amount IS NULL"
+            )
+        )
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    try:
+        db.session.execute(
+            text(
+                "UPDATE user_staking_position SET locked_max_amount = "
+                "(SELECT max_amount FROM staking_tier WHERE staking_tier.id = user_staking_position.tier_id) "
+                "WHERE locked_max_amount IS NULL"
             )
         )
         db.session.commit()

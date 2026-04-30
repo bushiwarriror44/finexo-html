@@ -1184,6 +1184,8 @@ def staking_positions():
                 "dailyRate": locked_dr_f,
                 "hourlyRate": float(Decimal(str(locked_dr_f)) / Decimal("24")),
                 "lockedDailyRate": locked_dr_f,
+                "lockedMinAmount": float(position.locked_min_amount if position.locked_min_amount is not None else (tier.min_amount if tier else 0)),
+                "lockedMaxAmount": float(position.locked_max_amount if position.locked_max_amount is not None else (tier.max_amount if tier else 0)),
                 "earned": float(total_earned or 0),
                 "createdAt": iso_or_none(position.created_at),
                 "lastAccrualAt": iso_or_none(position.last_accrual_at),
@@ -1252,6 +1254,8 @@ def staking_invest():
         tier_id=tier.id,
         amount=amount,
         locked_daily_rate=tier.daily_rate,
+        locked_min_amount=tier.min_amount,
+        locked_max_amount=tier.max_amount,
         status="active",
         lock_until=datetime.utcnow() + timedelta(days=30),
     )
@@ -1281,6 +1285,8 @@ def staking_invest():
                     "status": position.status,
                     "lockUntil": iso_or_none(position.lock_until),
                     "lockedDailyRate": locked,
+                    "lockedMinAmount": float(position.locked_min_amount if position.locked_min_amount is not None else tier.min_amount),
+                    "lockedMaxAmount": float(position.locked_max_amount if position.locked_max_amount is not None else tier.max_amount),
                     "createdAt": iso_or_none(position.created_at),
                 },
             }
