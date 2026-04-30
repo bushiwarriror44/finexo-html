@@ -8,7 +8,7 @@ from decimal import Decimal, InvalidOperation
 from datetime import datetime, timedelta
 from typing import Optional, Tuple
 
-from flask import Blueprint, Response, jsonify, request, send_file, session
+from flask import Blueprint, Response, jsonify, request, send_file, session, stream_with_context
 from sqlalchemy.exc import OperationalError
 
 from models import (
@@ -760,13 +760,15 @@ def user_realtime_stream():
         payload, status = api_error("unauthorized", "AUTH_UNAUTHORIZED", 401)
         return jsonify(payload), status
 
+    @stream_with_context
     def stream():
         last_payload = None
         for _ in range(60):
             db.session.expire_all()
+            kyc_profile = KycProfile.query.filter_by(user_id=user.id).first()
             payload = {
                 "ts": datetime.utcnow().isoformat(),
-                "kyc": (KycProfile.query.filter_by(user_id=user.id).first().status if KycProfile.query.filter_by(user_id=user.id).first() else "not_started"),
+                "kyc": (kyc_profile.status if kyc_profile else "not_started"),
                 "topupsPending": TopUpTransaction.query.filter_by(user_id=user.id, status="pending").count(),
                 "withdrawalsPending": WithdrawalRequest.query.filter_by(user_id=user.id, status="pending").count(),
                 "supportOpen": SupportTicket.query.filter_by(requester_id=user.id).filter(SupportTicket.status.notin_(["closed", "resolved"])).count(),
@@ -1169,14 +1171,19 @@ def staking_positions():
             .filter(StakingAccrual.position_id == position.id)
             .scalar()
         )
+        locked_dr = position.locked_daily_rate if position.locked_daily_rate is not None else (tier.daily_rate if tier else 0)
+        locked_dr_f = float(locked_dr or 0)
         payload.append(
             {
                 "id": position.id,
                 "tierId": position.tier_id,
                 "amount": float(position.amount),
                 "status": position.status,
-                "dailyRate": float(tier.daily_rate) if tier else 0.0,
-                "hourlyRate": float(Decimal(str(tier.daily_rate)) / Decimal("24")) if tier else 0.0,
+                "lockUntil": iso_or_none(position.lock_until),
+                "releasedAt": iso_or_none(position.released_at),
+                "dailyRate": locked_dr_f,
+                "hourlyRate": float(Decimal(str(locked_dr_f)) / Decimal("24")),
+                "lockedDailyRate": locked_dr_f,
                 "earned": float(total_earned or 0),
                 "createdAt": iso_or_none(position.created_at),
                 "lastAccrualAt": iso_or_none(position.last_accrual_at),
@@ -1244,7 +1251,9 @@ def staking_invest():
         user_id=user.id,
         tier_id=tier.id,
         amount=amount,
+        locked_daily_rate=tier.daily_rate,
         status="active",
+        lock_until=datetime.utcnow() + timedelta(days=30),
     )
     db.session.add(position)
     db.session.flush()
@@ -1260,6 +1269,7 @@ def staking_invest():
     )
     db.session.commit()
     write_audit("user", user.id, "staking_invest", f"position_id={position.id}; amount={float(amount)}")
+    locked = float(position.locked_daily_rate or tier.daily_rate or 0)
     return (
         jsonify(
             {
@@ -1269,6 +1279,8 @@ def staking_invest():
                     "tierId": position.tier_id,
                     "amount": float(position.amount),
                     "status": position.status,
+                    "lockUntil": iso_or_none(position.lock_until),
+                    "lockedDailyRate": locked,
                     "createdAt": iso_or_none(position.created_at),
                 },
             }

@@ -397,7 +397,10 @@ class UserStakingPosition(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
     tier_id = db.Column(db.Integer, db.ForeignKey("staking_tier.id"), nullable=False, index=True)
     amount = db.Column(Numeric(24, 8), nullable=False)
+    locked_daily_rate = db.Column(Numeric(12, 8), nullable=True)
     status = db.Column(db.String(20), nullable=False, default="active", index=True)
+    lock_until = db.Column(db.DateTime, nullable=True, index=True)
+    released_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     last_accrual_at = db.Column(db.DateTime, nullable=True)
@@ -891,6 +894,9 @@ def init_all_models():
         "ALTER TABLE staking_tier ADD COLUMN updated_at DATETIME",
         "ALTER TABLE user_staking_position ADD COLUMN updated_at DATETIME",
         "ALTER TABLE user_staking_position ADD COLUMN last_accrual_at DATETIME",
+        "ALTER TABLE user_staking_position ADD COLUMN lock_until DATETIME",
+        "ALTER TABLE user_staking_position ADD COLUMN released_at DATETIME",
+        "ALTER TABLE user_staking_position ADD COLUMN locked_daily_rate NUMERIC(12,8)",
     ]:
         try:
             db.session.execute(text(sql))
@@ -900,8 +906,30 @@ def init_all_models():
     try:
         db.session.execute(
             text(
+                "UPDATE user_staking_position SET locked_daily_rate = "
+                "(SELECT daily_rate FROM staking_tier WHERE staking_tier.id = user_staking_position.tier_id) "
+                "WHERE locked_daily_rate IS NULL"
+            )
+        )
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    try:
+        db.session.execute(
+            text(
                 "UPDATE mining_accrual SET accrual_at = COALESCE(accrual_at, datetime(accrual_date || ' 00:00:00')) "
                 "WHERE accrual_at IS NULL"
+            )
+        )
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    try:
+        db.session.execute(
+            text(
+                "UPDATE user_staking_position "
+                "SET lock_until = COALESCE(lock_until, datetime(created_at, '+30 days')) "
+                "WHERE lock_until IS NULL"
             )
         )
         db.session.commit()

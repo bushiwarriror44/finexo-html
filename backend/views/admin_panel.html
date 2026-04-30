@@ -17,6 +17,7 @@
     <li class="nav-item" role="presentation"><button class="nav-link" type="button" data-admin-tab="support">Поддержка</button></li>
     <li class="nav-item" role="presentation"><button class="nav-link" type="button" data-admin-tab="kyc">KYC</button></li>
     <li class="nav-item" role="presentation"><button class="nav-link" type="button" data-admin-tab="mining">Майнинг</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" type="button" data-admin-tab="staking">Стейкинг</button></li>
     <li class="nav-item" role="presentation"><button class="nav-link" type="button" data-admin-tab="settings">Настройки</button></li>
   </ul>
 
@@ -407,6 +408,109 @@
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mt-4 admin-section-block" data-section="staking">
+    <div class="card-header"><strong>Стейкинг</strong></div>
+    <div class="card-body">
+      <div class="row g-3 mb-3" id="stakingMetricsRow">
+        <div class="col-md-3">
+          <div class="border rounded p-2 h-100">
+            <div class="text-muted small">В стейкинге (активно), USDT</div>
+            <div class="fs-5 fw-semibold" id="stakingMetricStaked">—</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="border rounded p-2 h-100">
+            <div class="text-muted small">Начислено всего, USDT</div>
+            <div class="fs-5 fw-semibold" id="stakingMetricAccrued">—</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="border rounded p-2 h-100">
+            <div class="text-muted small">Активных позиций</div>
+            <div class="fs-5 fw-semibold" id="stakingMetricActivePos">—</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="border rounded p-2 h-100">
+            <div class="text-muted small">Всего позиций</div>
+            <div class="fs-5 fw-semibold" id="stakingMetricTotalPos">—</div>
+          </div>
+        </div>
+      </div>
+      <p class="text-muted small">
+        Изменение дневной ставки tier влияет только на <strong>новые</strong> позиции. Уже открытые позиции начисляются по ставке на момент открытия (см. поле <code>locked_daily_rate</code>).
+      </p>
+      <hr />
+      <h6 class="mb-2">Обновление tier</h6>
+      <form id="stakingTierForm" class="row g-2 align-items-end mb-3">
+        <div class="col-md-2">
+          <label class="form-label small mb-0">ID tier</label>
+          <input class="form-control" name="tierId" type="number" min="1" required />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small mb-0">Daily rate (0.01 = 1%/день)</label>
+          <input class="form-control" name="dailyRate" type="number" step="0.00000001" required />
+        </div>
+        <div class="col-md-2 form-check mb-2">
+          <input class="form-check-input" type="checkbox" name="isActive" id="stakingTierActive" checked />
+          <label class="form-check-label" for="stakingTierActive">Активен</label>
+        </div>
+        <div class="col-md-2 form-check mb-2">
+          <input class="form-check-input" type="checkbox" name="isHotOffer" id="stakingTierHot" />
+          <label class="form-check-label" for="stakingTierHot">Hot offer</label>
+        </div>
+        <div class="col-md-3">
+          <button class="btn btn-primary w-100" type="submit">Сохранить</button>
+        </div>
+      </form>
+      <div class="table-responsive mb-4">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Диапазон USDT</th>
+              <th>Daily rate</th>
+              <th>% / день</th>
+              <th>Активен</th>
+              <th>Hot</th>
+              <th>Обновлён</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="stakingTiersTableBody">
+            <tr><td colspan="8">Загрузка...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h6 class="mb-2">Пользователи со стейкингом</h6>
+      <form id="stakingUsersFilterForm" class="row g-2 mb-3">
+        <div class="col-md-6">
+          <input class="form-control" name="q" placeholder="Поиск по email или ID" />
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+          <button class="btn btn-primary w-100" type="submit">Найти</button>
+        </div>
+      </form>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Пользователь</th>
+              <th>В стейке (активно)</th>
+              <th>Активных поз.</th>
+              <th>Всего поз.</th>
+              <th>Начислено</th>
+              <th>Последняя позиция</th>
+            </tr>
+          </thead>
+          <tbody id="stakingUsersTableBody">
+            <tr><td colspan="6">Загрузка...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -979,10 +1083,146 @@ manualCreditForm?.addEventListener("submit", async (e) => {
   }
 });
 
+async function fetchStakingMetrics() {
+  const root = document.getElementById("stakingMetricsRow");
+  if (!root) return;
+  try {
+    const m = await submitJson("/admin/api/staking/metrics", "GET");
+    const staked = document.getElementById("stakingMetricStaked");
+    const accrued = document.getElementById("stakingMetricAccrued");
+    const active = document.getElementById("stakingMetricActivePos");
+    const total = document.getElementById("stakingMetricTotalPos");
+    if (staked) staked.textContent = formatDecimalValue(m.totalStakedUsdt);
+    if (accrued) accrued.textContent = formatDecimalValue(m.totalAccruedUsdt);
+    if (active) active.textContent = String(m.activePositions ?? "0");
+    if (total) total.textContent = String(m.totalPositions ?? "0");
+  } catch (err) {
+    showFeedback(err.message || "Staking metrics failed", "danger");
+  }
+}
+
+function renderStakingTiers(rows) {
+  const tbody = document.getElementById("stakingTiersTableBody");
+  if (!tbody) return;
+  if (!Array.isArray(rows) || !rows.length) {
+    tbody.innerHTML = `<tr><td colspan="8">Нет tier</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows
+    .map(
+      (r) => `
+      <tr>
+        <td>${escapeHtml(r.id)}</td>
+        <td>${escapeHtml(formatDecimalValue(r.minAmount))} – ${escapeHtml(formatDecimalValue(r.maxAmount))}</td>
+        <td>${escapeHtml(formatDecimalValue(r.dailyRate))}</td>
+        <td>${escapeHtml((Number(r.dailyRate) * 100).toFixed(2))}%</td>
+        <td>${r.isActive ? "да" : "нет"}</td>
+        <td>${r.isHotOffer ? "да" : "нет"}</td>
+        <td>${escapeHtml(r.updatedAt || "-")}</td>
+        <td>
+          <button type="button" class="btn btn-sm btn-outline-secondary staking-tier-prefill-btn"
+            data-tier-id="${escapeHtml(r.id)}"
+            data-daily-rate="${escapeHtml(r.dailyRate)}"
+            data-active="${r.isActive ? "1" : "0"}"
+            data-hot="${r.isHotOffer ? "1" : "0"}">Заполнить</button>
+        </td>
+      </tr>`,
+    )
+    .join("");
+  tbody.querySelectorAll(".staking-tier-prefill-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const form = document.getElementById("stakingTierForm");
+      if (!form) return;
+      const id = btn.getAttribute("data-tier-id");
+      const dr = btn.getAttribute("data-daily-rate");
+      form.querySelector('[name="tierId"]').value = id || "";
+      form.querySelector('[name="dailyRate"]').value = dr || "";
+      const activeBox = form.querySelector('[name="isActive"]');
+      const hotBox = form.querySelector('[name="isHotOffer"]');
+      if (activeBox) activeBox.checked = btn.getAttribute("data-active") === "1";
+      if (hotBox) hotBox.checked = btn.getAttribute("data-hot") === "1";
+    });
+  });
+}
+
+async function fetchStakingTiers() {
+  const tbody = document.getElementById("stakingTiersTableBody");
+  if (!tbody) return;
+  try {
+    const rows = await submitJson("/admin/api/staking/tiers", "GET");
+    renderStakingTiers(rows || []);
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="8" class="text-danger">${escapeHtml(err.message || "Ошибка")}</td></tr>`;
+  }
+}
+
+async function fetchStakingUsers() {
+  const tbody = document.getElementById("stakingUsersTableBody");
+  const form = document.getElementById("stakingUsersFilterForm");
+  if (!tbody || !form) return;
+  const fd = new FormData(form);
+  const params = new URLSearchParams();
+  const q = (fd.get("q") || "").toString().trim();
+  if (q) params.set("q", q);
+  params.set("page", "1");
+  params.set("pageSize", "100");
+  try {
+    const data = await submitJson(`/admin/api/staking/users?${params.toString()}`, "GET");
+    const items = data?.items || [];
+    if (!items.length) {
+      tbody.innerHTML = `<tr><td colspan="6">Нет пользователей</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = items
+      .map(
+        (row) => `
+      <tr>
+        <td>${escapeHtml(row.userId)}<div class="text-muted small">${escapeHtml(row.email || "")}</div></td>
+        <td>${escapeHtml(formatDecimalValue(row.totalStakedUsdt))}</td>
+        <td>${escapeHtml(row.activePositions)}</td>
+        <td>${escapeHtml(row.positionsCount)}</td>
+        <td>${escapeHtml(formatDecimalValue(row.totalAccruedUsdt))}</td>
+        <td>${escapeHtml(row.lastOpenedAt || "-")}</td>
+      </tr>`,
+      )
+      .join("");
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="6" class="text-danger">${escapeHtml(err.message || "Ошибка")}</td></tr>`;
+  }
+}
+
+document.getElementById("stakingTierForm")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const submitButton = form.querySelector('button[type="submit"]');
+  markPending(submitButton, true);
+  try {
+    const tierId = Number(form.querySelector('[name="tierId"]').value || 0);
+    const dailyRate = Number(form.querySelector('[name="dailyRate"]').value);
+    const isActive = !!form.querySelector('[name="isActive"]')?.checked;
+    const isHotOffer = !!form.querySelector('[name="isHotOffer"]')?.checked;
+    await submitJson("/admin/api/staking/tiers", "POST", { tierId, dailyRate, isActive, isHotOffer });
+    showFeedback("Стейкинг tier обновлён.");
+    await Promise.all([fetchStakingMetrics(), fetchStakingTiers()]);
+  } catch (err) {
+    showFeedback(err.message || "Сохранение не удалось", "danger");
+  } finally {
+    markPending(submitButton, false);
+  }
+});
+
+document.getElementById("stakingUsersFilterForm")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  await fetchStakingUsers();
+});
+
 fetchUsers();
 fetchWallets();
 fetchTopups();
 fetchVerificationProfiles();
+fetchStakingMetrics();
+fetchStakingTiers();
+fetchStakingUsers();
 setupAdminTabs();
 normalizeScientificCells();
 

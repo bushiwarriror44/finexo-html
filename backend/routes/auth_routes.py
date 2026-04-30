@@ -1,8 +1,11 @@
 from datetime import datetime
 import re
+import secrets
+import time
 
 from flask import Blueprint, jsonify, request, session
 from sqlalchemy.exc import OperationalError
+from sqlalchemy import func
 
 from models import PasswordResetToken, User, UserSecurityProfile, UserSessionRecord, UserTrustedDevice, db, init_all_models
 from services.audit_service import write_audit
@@ -14,6 +17,8 @@ from services.security import create_token, hash_password, token_expiration, tok
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 _schema_checked = False
+CAPTCHA_SESSION_KEY = "auth_captcha_challenges"
+CAPTCHA_TTL_SECONDS = 300
 
 
 def _error(message, code, status, details=None):
@@ -35,6 +40,37 @@ def _current_user():
             session.clear()
             return None
     return User.query.get(user_id)
+
+
+def _captcha_store():
+    payload = session.get(CAPTCHA_SESSION_KEY)
+    if not isinstance(payload, dict):
+        payload = {}
+    return payload
+
+
+def _cleanup_captcha_store(store: dict) -> dict:
+    now = int(time.time())
+    cleaned = {}
+    for key, item in (store or {}).items():
+        if not isinstance(item, dict):
+            continue
+        expires_at = int(item.get("expiresAt") or 0)
+        if expires_at > now:
+            cleaned[str(key)] = item
+    return cleaned
+
+
+def _verify_captcha(captcha_id: str, captcha_answer: str) -> bool:
+    store = _cleanup_captcha_store(_captcha_store())
+    session[CAPTCHA_SESSION_KEY] = store
+    payload = store.pop(str(captcha_id or "").strip(), None)
+    session[CAPTCHA_SESSION_KEY] = store
+    if not payload:
+        return False
+    expected = str(payload.get("answer") or "").strip()
+    provided = str(captcha_answer or "").strip()
+    return bool(expected) and provided == expected
 
 
 def _ensure_schema():
@@ -62,6 +98,8 @@ def register():
     first_name = (data.get("firstName") or "").strip()
     last_name = (data.get("lastName") or "").strip()
     country_code = (data.get("countryCode") or "").strip().upper()
+    captcha_id = (data.get("captchaId") or "").strip()
+    captcha_answer = (data.get("captchaAnswer") or "").strip()
 
     fields = {}
     if not email:
@@ -81,6 +119,19 @@ def register():
             400,
             {"fields": fields},
         )
+    if not captcha_id:
+        fields["captchaId"] = "REQUIRED"
+    if not captcha_answer:
+        fields["captchaAnswer"] = "REQUIRED"
+    if fields:
+        return _error(
+            "email, password, first name, last name, country and captcha are required",
+            "AUTH_REQUIRED_FIELDS",
+            400,
+            {"fields": fields},
+        )
+    if not _verify_captcha(captcha_id, captcha_answer):
+        return _error("captcha validation failed", "AUTH_CAPTCHA_INVALID", 400, {"fields": {"captchaAnswer": "INVALID"}})
     is_valid_password, password_code = validate_password_policy(password)
     if not is_valid_password:
         return _error(
@@ -91,7 +142,7 @@ def register():
         )
     if not re.fullmatch(r"[A-Z]{2}", country_code):
         return _error("country must be a valid ISO code", "AUTH_INVALID_COUNTRY_CODE", 400, {"fields": {"countryCode": "INVALID"}})
-    if User.query.filter_by(email=email).first():
+    if User.query.filter(func.lower(User.email) == email).first():
         return _error("user already exists", "AUTH_USER_EXISTS", 409, {"fields": {"email": "TAKEN"}})
 
     user = User(
@@ -118,6 +169,8 @@ def login():
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
     remember_me = bool(data.get("rememberMe"))
+    captcha_id = (data.get("captchaId") or "").strip()
+    captcha_answer = (data.get("captchaAnswer") or "").strip()
     if not email or not password:
         fields = {}
         if not email:
@@ -125,6 +178,15 @@ def login():
         if not password:
             fields["password"] = "REQUIRED"
         return _error("email and password are required", "AUTH_REQUIRED_FIELDS", 400, {"fields": fields})
+    if not captcha_id or not captcha_answer:
+        fields = {}
+        if not captcha_id:
+            fields["captchaId"] = "REQUIRED"
+        if not captcha_answer:
+            fields["captchaAnswer"] = "REQUIRED"
+        return _error("captcha is required", "AUTH_REQUIRED_FIELDS", 400, {"fields": fields})
+    if not _verify_captcha(captcha_id, captcha_answer):
+        return _error("captcha validation failed", "AUTH_CAPTCHA_INVALID", 400, {"fields": {"captchaAnswer": "INVALID"}})
 
     user = User.query.filter_by(email=email).first()
     if not user or not verify_password(user.password_hash, password):
@@ -153,6 +215,28 @@ def login():
             device_fingerprint=session["session_token"][:64],
             last_seen_at=datetime.utcnow(),
         )
+    )
+
+
+@auth_bp.get("/captcha")
+@rate_limit(60, 300)
+def issue_captcha():
+    left = secrets.randbelow(9) + 1
+    right = secrets.randbelow(9) + 1
+    answer = str(left + right)
+    captcha_id = secrets.token_urlsafe(12)
+    store = _cleanup_captcha_store(_captcha_store())
+    store[captcha_id] = {
+        "answer": answer,
+        "expiresAt": int(time.time()) + CAPTCHA_TTL_SECONDS,
+    }
+    session[CAPTCHA_SESSION_KEY] = store
+    return jsonify(
+        {
+            "captchaId": captcha_id,
+            "challenge": f"{left} + {right} = ?",
+            "ttlSeconds": CAPTCHA_TTL_SECONDS,
+        }
     )
     if profile and profile.trusted_devices_only:
         fingerprint = session["session_token"][:64]

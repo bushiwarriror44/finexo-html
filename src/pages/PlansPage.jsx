@@ -7,6 +7,7 @@ import { PlansComparisonTable } from "../components/plans/PlansComparisonTable";
 import { HashrateScenarioChart } from "../components/plans/HashrateScenarioChart";
 import { TopupModal } from "../components/dashboard/TopupModal";
 import { useAuth } from "../context/AuthContext";
+import { estimatePlanBreakevenDays, estimatePlanNetDaily } from "../utils/miningPlanOverrides";
 
 const STRATEGY_PROFILE = {
   btc_sha256: { apy: 24, risk: "Low-Mid", color: "#00bbf0", label: "BTC SHA-256" },
@@ -104,8 +105,11 @@ export function PlansPage() {
   const selectedPlan = plans.find((plan) => Number(plan.id) === Number(selectedPlanId)) || null;
   const selectedProfile = selectedPlan ? STRATEGY_PROFILE[selectedPlan.strategy] || null : null;
   const selectedNetDaily = selectedPlan
-    ? Math.max(0, (Number(selectedPlan.priceUsdt || 0) * Number(selectedProfile?.apy || 0)) / 100 / 365 * 0.7)
+    ? estimatePlanNetDaily(selectedPlan.priceUsdt, selectedProfile?.apy || 0, selectedPlan.name)
     : 0;
+  const selectedBreakevenDays = selectedPlan
+    ? estimatePlanBreakevenDays(selectedPlan.priceUsdt, selectedNetDaily, selectedPlan.name)
+    : null;
   const openAuthModal = () => {
     const cleanParams = new URLSearchParams(location.search);
     cleanParams.delete("auth");
@@ -134,7 +138,12 @@ export function PlansPage() {
             strategyProfile={STRATEGY_PROFILE}
             t={t}
           />
-          <HashrateScenarioChart investment={selectedPlan?.priceUsdt || 0} netDaily={selectedNetDaily} t={t} />
+          <HashrateScenarioChart
+            investment={selectedPlan?.priceUsdt || 0}
+            netDaily={selectedNetDaily}
+            forcedBreakevenDays={selectedBreakevenDays}
+            t={t}
+          />
 
           {status ? <p className="text-success">{status}</p> : null}
           {error ? <p className="text-danger">{error}</p> : null}

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { copyTextWithFeedback, formatLastUpdatedLabel, getSafeErrorMessage, normalizeApiList, shortenHash, statusBadgeClass } from "./utils";
 import { EmptyState, ErrorState, LoadingSkeleton } from "../../components/dashboard/StateBlocks";
 import { TopupModal } from "../../components/dashboard/TopupModal";
-import { FiAlertTriangle, FiClock, FiShield } from "react-icons/fi";
+import { FiAlertTriangle, FiClock, FiFilter, FiShield } from "react-icons/fi";
 
 export function DashboardTopupsPage() {
   const { t } = useTranslation();
@@ -27,6 +27,7 @@ export function DashboardTopupsPage() {
   const [amountMax, setAmountMax] = useState("");
   const [presetName, setPresetName] = useState("");
   const [presets, setPresets] = useState([]);
+  const [showFiltersModal, setShowFiltersModal] = useState(false);
 
   const selectedWallet = useMemo(
     () => wallets.find((item) => item.asset === "USDT" && item.network === "TRX") || null,
@@ -158,51 +159,10 @@ export function DashboardTopupsPage() {
               <FiAlertTriangle />
               <span>{t("dashboardCabinet.topups.finalityStrip", { defaultValue: "After confirmation and posting, reversal is not guaranteed. Verify tx hash and destination before submission." })}</span>
             </div>
-            <div className="dashboard-trust-strip">
-              <div className="dashboard-trust-strip-item">
-                <strong>{t("dashboardCabinet.trust.verification", { defaultValue: "Verification level" })}</strong>
-                <span>{t("dashboardCabinet.trust.onchainRequired", { defaultValue: "On-chain confirmation" })}</span>
-              </div>
-              <div className="dashboard-trust-strip-item">
-                <strong>{t("dashboardCabinet.trust.finality", { defaultValue: "Finality" })}</strong>
-                <span>{t("dashboardCabinet.trust.finalizedAfterPosting", { defaultValue: "Finalized after posting" })}</span>
-              </div>
-              <div className="dashboard-trust-strip-item">
-                <strong>{t("dashboardCabinet.trust.policy", { defaultValue: "Policy" })}</strong>
-                <span>{t("dashboardCabinet.trust.complianceReview", { defaultValue: "Compliance review" })}</span>
-              </div>
-              <div className="dashboard-trust-strip-item">
-                <strong>{t("dashboardCabinet.trust.sync", { defaultValue: "Sync" })}</strong>
-                <span>{formatLastUpdatedLabel(topupsSyncAt, t, { withRelativeHint: false })}</span>
-              </div>
-            </div>
             <div className="dash-table-toolbar">
-              <div className="dash-chip-row">
-                <button type="button" className={`dash-chip ${quickFilter === "all" ? "is-active" : ""}`} onClick={() => setQuickFilter("all")}>
-                  {t("dashboardCabinet.actions.all", { defaultValue: "All" })}
-                </button>
-                <button type="button" className={`dash-chip ${quickFilter === "pending" ? "is-active" : ""}`} onClick={() => setQuickFilter("pending")}>
-                  {t("dashboardCabinet.topups.pending", { defaultValue: "Pending" })}
-                </button>
-                <button type="button" className={`dash-chip ${quickFilter === "failed" ? "is-active" : ""}`} onClick={() => setQuickFilter("failed")}>
-                  {t("dashboardCabinet.topups.failed", { defaultValue: "Failed" })}
-                </button>
-                <button type="button" className={`dash-chip ${quickFilter === "completed" ? "is-active" : ""}`} onClick={() => setQuickFilter("completed")}>
-                  {t("dashboardCabinet.status.completed", { defaultValue: "Completed" })}
-                </button>
-              </div>
-              <input
-                className="dash-input"
-                placeholder={t("dashboardCabinet.actions.search", { defaultValue: "Search..." })}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              <select className="dash-input dash-select-sm" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                <option value="id_desc">{t("dashboardCabinet.actions.sortNewest", { defaultValue: "Newest first" })}</option>
-                <option value="id_asc">{t("dashboardCabinet.actions.sortOldest", { defaultValue: "Oldest first" })}</option>
-                <option value="amount_desc">{t("dashboardCabinet.actions.sortAmountDesc", { defaultValue: "Amount: high to low" })}</option>
-                <option value="amount_asc">{t("dashboardCabinet.actions.sortAmountAsc", { defaultValue: "Amount: low to high" })}</option>
-              </select>
+              <button className="dash-btn is-secondary is-sm" type="button" onClick={() => setShowFiltersModal(true)}>
+                <FiFilter /> {t("dashboardCabinet.actions.filters", { defaultValue: "Filters" })}
+              </button>
             </div>
             <div className="dashboard-grid dashboard-grid-5">
               <input type="date" className="dash-input" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
@@ -327,6 +287,44 @@ export function DashboardTopupsPage() {
         }}
         t={t}
       />
+      {showFiltersModal ? (
+        <div className="auth-modal-backdrop" onClick={() => setShowFiltersModal(false)}>
+          <div className="auth-modal-card topup-withdraw-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <h3 className="auth-modal-title">{t("dashboardCabinet.actions.filters", { defaultValue: "Filters" })}</h3>
+            <div className="dash-chip-row mb-2">
+              <button type="button" className={`dash-chip ${quickFilter === "all" ? "is-active" : ""}`} onClick={() => setQuickFilter("all")}>
+                {t("dashboardCabinet.actions.all", { defaultValue: "All" })}
+              </button>
+              <button type="button" className={`dash-chip ${quickFilter === "pending" ? "is-active" : ""}`} onClick={() => setQuickFilter("pending")}>
+                {t("dashboardCabinet.topups.pending", { defaultValue: "Pending" })}
+              </button>
+              <button type="button" className={`dash-chip ${quickFilter === "failed" ? "is-active" : ""}`} onClick={() => setQuickFilter("failed")}>
+                {t("dashboardCabinet.topups.failed", { defaultValue: "Failed" })}
+              </button>
+              <button type="button" className={`dash-chip ${quickFilter === "completed" ? "is-active" : ""}`} onClick={() => setQuickFilter("completed")}>
+                {t("dashboardCabinet.status.completed", { defaultValue: "Completed" })}
+              </button>
+            </div>
+            <input
+              className="dash-input mb-2"
+              placeholder={t("dashboardCabinet.actions.search", { defaultValue: "Search..." })}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <select className="dash-input dash-select-sm mb-3" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+              <option value="id_desc">{t("dashboardCabinet.actions.sortNewest", { defaultValue: "Newest first" })}</option>
+              <option value="id_asc">{t("dashboardCabinet.actions.sortOldest", { defaultValue: "Oldest first" })}</option>
+              <option value="amount_desc">{t("dashboardCabinet.actions.sortAmountDesc", { defaultValue: "Amount: high to low" })}</option>
+              <option value="amount_asc">{t("dashboardCabinet.actions.sortAmountAsc", { defaultValue: "Amount: low to high" })}</option>
+            </select>
+            <div className="dash-actions-cell">
+              <button className="dash-btn is-secondary is-sm" type="button" onClick={() => setShowFiltersModal(false)}>
+                {t("dashboardCabinet.actions.close", { defaultValue: "Close" })}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }

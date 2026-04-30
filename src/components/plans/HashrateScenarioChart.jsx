@@ -15,7 +15,7 @@ function buildSeries(investment, netDaily, months, modifier) {
   return points;
 }
 
-export function HashrateScenarioChart({ investment, netDaily, t }) {
+export function HashrateScenarioChart({ investment, netDaily, forcedBreakevenDays = null, t }) {
   const [horizon, setHorizon] = useState(12);
   const series = useMemo(
     () => SCENARIOS.map((s) => ({ ...s, points: buildSeries(investment, netDaily, horizon, s.modifier) })),
@@ -40,7 +40,7 @@ export function HashrateScenarioChart({ investment, netDaily, t }) {
   const conservative = series[1]?.points?.at(-1)?.value || investment;
   const stress = series[2]?.points?.at(-1)?.value || investment;
   const netMonthBase = Number(netDaily || 0) * 30;
-  const breakevenDays = netDaily > 0 ? Math.ceil(Number(investment || 0) / Number(netDaily || 1)) : null;
+  const breakevenDays = forcedBreakevenDays || (netDaily > 0 ? Math.ceil(Number(investment || 0) / Number(netDaily || 1)) : null);
 
   return (
     <div className="scenario-chart-card">

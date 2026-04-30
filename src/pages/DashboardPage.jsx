@@ -1,10 +1,11 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FiActivity, FiAlertCircle, FiBarChart2, FiCheckCircle, FiClock, FiCreditCard, FiDollarSign, FiGrid, FiLifeBuoy, FiLoader, FiShield, FiShoppingBag, FiStar, FiTrendingUp } from "react-icons/fi";
+import { FiActivity, FiAlertCircle, FiBarChart2, FiCheckCircle, FiClock, FiCreditCard, FiDollarSign, FiGrid, FiLifeBuoy, FiLoader, FiShield, FiShoppingBag, FiStar, FiTrendingUp, FiUserCheck, FiLock } from "react-icons/fi";
 import { SectionHeading } from "../components/ui/SectionHeading";
 import { apiGet, apiPost } from "../api/client";
 import { EmptyState, ErrorState, LoadingSkeleton } from "../components/dashboard/StateBlocks";
+import { ActionPopupCard } from "../components/dashboard/ActionPopupCard";
 
 const DASHBOARD_LINKS = [
   { to: "/dashboard/overview", icon: FiGrid, i18nKey: "dashboardCabinet.tabs.overview" },
@@ -16,6 +17,8 @@ const DASHBOARD_LINKS = [
   { to: "/dashboard/accruals", icon: FiActivity, i18nKey: "dashboardCabinet.tabs.accruals" },
   { to: "/dashboard/withdrawals", icon: FiDollarSign, i18nKey: "dashboardCabinet.tabs.withdrawals" },
   { to: "/dashboard/support", icon: FiLifeBuoy, i18nKey: "dashboardCabinet.tabs.support" },
+  { to: "/dashboard/kyc", icon: FiUserCheck, i18nKey: "dashboardCabinet.tabs.kyc" },
+  { to: "/dashboard/security", icon: FiLock, i18nKey: "dashboardCabinet.tabs.security" },
 ];
 
 export function DashboardPage() {
@@ -23,10 +26,8 @@ export function DashboardPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const [counters, setCounters] = useState({ topups: 0, withdrawals: 0, support: 0 });
-  const [nextAction, setNextAction] = useState({ key: "topup", to: "/dashboard/topups" });
   const [activityFeed, setActivityFeed] = useState([]);
   const [notificationFilters, setNotificationFilters] = useState({ category: "all", priority: "all", read: "all" });
-  const [checklist, setChecklist] = useState([]);
   const [kycEnforcementActive, setKycEnforcementActive] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -36,7 +37,7 @@ export function DashboardPage() {
     setLoading(true);
     setError("");
     try {
-      const [topups, withdrawals, tickets, kyc, notifications, checklistData, workflow] = await Promise.all([
+      const [topups, withdrawals, tickets, kyc, notifications] = await Promise.all([
         apiGet("/api/wallet/topups"),
         apiGet("/api/user/withdrawals"),
         apiGet("/api/user/support/tickets"),
@@ -46,26 +47,14 @@ export function DashboardPage() {
             notificationFilters.priority
           )}&read=${encodeURIComponent(notificationFilters.read)}`
         ),
-        apiGet("/api/user/dashboard/onboarding-checklist"),
-        apiGet("/api/user/dashboard/workflow"),
       ]);
       const topupPending = (topups || []).filter((x) => ["pending", "queued", "running"].includes(String(x?.status || "").toLowerCase())).length;
       const withdrawalPending = (withdrawals || []).filter((x) => ["pending", "review"].includes(String(x?.status || "").toLowerCase())).length;
       const supportOpen = (tickets || []).filter((x) => String(x?.status || "").toLowerCase() !== "closed").length;
       setCounters({ topups: topupPending, withdrawals: withdrawalPending, support: supportOpen });
 
-      if (workflow?.nextAction?.key && workflow?.nextAction?.deepLink) {
-        setNextAction({ key: workflow.nextAction.key, to: workflow.nextAction.deepLink });
-      } else if ((kyc?.status || "not_started") === "not_started") {
-        setNextAction({ key: "kyc", to: "/dashboard/overview" });
-      } else if (topupPending === 0) {
-        setNextAction({ key: "topup", to: "/dashboard/topups" });
-      } else {
-        setNextAction({ key: "contracts", to: "/dashboard/contracts" });
-      }
       const rawKyc = String(kyc?.rawStatus || kyc?.status || "not_started").toLowerCase();
       setKycEnforcementActive(Boolean(kyc?.verificationRequested) && rawKyc !== "approved");
-      setChecklist(Array.isArray(checklistData?.items) ? checklistData.items : []);
       setActivityFeed(Array.isArray(notifications?.items) ? notifications.items : []);
     } catch {
       setCounters({ topups: 0, withdrawals: 0, support: 0 });
@@ -106,27 +95,35 @@ export function DashboardPage() {
   const contextualActions = useMemo(() => {
     const byPath = {
       "/dashboard/overview": [
-        { to: "/dashboard/buy-power", label: t("dashboardCabinet.nextAction.buyPower", { defaultValue: "Start earning" }) },
-        { to: "/dashboard/topups", label: t("dashboardCabinet.nextAction.topup", { defaultValue: "Top up balance" }) },
-        { to: "/dashboard/contracts", label: t("dashboardCabinet.nextAction.contracts", { defaultValue: "Review contracts" }) },
-        { to: "/dashboard/support", label: t("dashboardCabinet.nextAction.support", { defaultValue: "Check support updates" }) },
+        { to: "/dashboard/buy-power", label: t("dashboardCabinet.nextAction.buyPower", { defaultValue: "Start earning" }), icon: FiShoppingBag },
+        { to: "/dashboard/topups", label: t("dashboardCabinet.nextAction.topup", { defaultValue: "Top up balance" }), icon: FiCreditCard },
+        { to: "/dashboard/contracts", label: t("dashboardCabinet.nextAction.contracts", { defaultValue: "Review contracts" }), icon: FiTrendingUp },
+        { to: "/dashboard/support", label: t("dashboardCabinet.nextAction.support", { defaultValue: "Check support updates" }), icon: FiLifeBuoy },
       ],
       "/dashboard/buy-power": [
-        { to: "/dashboard/buy-power", label: t("dashboardCabinet.nextAction.buyPower", { defaultValue: "Start earning" }) },
-        { to: "/dashboard/topups", label: t("dashboardCabinet.nextAction.topup", { defaultValue: "Top up balance" }) },
-        { to: "/dashboard/contracts", label: t("dashboardCabinet.nextAction.contracts", { defaultValue: "Review contracts" }) },
+        { to: "/dashboard/buy-power", label: t("dashboardCabinet.nextAction.buyPower", { defaultValue: "Start earning" }), icon: FiShoppingBag },
+        { to: "/dashboard/topups", label: t("dashboardCabinet.nextAction.topup", { defaultValue: "Top up balance" }), icon: FiCreditCard },
+        { to: "/dashboard/contracts", label: t("dashboardCabinet.nextAction.contracts", { defaultValue: "Review contracts" }), icon: FiTrendingUp },
       ],
       "/dashboard/topups": [
-        { to: "/dashboard/topups", label: t("dashboardCabinet.topups.openModal", { defaultValue: "Open top-up modal" }) },
-        { to: "/dashboard/balance", label: t("dashboardCabinet.tabs.balance") },
+        { to: "/dashboard/topups", label: t("dashboardCabinet.topups.openModal", { defaultValue: "Open top-up modal" }), icon: FiCreditCard },
+        { to: "/dashboard/balance", label: t("dashboardCabinet.tabs.balance"), icon: FiBarChart2 },
       ],
       "/dashboard/withdrawals": [
-        { to: "/dashboard/withdrawals", label: t("dashboardCabinet.withdrawals.openModal", { defaultValue: "Open withdrawal modal" }) },
-        { to: "/dashboard/support", label: t("dashboardCabinet.tabs.support") },
+        { to: "/dashboard/withdrawals", label: t("dashboardCabinet.withdrawals.openModal", { defaultValue: "Open withdrawal modal" }), icon: FiDollarSign },
+        { to: "/dashboard/support", label: t("dashboardCabinet.tabs.support"), icon: FiLifeBuoy },
       ],
       "/dashboard/support": [
-        { to: "/dashboard/support", label: t("dashboardCabinet.support.createTicket", { defaultValue: "Create ticket" }) },
-        { to: "/dashboard/overview", label: t("dashboardCabinet.tabs.overview") },
+        { to: "/dashboard/support", label: t("dashboardCabinet.support.createTicket", { defaultValue: "Create ticket" }), icon: FiLifeBuoy },
+        { to: "/dashboard/overview", label: t("dashboardCabinet.tabs.overview"), icon: FiGrid },
+      ],
+      "/dashboard/kyc": [
+        { to: "/dashboard/kyc", label: t("dashboardCabinet.tabs.kyc", { defaultValue: "KYC" }), icon: FiUserCheck },
+        { to: "/dashboard/security", label: t("dashboardCabinet.tabs.security", { defaultValue: "Security" }), icon: FiLock },
+      ],
+      "/dashboard/security": [
+        { to: "/dashboard/security", label: t("dashboardCabinet.tabs.security", { defaultValue: "Security" }), icon: FiLock },
+        { to: "/dashboard/kyc", label: t("dashboardCabinet.tabs.kyc", { defaultValue: "KYC" }), icon: FiUserCheck },
       ],
     };
     return byPath[location.pathname] || byPath["/dashboard/overview"];
@@ -149,15 +146,14 @@ export function DashboardPage() {
         ) : null}
         <ErrorState message={error} onRetry={() => load().catch(() => {})} retryLabel={t("dashboardCabinet.actions.retry")} />
         {loading ? <LoadingSkeleton rows={2} /> : null}
-        <div className="dashboard-next-action">
-          <p>
-            <strong>{t("dashboardCabinet.nextActionTitle", { defaultValue: "Next best action:" })}</strong>{" "}
-            {t(`dashboardCabinet.nextAction.${nextAction.key}`, { defaultValue: "Complete your account workflow." })}
-          </p>
-          <NavLink to={nextAction.to} className="dash-btn is-primary is-sm">
-            {t("dashboardCabinet.nextAction.open", { defaultValue: "Open" })}
-          </NavLink>
-        </div>
+        <ActionPopupCard
+          icon={FiTrendingUp}
+          title={t("dashboardCabinet.nextAction.buyPower", { defaultValue: "Start earning!" })}
+          description={t("dashboardCabinet.overview.buyPowerHint", { defaultValue: "Откройте экран тарифов и купите мощность прямо из кабинета." })}
+          ctaLabel={t("dashboardCabinet.buyPower.open", { defaultValue: "Открыть покупку" })}
+          onClick={() => navigate("/dashboard/buy-power")}
+          tone="primary"
+        />
         <div className="dashboard-layout">
           <aside className="dashboard-sidebar">
             <nav className="dashboard-subnav" aria-label="Dashboard modules">
@@ -218,31 +214,12 @@ export function DashboardPage() {
                 </button>
               </div>
             </div>
-            <div className="dashboard-panel dashboard-sidebar-panel">
-              <div className="dashboard-panel-header"><h5>{t("dashboardCabinet.savedPresets", { defaultValue: "Saved presets" })}</h5></div>
-              <div className="dashboard-panel-body">
-                {checklist.map((item) => (
-                  <p key={item.id} className="dash-help">
-                    <span className={item.done ? "dash-badge is-success" : "dash-badge is-warning"}>{item.done ? "Done" : "Todo"}</span>{" "}
-                    <NavLink to={item.deepLink || "/dashboard/overview"}>{item.label}</NavLink>
-                  </p>
-                ))}
-              </div>
-            </div>
-            <div className="dashboard-panel dashboard-sidebar-panel">
-              <div className="dashboard-panel-header"><h5>{t("dashboardCabinet.statusSemantics.title", { defaultValue: "Status semantics" })}</h5></div>
-              <div className="dashboard-panel-body dashboard-status-legend">
-                <p><span className="dash-badge is-warning"><FiClock className="status-legend-icon" />{t("dashboardCabinet.status.pending", { defaultValue: "Pending" })}</span>{t("dashboardCabinet.statusSemantics.pending", { defaultValue: "Queued or awaiting action." })}</p>
-                <p><span className="dash-badge is-info"><FiLoader className="status-legend-icon is-spinning" />{t("dashboardCabinet.status.processing", { defaultValue: "Processing" })}</span>{t("dashboardCabinet.statusSemantics.processing", { defaultValue: "Under review or currently processing." })}</p>
-                <p><span className="dash-badge is-success"><FiCheckCircle className="status-legend-icon" />{t("dashboardCabinet.status.completed", { defaultValue: "Completed" })}</span>{t("dashboardCabinet.statusSemantics.completed", { defaultValue: "Processed successfully." })}</p>
-                <p><span className="dash-badge is-danger"><FiAlertCircle className="status-legend-icon" />{t("dashboardCabinet.status.failed", { defaultValue: "Failed" })}</span>{t("dashboardCabinet.statusSemantics.failed", { defaultValue: "Rejected, cancelled, or failed." })}</p>
-              </div>
-            </div>
           </aside>
           <div className="dashboard-content">
             <div className="dashboard-action-strip dashboard-action-strip-sticky">
               {contextualActions.map((action) => (
                 <NavLink key={`${action.to}-${action.label}`} to={action.to} className="dashboard-action-pill">
+                  {action.icon ? <action.icon aria-hidden="true" /> : null}
                   {action.label}
                 </NavLink>
               ))}

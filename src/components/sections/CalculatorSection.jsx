@@ -15,6 +15,7 @@ import {
 } from 'react-icons/fi';
 import { apiGet, apiPost } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { estimatePlanNetDaily, getPlanOverride } from '../../utils/miningPlanOverrides';
 
 const STRATEGY_DEFAULTS = {
 	btc_sha256: {
@@ -107,10 +108,14 @@ export function CalculatorSection() {
 			selectedPlan.hashrateUnit === 'GH/s'
 				? Number(selectedPlan.hashrateValue) / 1000
 				: Number(selectedPlan.hashrateValue || 0);
-		const grossDaily = (investment * (profile.apy / 100)) / 365;
+		const override = getPlanOverride(selectedPlan.name);
+		const baseGrossDaily = (investment * (profile.apy / 100)) / 365;
+		const grossDaily = override ? estimatePlanNetDaily(investment, profile.apy, selectedPlan.name) / 0.7 : baseGrossDaily;
 		const powerDaily = grossDaily * 0.18;
 		const maintenanceDaily = grossDaily * 0.12;
-		const netDaily = Math.max(0, grossDaily - powerDaily - maintenanceDaily);
+		const netDaily = override
+			? estimatePlanNetDaily(investment, profile.apy, selectedPlan.name)
+			: Math.max(0, grossDaily - powerDaily - maintenanceDaily);
 		const netTotal = netDaily * duration;
 		const roi = investment > 0 ? (netTotal / investment) * 100 : 0;
 		return {

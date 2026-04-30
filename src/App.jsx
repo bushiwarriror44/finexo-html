@@ -29,6 +29,8 @@ import { DashboardAccrualsPage } from "./pages/dashboard/DashboardAccrualsPage";
 import { DashboardWithdrawalsPage } from "./pages/dashboard/DashboardWithdrawalsPage";
 import { DashboardSupportPage } from "./pages/dashboard/DashboardSupportPage";
 import { DashboardBuyPowerPage } from "./pages/dashboard/DashboardBuyPowerPage";
+import { DashboardKycPage } from "./pages/dashboard/DashboardKycPage";
+import { DashboardSecurityPage } from "./pages/dashboard/DashboardSecurityPage";
 
 export default function App() {
   return (
@@ -58,6 +60,8 @@ export default function App() {
           <Route path="accruals" element={<DashboardAccrualsPage />} />
           <Route path="withdrawals" element={<DashboardWithdrawalsPage />} />
           <Route path="support" element={<DashboardSupportPage />} />
+          <Route path="kyc" element={<DashboardKycPage />} />
+          <Route path="security" element={<DashboardSecurityPage />} />
         </Route>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />

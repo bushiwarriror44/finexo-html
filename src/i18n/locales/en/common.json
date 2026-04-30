@@ -56,6 +56,7 @@
       "userNotFound": "Account not found.",
       "emailSendFailed": "Unable to send reset email now.",
       "invalidEmail": "Invalid email format.",
+      "captchaInvalid": "Captcha is invalid or expired. Please refresh and try again.",
       "network": "Network error. Check connection and retry."
     },
     "fieldErrors": {
@@ -82,6 +83,14 @@
       "countryCode": {
         "required": "Select country.",
         "invalid": "Select a valid country."
+      },
+      "captchaId": {
+        "required": "Refresh captcha and try again.",
+        "invalid": "Captcha has expired. Refresh it and retry."
+      },
+      "captchaAnswer": {
+        "required": "Enter captcha result.",
+        "invalid": "Incorrect captcha result."
       },
       "token": {
         "required": "Reset token is required.",
@@ -151,18 +160,39 @@
       "items": [
         {
           "service": "BTC Pool Contracts",
-          "included": ["Managed contract activation", "Daily accrual visibility", "Contract status tracking"],
-          "excluded": ["Guaranteed fixed returns", "Personal investment advice"]
+          "included": [
+            "Managed contract activation",
+            "Daily accrual visibility",
+            "Contract status tracking"
+          ],
+          "excluded": [
+            "Guaranteed fixed returns",
+            "Personal investment advice"
+          ]
         },
         {
           "service": "Security Storage",
-          "included": ["Custody controls for platform reserves", "Access-restricted operational workflows", "Audit trail for sensitive actions"],
-          "excluded": ["User-managed private key hosting", "External wallet insurance promises"]
+          "included": [
+            "Custody controls for platform reserves",
+            "Access-restricted operational workflows",
+            "Audit trail for sensitive actions"
+          ],
+          "excluded": [
+            "User-managed private key hosting",
+            "External wallet insurance promises"
+          ]
         },
         {
           "service": "Expert Support",
-          "included": ["24/7 first-line intake", "Case priority routing", "Escalation to operations/compliance"],
-          "excluded": ["Legal or tax consulting", "Third-party exchange support"]
+          "included": [
+            "24/7 first-line intake",
+            "Case priority routing",
+            "Escalation to operations/compliance"
+          ],
+          "excluded": [
+            "Legal or tax consulting",
+            "Third-party exchange support"
+          ]
         }
       ]
     },
@@ -171,43 +201,91 @@
       "items": [
         {
           "service": "Contracts",
-          "controls": ["Onboarding checkpoints before contract activation", "Ledger-linked records for accrual events", "Policy-bound handling of payout-impacting actions"]
+          "controls": [
+            "Onboarding checkpoints before contract activation",
+            "Ledger-linked records for accrual events",
+            "Policy-bound handling of payout-impacting actions"
+          ]
         },
         {
           "service": "Custody",
-          "controls": ["Role-scoped access to critical operations", "Operator activity review trail", "Exception handling with documented approvals"]
+          "controls": [
+            "Role-scoped access to critical operations",
+            "Operator activity review trail",
+            "Exception handling with documented approvals"
+          ]
         },
         {
           "service": "Support",
-          "controls": ["Ticket-level categorization by severity", "Escalation matrix for security/compliance cases", "Structured closure notes for reviewability"]
+          "controls": [
+            "Ticket-level categorization by severity",
+            "Escalation matrix for security/compliance cases",
+            "Structured closure notes for reviewability"
+          ]
         }
       ]
     },
     "operationalSla": {
       "title": "Operational SLA Snapshot",
       "items": [
-        { "metric": "Platform uptime target", "value": "99.9%" },
-        { "metric": "Critical incident triage target", "value": "< 15 min" },
-        { "metric": "High-priority first response target", "value": "< 1 h" },
-        { "metric": "Support coverage", "value": "24/7" }
+        {
+          "metric": "Platform uptime target",
+          "value": "99.9%"
+        },
+        {
+          "metric": "Critical incident triage target",
+          "value": "< 15 min"
+        },
+        {
+          "metric": "High-priority first response target",
+          "value": "< 1 h"
+        },
+        {
+          "metric": "Support coverage",
+          "value": "24/7"
+        }
       ]
     },
     "timeline": {
       "title": "Service Lifecycle Timeline",
       "items": [
-        { "stage": "Onboarding", "text": "Account setup, baseline checks, and profile readiness." },
-        { "stage": "Funding", "text": "Top-up validation and ledger confirmation." },
-        { "stage": "Contract operations", "text": "Contract activation, monitoring, and accrual tracking." },
-        { "stage": "Withdrawal", "text": "Security and compliance checks before settlement." },
-        { "stage": "Support closure", "text": "Case resolution, summary logging, and closure confirmation." }
+        {
+          "stage": "Onboarding",
+          "text": "Account setup, baseline checks, and profile readiness."
+        },
+        {
+          "stage": "Funding",
+          "text": "Top-up validation and ledger confirmation."
+        },
+        {
+          "stage": "Contract operations",
+          "text": "Contract activation, monitoring, and accrual tracking."
+        },
+        {
+          "stage": "Withdrawal",
+          "text": "Security and compliance checks before settlement."
+        },
+        {
+          "stage": "Support closure",
+          "text": "Case resolution, summary logging, and closure confirmation."
+        }
       ]
     },
     "feeTransparency": {
       "title": "Fee & Cost Transparency (Gross -> Net)",
       "steps": [
-        { "label": "Gross model output", "text": "Base projection before operational deductions." },
-        { "label": "Operational deductions", "text": "Service fees, infrastructure overhead, and network-related factors." },
-        { "label": "Net result view", "text": "Estimated net outcome after documented cost layers." }
+        {
+          "label": "Gross model output",
+          "text": "Base projection before operational deductions."
+        },
+        {
+          "label": "Operational deductions",
+          "text": "Service fees, infrastructure overhead, and network-related factors."
+        },
+        {
+          "label": "Net result view",
+          "text": "Estimated net outcome after documented cost layers."
+        }
       ],
       "notes": [
         "Displayed values are model-based estimates, not guaranteed outcomes.",
@@ -218,10 +296,26 @@
     "incidentEscalation": {
       "title": "Incident Escalation Flow",
       "items": [
-        { "severity": "Critical", "target": "< 15 min triage", "flow": "Immediate incident command, user notice, recovery actions." },
-        { "severity": "High", "target": "< 1 h first response", "flow": "Operations and compliance review with tracked updates." },
-        { "severity": "Medium", "target": "< 4 h response", "flow": "Issue containment and monitored resolution window." },
-        { "severity": "Low", "target": "< 24 h response", "flow": "Planned fix cycle with documented closure notes." }
+        {
+          "severity": "Critical",
+          "target": "< 15 min triage",
+          "flow": "Immediate incident command, user notice, recovery actions."
+        },
+        {
+          "severity": "High",
+          "target": "< 1 h first response",
+          "flow": "Operations and compliance review with tracked updates."
+        },
+        {
+          "severity": "Medium",
+          "target": "< 4 h response",
+          "flow": "Issue containment and monitored resolution window."
+        },
+        {
+          "severity": "Low",
+          "target": "< 24 h response",
+          "flow": "Planned fix cycle with documented closure notes."
+        }
       ]
     },
     "riskScenarios": {
@@ -236,28 +330,61 @@
     "serviceSuitability": {
       "title": "Service Suitability",
       "profiles": [
-        { "name": "Operations-focused user", "fit": "Needs transparent workflows, controls, and daily visibility." },
-        { "name": "Risk-aware planner", "fit": "Prefers conservative assumptions and gross-to-net reporting." },
-        { "name": "Process-driven team", "fit": "Requires SLA-oriented support and escalation clarity." }
+        {
+          "name": "Operations-focused user",
+          "fit": "Needs transparent workflows, controls, and daily visibility."
+        },
+        {
+          "name": "Risk-aware planner",
+          "fit": "Prefers conservative assumptions and gross-to-net reporting."
+        },
+        {
+          "name": "Process-driven team",
+          "fit": "Requires SLA-oriented support and escalation clarity."
+        }
       ],
       "notFit": "Not designed for users seeking fixed-return guarantees or speculative promises."
     },
     "policyHub": {
       "title": "Policy & Escalation Links",
       "links": [
-        { "label": "AML / CFT Policy", "to": "/aml-policy" },
-        { "label": "Terms of Service", "to": "/terms" },
-        { "label": "Privacy Policy", "to": "/privacy-policy" },
-        { "label": "Contact Operations", "to": "/team" }
+        {
+          "label": "AML / CFT Policy",
+          "to": "/aml-policy"
+        },
+        {
+          "label": "Terms of Service",
+          "to": "/terms"
+        },
+        {
+          "label": "Privacy Policy",
+          "to": "/privacy-policy"
+        },
+        {
+          "label": "Contact Operations",
+          "to": "/team"
+        }
       ]
     },
     "trustCta": {
       "title": "Review Controls Before You Commit",
       "actions": [
-        { "label": "Review controls", "to": "/about/cloudmine" },
-        { "label": "See policy stack", "to": "/aml-policy" },
-        { "label": "Open dashboard", "to": "/dashboard" },
-        { "label": "Contact operations", "to": "/team" }
+        {
+          "label": "Review controls",
+          "to": "/about/cloudmine"
+        },
+        {
+          "label": "See policy stack",
+          "to": "/aml-policy"
+        },
+        {
+          "label": "Open dashboard",
+          "to": "/dashboard"
+        },
+        {
+          "label": "Contact operations",
+          "to": "/team"
+        }
       ]
     },
     "contentBands": {
@@ -504,10 +631,22 @@
     "ownershipSla": {
       "title": "Service Ownership & SLA",
       "items": [
-        { "metric": "Critical triage target", "value": "< 15 min" },
-        { "metric": "High-priority first response", "value": "< 1 h" },
-        { "metric": "Standard case closure target", "value": "< 24 h" },
-        { "metric": "Operational coverage window", "value": "24/7" }
+        {
+          "metric": "Critical triage target",
+          "value": "< 15 min"
+        },
+        {
+          "metric": "High-priority first response",
+          "value": "< 1 h"
+        },
+        {
+          "metric": "Standard case closure target",
+          "value": "< 24 h"
+        },
+        {
+          "metric": "Operational coverage window",
+          "value": "24/7"
+        }
       ]
     },
     "governance": {
@@ -522,18 +661,43 @@
     "escalation": {
       "title": "Escalation Ladder",
       "items": [
-        { "level": "L1", "target": "< 15 min acknowledge", "scope": "Frontline triage, incident tagging, and user intake updates." },
-        { "level": "L2", "target": "< 1 h specialist response", "scope": "Operations/compliance specialist review and containment actions." },
-        { "level": "L3", "target": "< 4 h command escalation", "scope": "Cross-functional decision with coordinated remediation plan." },
-        { "level": "Incident command", "target": "As required for critical events", "scope": "Executive-level coordination, status communication, and recovery oversight." }
+        {
+          "level": "L1",
+          "target": "< 15 min acknowledge",
+          "scope": "Frontline triage, incident tagging, and user intake updates."
+        },
+        {
+          "level": "L2",
+          "target": "< 1 h specialist response",
+          "scope": "Operations/compliance specialist review and containment actions."
+        },
+        {
+          "level": "L3",
+          "target": "< 4 h command escalation",
+          "scope": "Cross-functional decision with coordinated remediation plan."
+        },
+        {
+          "level": "Incident command",
+          "target": "As required for critical events",
+          "scope": "Executive-level coordination, status communication, and recovery oversight."
+        }
       ]
     },
     "cadence": {
       "title": "Operational Cadence",
       "items": [
-        { "period": "Daily", "focus": "Runtime checks, queue health, and active issue routing." },
-        { "period": "Weekly", "focus": "Incident recap, SLA variance review, and control tuning." },
-        { "period": "Monthly", "focus": "Governance review, escalation patterns, and policy adjustments." }
+        {
+          "period": "Daily",
+          "focus": "Runtime checks, queue health, and active issue routing."
+        },
+        {
+          "period": "Weekly",
+          "focus": "Incident recap, SLA variance review, and control tuning."
+        },
+        {
+          "period": "Monthly",
+          "focus": "Governance review, escalation patterns, and policy adjustments."
+        }
       ]
     }
   },
@@ -543,7 +707,7 @@
     "addressLabel": "Office address",
     "addressValue": "Office 502, Aurora Business Tower, Downtown Dubai, UAE",
     "emailLabel": "Email",
-    "emailValue": "office@cloudmine-support.com",
+    "emailValue": "supp.cloud-mine@hotmail.com",
     "phoneLabel": "Phone",
     "phoneValue": "+971 4 001 23456",
     "hotlineLabel": "Hotline",
@@ -569,7 +733,7 @@
     "address": "Address",
     "location": "Dubai, UAE / Astana, KZ",
     "call": "Call +971 000 000 000",
-    "email": "support@cloudmine.io",
+    "email": "supp.cloud-mine@hotmail.com",
     "info": "Info",
     "infoText": "Cloud mining contracts with transparent analytics and clear payout reporting.",
     "links": "Links",
@@ -772,7 +936,9 @@
       "staking": "Staking",
       "accruals": "Accruals",
       "withdrawals": "Withdrawals",
-      "support": "Support"
+      "support": "Support",
+      "kyc": "KYC",
+      "security": "Security"
     },
     "metrics": {
       "balance": "Balance",
@@ -905,13 +1071,16 @@
       "referralHint": "Use one active code for consistent tracking.",
       "kycHint": "KYC status affects limits and reviews.",
       "passwordHint": "Update password if access looks suspicious.",
-      "securityPanelHint": "Toggles apply locally first, then on server confirmation."
-      ,"hourlyUpdateHint": "Mining earnings are updated hourly and displayed with 4 decimal precision.",
+      "securityPanelHint": "Toggles apply locally first, then on server confirmation.",
+      "hourlyUpdateHint": "Mining earnings are updated hourly and displayed with 4 decimal precision.",
       "twoFactorEnrollStarted": "2FA enrollment started. Enter verification code.",
       "twoFactorSecret": "2FA secret",
       "trustCurrentDevice": "Trust current device",
       "revokeAllSessions": "Revoke all sessions",
-      "sessionsRevoked": "All sessions revoked."
+      "sessionsRevoked": "All sessions revoked.",
+      "invitesDirect": "Direct",
+      "invitesSecondLevel": "Second level",
+      "invitesThirdLevel": "Third level"
     },
     "balance": {
       "ledgerHistory": "Ledger history",
@@ -946,9 +1115,29 @@
       "investSuccess": "Investment opened successfully.",
       "investFailed": "Failed to open staking position.",
       "invalidAmount": "Enter a valid amount.",
+      "insufficientBalance": "Insufficient balance for this staking amount.",
+      "confirmTitle": "Confirm staking investment",
+      "confirmInvest": "Confirm investment",
+      "projected30d": "Projected dividends for 30 calendar days",
+      "lockNotice": "Important: principal amount is locked for 30 days. Dividends are credited to your main balance and remain available for normal use.",
+      "rangeHint": "Available range: {{min}} - {{max}} USDT.",
+      "lockUntil": "Principal lock until",
       "positionsTitle": "Active staking positions",
       "dailyRate": "Daily rate",
-      "earned": "Earned"
+      "earned": "Earned",
+      "subscriptionDetails": "Subscription details",
+      "confirmDailyRate": "Daily rate (fixed for this position)",
+      "perDay": "per day",
+      "confirmApr": "APR (simple, illustrative)",
+      "aprHint": "daily × 365; not compound",
+      "confirmTerm": "Term",
+      "defaultTerm": "30 days (1 month)",
+      "confirmStartDate": "Start date",
+      "confirmEndDate": "End date (principal unlock)",
+      "projectedPayoutAtEnd": "Total projected at end date (principal + dividends)",
+      "payoutSchedule": "Payout schedule",
+      "payoutScheduleValue": "Rewards accrue hourly to your main USDT balance. Principal is unlocked after the end date.",
+      "termsShort": "This rate applies only to this new position. If tier rates change later, your open position keeps the rate shown above. Figures are estimates, not guaranteed returns."
     },
     "accruals": {
       "title": "Mining accruals",
@@ -1135,8 +1324,7 @@
       "notifications": "Feed shows items that may need attention."
     },
     "notifications": "Notification center",
-    "savedPresets": "Saved presets"
-    ,
+    "savedPresets": "Saved presets",
     "lastUpdatedAgo": "{{value}}"
   },
   "dashboard": {
@@ -1151,10 +1339,22 @@
       "title": "Who We Are",
       "lead": "CloudMine operates as an infrastructure-led service with controlled risk posture and audit-oriented workflows.",
       "items": [
-        { "title": "Mission", "text": "Deliver transparent cloud-mining operations with measurable controls and clear user visibility." },
-        { "title": "Operating model", "text": "Cross-functional cycle between operations, compliance, support, and financial controls." },
-        { "title": "Client focus", "text": "Decision-ready data for onboarding, contract monitoring, and support escalation." },
-        { "title": "Risk stance", "text": "Conservative assumptions, no fixed-return guarantees, and policy-first execution." }
+        {
+          "title": "Mission",
+          "text": "Deliver transparent cloud-mining operations with measurable controls and clear user visibility."
+        },
+        {
+          "title": "Operating model",
+          "text": "Cross-functional cycle between operations, compliance, support, and financial controls."
+        },
+        {
+          "title": "Client focus",
+          "text": "Decision-ready data for onboarding, contract monitoring, and support escalation."
+        },
+        {
+          "title": "Risk stance",
+          "text": "Conservative assumptions, no fixed-return guarantees, and policy-first execution."
+        }
       ]
     },
     "contentBands": {
@@ -1177,20 +1377,47 @@
     "trustMetrics": {
       "title": "Trust Metrics",
       "items": [
-        { "value": "99.95%", "label": "platform availability target" },
-        { "value": "< 15 min", "label": "critical incident triage target" },
-        { "value": "< 4 h", "label": "high-priority first response target" },
-        { "value": "24/7", "label": "operations and support coverage" },
-        { "value": "100%", "label": "sensitive actions with audit trail" }
+        {
+          "value": "99.95%",
+          "label": "platform availability target"
+        },
+        {
+          "value": "< 15 min",
+          "label": "critical incident triage target"
+        },
+        {
+          "value": "< 4 h",
+          "label": "high-priority first response target"
+        },
+        {
+          "value": "24/7",
+          "label": "operations and support coverage"
+        },
+        {
+          "value": "100%",
+          "label": "sensitive actions with audit trail"
+        }
       ]
     },
     "compliance": {
       "title": "Compliance & Security Snapshot",
       "items": [
-        { "title": "AML/KYC controls", "text": "Risk-based verification and sanctions screening through lifecycle checkpoints." },
-        { "title": "Access control", "text": "Role-scoped privileges with accountability for administrative actions." },
-        { "title": "Incident response", "text": "Documented playbooks for detection, containment, communication, and recovery." },
-        { "title": "Audit logging", "text": "Operational and user-critical events are recorded for traceability and review." }
+        {
+          "title": "AML/KYC controls",
+          "text": "Risk-based verification and sanctions screening through lifecycle checkpoints."
+        },
+        {
+          "title": "Access control",
+          "text": "Role-scoped privileges with accountability for administrative actions."
+        },
+        {
+          "title": "Incident response",
+          "text": "Documented playbooks for detection, containment, communication, and recovery."
+        },
+        {
+          "title": "Audit logging",
+          "text": "Operational and user-critical events are recorded for traceability and review."
+        }
       ]
     },
     "governance": {
@@ -1205,11 +1432,26 @@
     "timeline": {
       "title": "Operations Timeline",
       "items": [
-        { "title": "Onboarding", "text": "Account setup and baseline risk checks." },
-        { "title": "Funding", "text": "Top-up validation and ledger synchronization." },
-        { "title": "Contract lifecycle", "text": "Activation, monitoring, and accrual reporting." },
-        { "title": "Withdrawal", "text": "Security and compliance verification before settlement." },
-        { "title": "Support", "text": "Case routing, SLA handling, and closure logging." }
+        {
+          "title": "Onboarding",
+          "text": "Account setup and baseline risk checks."
+        },
+        {
+          "title": "Funding",
+          "text": "Top-up validation and ledger synchronization."
+        },
+        {
+          "title": "Contract lifecycle",
+          "text": "Activation, monitoring, and accrual reporting."
+        },
+        {
+          "title": "Withdrawal",
+          "text": "Security and compliance verification before settlement."
+        },
+        {
+          "title": "Support",
+          "text": "Case routing, SLA handling, and closure logging."
+        }
       ]
     },
     "reliability": {
@@ -1233,28 +1475,68 @@
     "teamAccountability": {
       "title": "Team & Accountability",
       "items": [
-        { "role": "Operations", "sla": "Monitors runtime state and service continuity.", "owner": "Owns incident command and recovery execution." },
-        { "role": "Compliance", "sla": "Reviews risk triggers and policy exceptions.", "owner": "Owns AML/KYC and escalation decisions." },
-        { "role": "Support", "sla": "Handles ticket triage and communication cadence.", "owner": "Owns first response and case lifecycle updates." },
-        { "role": "Security", "sla": "Maintains control posture for sensitive actions.", "owner": "Owns access controls and security event review." }
+        {
+          "role": "Operations",
+          "sla": "Monitors runtime state and service continuity.",
+          "owner": "Owns incident command and recovery execution."
+        },
+        {
+          "role": "Compliance",
+          "sla": "Reviews risk triggers and policy exceptions.",
+          "owner": "Owns AML/KYC and escalation decisions."
+        },
+        {
+          "role": "Support",
+          "sla": "Handles ticket triage and communication cadence.",
+          "owner": "Owns first response and case lifecycle updates."
+        },
+        {
+          "role": "Security",
+          "sla": "Maintains control posture for sensitive actions.",
+          "owner": "Owns access controls and security event review."
+        }
       ]
     },
     "docsHub": {
       "title": "Policy & Documentation",
       "items": [
-        { "label": "AML / CFT Policy", "to": "/aml-policy" },
-        { "label": "Terms of Service", "to": "/terms" },
-        { "label": "Privacy Policy", "to": "/privacy-policy" },
-        { "label": "Support channel", "to": "/team" }
+        {
+          "label": "AML / CFT Policy",
+          "to": "/aml-policy"
+        },
+        {
+          "label": "Terms of Service",
+          "to": "/terms"
+        },
+        {
+          "label": "Privacy Policy",
+          "to": "/privacy-policy"
+        },
+        {
+          "label": "Support channel",
+          "to": "/team"
+        }
       ]
     },
     "cta": {
       "title": "Review Controls Before Action",
       "actions": [
-        { "label": "Review controls", "to": "/about/cloudmine" },
-        { "label": "See policies", "to": "/aml-policy" },
-        { "label": "Open dashboard", "to": "/dashboard" },
-        { "label": "Contact operations", "to": "/team" }
+        {
+          "label": "Review controls",
+          "to": "/about/cloudmine"
+        },
+        {
+          "label": "See policies",
+          "to": "/aml-policy"
+        },
+        {
+          "label": "Open dashboard",
+          "to": "/dashboard"
+        },
+        {
+          "label": "Contact operations",
+          "to": "/team"
+        }
       ]
     }
   }

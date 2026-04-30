@@ -7,15 +7,22 @@ const FALLBACK_CODES = [
   "VN", "ZA",
 ];
 
+const REQUIRED_COUNTRY_CODES = ["KG", "KZ"];
+const COUNTRY_LABEL_OVERRIDES = {
+  KG: { en: "Kyrgyzstan", ru: "Кыргызстан" },
+  KZ: { en: "Kazakhstan", ru: "Казахстан" },
+};
+
 function resolveCodes() {
   try {
     if (typeof Intl?.supportedValuesOf === "function") {
-      return Intl.supportedValuesOf("region").filter((code) => /^[A-Z]{2}$/.test(code));
+      const supported = Intl.supportedValuesOf("region").filter((code) => /^[A-Z]{2}$/.test(code));
+      return [...new Set([...supported, ...REQUIRED_COUNTRY_CODES])];
     }
   } catch {
     // ignore and use fallback
   }
-  return FALLBACK_CODES;
+  return [...new Set([...FALLBACK_CODES, ...REQUIRED_COUNTRY_CODES])];
 }
 
 export const COUNTRY_CODES = resolveCodes();
@@ -32,9 +39,10 @@ export function getCountryDisplayLabels() {
   }
 
   return COUNTRY_CODES.reduce((acc, code) => {
+    const override = COUNTRY_LABEL_OVERRIDES[code];
     acc[code] = {
-      en: english?.of(code) || code,
-      ru: russian?.of(code) || code,
+      en: override?.en || english?.of(code) || code,
+      ru: override?.ru || russian?.of(code) || code,
     };
     return acc;
   }, {});

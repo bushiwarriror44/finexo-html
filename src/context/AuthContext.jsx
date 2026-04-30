@@ -23,8 +23,8 @@ export function AuthProvider({ children }) {
     refresh();
   }, []);
 
-  const login = async (email, password, rememberMe = false) => {
-    const data = await apiPost("/api/auth/login", { email, password, rememberMe });
+  const login = async (email, password, rememberMe = false, captchaId = "", captchaAnswer = "") => {
+    const data = await apiPost("/api/auth/login", { email, password, rememberMe, captchaId, captchaAnswer });
     setUser(data.user || null);
     return data;
   };
@@ -36,6 +36,8 @@ export function AuthProvider({ children }) {
     firstName = "",
     lastName = "",
     countryCode = "",
+    captchaId = "",
+    captchaAnswer = "",
   }) => {
     return apiPost("/api/auth/register", {
       email,
@@ -44,6 +46,8 @@ export function AuthProvider({ children }) {
       firstName,
       lastName,
       countryCode,
+      captchaId,
+      captchaAnswer,
     });
   };
 

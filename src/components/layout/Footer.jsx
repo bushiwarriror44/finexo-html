@@ -23,10 +23,8 @@ export function Footer() {
   };
 
   const socialLinks = {
-    facebook: "https://www.facebook.com/",
-    twitter: "https://x.com/",
-    linkedin: "https://www.linkedin.com/",
-    instagram: "https://www.instagram.com/",
+    instagram: "https://www.instagram.com/officialcloudmine?igsh=MTM5N2xmbWRvcDFpOA==",
+    telegram: "https://t.me/CloudMine_channel",
   };
 
   return (
@@ -40,14 +38,12 @@ export function Footer() {
                 <div className="contact_link_box">
                   <a href="https://maps.google.com/?q=Dubai,UAE" target="_blank" rel="noreferrer"><i className="fa fa-map-marker" aria-hidden="true" /><span>{t("footer.location")}</span></a>
                   <a href="tel:+971000000000"><i className="fa fa-phone" aria-hidden="true" /><span>{t("footer.call")}</span></a>
-                  <a href="mailto:support@cloudmine.io"><i className="fa fa-envelope" aria-hidden="true" /><span>{t("footer.email")}</span></a>
+                  <a href="mailto:supp.cloud-mine@hotmail.com"><i className="fa fa-envelope" aria-hidden="true" /><span>{t("footer.email")}</span></a>
                 </div>
               </div>
               <div className="info_social">
-                <a href={socialLinks.facebook} target="_blank" rel="noreferrer" aria-label="Facebook"><i className="fa fa-facebook" aria-hidden="true" /></a>
-                <a href={socialLinks.twitter} target="_blank" rel="noreferrer" aria-label="Twitter"><i className="fa fa-twitter" aria-hidden="true" /></a>
-                <a href={socialLinks.linkedin} target="_blank" rel="noreferrer" aria-label="LinkedIn"><i className="fa fa-linkedin" aria-hidden="true" /></a>
                 <a href={socialLinks.instagram} target="_blank" rel="noreferrer" aria-label="Instagram"><i className="fa fa-instagram" aria-hidden="true" /></a>
+                <a href={socialLinks.telegram} target="_blank" rel="noreferrer" aria-label="Telegram"><i className="fa fa-telegram" aria-hidden="true" /></a>
               </div>
             </div>
             <div className="col-md-6 col-lg-3 info_col">

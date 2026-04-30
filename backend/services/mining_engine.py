@@ -7,6 +7,7 @@ from typing import Optional
 from models import (
     MiningAccrual,
     MiningContract,
+    MiningPlan,
     MiningStrategyParam,
     StakingAccrual,
     StakingTier,
@@ -15,6 +16,12 @@ from models import (
     db,
 )
 from services.audit_service import write_audit
+
+PLAN_DAILY_NET_OVERRIDES = {
+    "BTC Starter 120T": Decimal("2.80"),
+    "KAS Accel 8T": Decimal("4.42"),
+    "LTC+DOGE Hybrid 2.5G": Decimal("4.33"),
+}
 
 
 def normalize_hashrate(value, unit: str) -> Decimal:
@@ -71,6 +78,11 @@ def run_hourly_mining_accruals(now: Optional[datetime] = None) -> int:
         .order_by(MiningContract.created_at.asc())
         .all()
     )
+    plan_ids = {contract.plan_id for contract in contracts}
+    plan_name_by_id = {}
+    if plan_ids:
+        rows = MiningPlan.query.filter(MiningPlan.id.in_(plan_ids)).all()
+        plan_name_by_id = {row.id: row.name for row in rows}
     count = 0
     for contract in contracts:
         exists = MiningAccrual.query.filter_by(contract_id=contract.id, accrual_at=slot).first()
@@ -80,8 +92,16 @@ def run_hourly_mining_accruals(now: Optional[datetime] = None) -> int:
         if not params:
             continue
         calc = calculate_daily_payout(contract, params, seed=contract.id + int(now.timestamp()) // 86400)
-        hourly_gross = Decimal(str(calc["gross"])) / Decimal("24")
-        hourly_net = Decimal(str(calc["net"])) / Decimal("24")
+        plan_name = plan_name_by_id.get(contract.plan_id, "")
+        daily_net_override = PLAN_DAILY_NET_OVERRIDES.get(plan_name)
+        if daily_net_override is not None:
+            hourly_net = daily_net_override / Decimal("24")
+            # Keep gross aligned with net for accounting fields; do not alter non-target plans.
+            hourly_gross = hourly_net
+            calc["snapshot"]["planDailyNetOverride"] = float(daily_net_override)
+        else:
+            hourly_gross = Decimal(str(calc["gross"])) / Decimal("24")
+            hourly_net = Decimal(str(calc["net"])) / Decimal("24")
         accrual = MiningAccrual(
             contract_id=contract.id,
             accrual_date=today,
@@ -126,13 +146,39 @@ def run_hourly_staking_accruals(now: Optional[datetime] = None) -> int:
     )
     count = 0
     for position in positions:
+        lock_until = position.lock_until or (position.created_at + timedelta(days=30))
+        if lock_until and now >= lock_until:
+            if not position.released_at:
+                principal_amount = Decimal(str(position.amount or 0))
+                if principal_amount > 0:
+                    db.session.add(
+                        UserBalanceLedger(
+                            user_id=position.user_id,
+                            amount=principal_amount,
+                            entry_type="credit",
+                            reason=f"Staking principal release #{position.id}",
+                            asset="USDT",
+                            network="USDT",
+                        )
+                    )
+                position.released_at = slot
+            position.status = "completed"
+            db.session.commit()
+            write_audit("system", None, "staking_release", f"position_id={position.id}; released_at={slot.isoformat()}")
+            continue
         exists = StakingAccrual.query.filter_by(position_id=position.id, accrual_at=slot).first()
         if exists:
             continue
         tier = StakingTier.query.get(position.tier_id)
-        if not tier or not tier.is_active:
+        if position.locked_daily_rate is not None:
+            daily_dec = Decimal(str(position.locked_daily_rate or 0))
+        elif tier:
+            daily_dec = Decimal(str(tier.daily_rate or 0))
+        else:
             continue
-        hourly_amount = (Decimal(str(position.amount)) * Decimal(str(tier.daily_rate or 0))) / Decimal("24")
+        if daily_dec <= 0:
+            continue
+        hourly_amount = (Decimal(str(position.amount)) * daily_dec) / Decimal("24")
         if hourly_amount <= 0:
             continue
         accrual = StakingAccrual(

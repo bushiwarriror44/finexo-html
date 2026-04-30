@@ -3,6 +3,8 @@ from decimal import Decimal
 
 from flask import Blueprint, jsonify, request, send_file, session
 
+from sqlalchemy import func, or_
+
 from models import (
     MiningAccrual,
     MiningContract,
@@ -15,6 +17,8 @@ from models import (
     KycReview,
     ReferralPayout,
     ReferralRule,
+    StakingAccrual,
+    StakingTier,
     SupportEventLog,
     SupportMessage,
     SupportSlaRule,
@@ -22,6 +26,7 @@ from models import (
     TopUpTransaction,
     User,
     UserBalanceLedger,
+    UserStakingPosition,
     WalletAddress,
     WithdrawalEventLog,
     WithdrawalRequest,
@@ -1155,5 +1160,146 @@ def admin_mining_metrics():
             "totalInvestedUsdt": round(sum(float(item.invested_usdt) for item in contracts), 8),
             "totalAccruedUsdt": round(sum(float(item.net_usdt) for item in accruals), 8),
             "lastAccrualDate": max((item.accrual_date.isoformat() for item in accruals), default=None),
+        }
+    )
+
+
+@admin_api_bp.get("/staking/metrics")
+def admin_staking_metrics():
+    admin = _require_admin()
+    if not admin:
+        return _json_error("forbidden", "FORBIDDEN", 403)
+    total_staked = (
+        db.session.query(func.coalesce(func.sum(UserStakingPosition.amount), 0))
+        .filter(UserStakingPosition.status == "active")
+        .scalar()
+    )
+    total_accrued = db.session.query(func.coalesce(func.sum(StakingAccrual.amount), 0)).scalar()
+    active_positions = UserStakingPosition.query.filter_by(status="active").count()
+    total_positions = UserStakingPosition.query.count()
+    return jsonify(
+        {
+            "totalStakedUsdt": float(total_staked or 0),
+            "totalAccruedUsdt": float(total_accrued or 0),
+            "activePositions": active_positions,
+            "totalPositions": total_positions,
+        }
+    )
+
+
+@admin_api_bp.get("/staking/users")
+def admin_staking_users():
+    admin = _require_admin()
+    if not admin:
+        return _json_error("forbidden", "FORBIDDEN", 403)
+    page = max(1, _parse_int(request.args.get("page", 1), 1) or 1)
+    page_size = min(200, max(1, _parse_int(request.args.get("pageSize", 50), 50) or 50))
+    q = (request.args.get("q") or "").strip().lower()
+
+    query = User.query.join(UserStakingPosition, User.id == UserStakingPosition.user_id)
+    if q:
+        if q.isdigit():
+            query = query.filter(or_(User.email.ilike(f"%{q}%"), User.id == int(q)))
+        else:
+            query = query.filter(User.email.ilike(f"%{q}%"))
+    query = query.distinct()
+    total = query.count()
+    users = query.order_by(User.id.asc()).offset((page - 1) * page_size).limit(page_size).all()
+
+    items = []
+    for user in users:
+        all_pos = UserStakingPosition.query.filter_by(user_id=user.id).all()
+        active_pos = [p for p in all_pos if p.status == "active"]
+        total_staked = sum(float(p.amount) for p in active_pos)
+        accrued = (
+            db.session.query(func.coalesce(func.sum(StakingAccrual.amount), 0))
+            .filter(StakingAccrual.user_id == user.id)
+            .scalar()
+        )
+        last_opened = None
+        for p in all_pos:
+            if p.created_at and (last_opened is None or p.created_at > last_opened):
+                last_opened = p.created_at
+        items.append(
+            {
+                "userId": user.id,
+                "email": user.email,
+                "totalStakedUsdt": round(total_staked, 8),
+                "activePositions": len(active_pos),
+                "positionsCount": len(all_pos),
+                "totalAccruedUsdt": float(accrued or 0),
+                "lastOpenedAt": last_opened.isoformat() if last_opened else None,
+            }
+        )
+    return jsonify({"items": items, "total": total, "page": page, "pageSize": page_size})
+
+
+@admin_api_bp.get("/staking/tiers")
+def admin_staking_tiers_list():
+    admin = _require_admin()
+    if not admin:
+        return _json_error("forbidden", "FORBIDDEN", 403)
+    rows = StakingTier.query.order_by(StakingTier.min_amount.asc()).all()
+    return jsonify(
+        [
+            {
+                "id": row.id,
+                "asset": row.asset,
+                "minAmount": float(row.min_amount),
+                "maxAmount": float(row.max_amount),
+                "dailyRate": float(row.daily_rate),
+                "isHotOffer": bool(row.is_hot_offer),
+                "isActive": bool(row.is_active),
+                "updatedAt": row.updated_at.isoformat() if row.updated_at else None,
+            }
+            for row in rows
+        ]
+    )
+
+
+@admin_api_bp.post("/staking/tiers")
+def admin_staking_tier_update():
+    admin = _require_admin()
+    if not admin:
+        return _json_error("forbidden", "FORBIDDEN", 403)
+    data = request.get_json(silent=True) or {}
+    tier_id = _parse_int(data.get("tierId") if data.get("tierId") is not None else data.get("id"))
+    if not tier_id:
+        return _json_error("tierId is required", "STAKING_TIER_ID_REQUIRED", 400)
+    tier = StakingTier.query.get(tier_id)
+    if not tier:
+        return _json_error("tier not found", "STAKING_TIER_NOT_FOUND", 404)
+    if "dailyRate" in data and data.get("dailyRate") is not None:
+        try:
+            dr = Decimal(str(data.get("dailyRate")))
+        except Exception:
+            return _json_error("invalid dailyRate", "STAKING_INVALID_RATE", 400)
+        if dr < Decimal("0") or dr > Decimal("0.5"):
+            return _json_error("dailyRate out of allowed range (0 - 0.5)", "STAKING_RATE_RANGE", 400)
+        tier.daily_rate = dr
+    if "isActive" in data:
+        tier.is_active = bool(data.get("isActive"))
+    if "isHotOffer" in data:
+        tier.is_hot_offer = bool(data.get("isHotOffer"))
+    db.session.commit()
+    write_audit(
+        "admin",
+        admin.id,
+        "staking_tier_update",
+        f"tier_id={tier.id}; daily_rate={float(tier.daily_rate)}; active={tier.is_active}",
+    )
+    return jsonify(
+        {
+            "success": True,
+            "tier": {
+                "id": tier.id,
+                "asset": tier.asset,
+                "minAmount": float(tier.min_amount),
+                "maxAmount": float(tier.max_amount),
+                "dailyRate": float(tier.daily_rate),
+                "isHotOffer": bool(tier.is_hot_offer),
+                "isActive": bool(tier.is_active),
+                "updatedAt": tier.updated_at.isoformat() if tier.updated_at else None,
+            },
         }
     )

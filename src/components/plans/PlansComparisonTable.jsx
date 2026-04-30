@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { estimatePlanBreakevenDays, estimatePlanNetDaily } from "../../utils/miningPlanOverrides";
 
 const RISK_ORDER = { low: 1, "low-mid": 2, mid: 3, "mid-high": 4, high: 5 };
 
@@ -9,12 +10,6 @@ function normalizeRisk(value) {
   if (raw.includes("low")) return "low";
   if (raw.includes("high")) return "high";
   return "mid";
-}
-
-function estimateNetDaily(priceUsdt, apy) {
-  const gross = (Number(priceUsdt || 0) * Number(apy || 0)) / 100 / 365;
-  const deductions = gross * 0.3;
-  return Math.max(0, gross - deductions);
 }
 
 export function PlansComparisonTable({
@@ -44,8 +39,8 @@ export function PlansComparisonTable({
       const bProfile = strategyProfile?.[b.strategy];
       const aApy = Number(aProfile?.apy || 0);
       const bApy = Number(bProfile?.apy || 0);
-      const aNet = estimateNetDaily(a.priceUsdt, aApy);
-      const bNet = estimateNetDaily(b.priceUsdt, bApy);
+      const aNet = estimatePlanNetDaily(a.priceUsdt, aApy, a.name);
+      const bNet = estimatePlanNetDaily(b.priceUsdt, bApy, b.name);
       const aRisk = RISK_ORDER[normalizeRisk(aProfile?.risk)] || 3;
       const bRisk = RISK_ORDER[normalizeRisk(bProfile?.risk)] || 3;
       if (sortBy === "price_desc") return Number(b.priceUsdt || 0) - Number(a.priceUsdt || 0);
@@ -106,8 +101,9 @@ export function PlansComparisonTable({
             ) : (
               visiblePlans.map((plan) => {
                 const profile = strategyProfile?.[plan.strategy] || {};
-                const netDaily = estimateNetDaily(plan.priceUsdt, profile.apy || 0);
-                const breakeven = netDaily > 0 ? Math.ceil(Number(plan.priceUsdt || 0) / netDaily) : "-";
+                const netDaily = estimatePlanNetDaily(plan.priceUsdt, profile.apy || 0, plan.name);
+                const breakevenDays = estimatePlanBreakevenDays(plan.priceUsdt, netDaily, plan.name);
+                const breakeven = breakevenDays ? `${breakevenDays}d` : "-";
                 const isSelected = Number(selectedPlanId) === Number(plan.id);
                 return (
                   <tr key={plan.id} className={isSelected ? "is-row-selected" : ""}>
@@ -119,7 +115,7 @@ export function PlansComparisonTable({
                     <td>${Number(plan.priceUsdt || 0).toFixed(2)}</td>
                     <td>{Number(profile.apy || 0).toFixed(1)}%</td>
                     <td>${netDaily.toFixed(2)}</td>
-                    <td>{breakeven === "-" ? "-" : `${breakeven}d`}</td>
+                    <td>{breakeven}</td>
                     <td>
                       <button className="dash-btn is-secondary is-sm" type="button" onClick={() => onSelectPlan(plan.id)}>
                         {isSelected ? t("plans.selected", { defaultValue: "Selected" }) : t("plans.selectPlan", { defaultValue: "Select" })}

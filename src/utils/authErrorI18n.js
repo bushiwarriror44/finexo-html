@@ -10,6 +10,7 @@ const AUTH_ERROR_CODE_TO_KEY = {
   AUTH_USER_NOT_FOUND: "auth.errors.userNotFound",
   AUTH_EMAIL_SEND_FAILED: "auth.errors.emailSendFailed",
   AUTH_INVALID_EMAIL: "auth.errors.invalidEmail",
+  AUTH_CAPTCHA_INVALID: "auth.errors.captchaInvalid",
   NETWORK_ERROR: "auth.errors.network",
 };
 

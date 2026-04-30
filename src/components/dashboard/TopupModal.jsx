@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 export function TopupModal({ isOpen, wallets, onClose, onSubmit, t }) {
+  const quickAmounts = [100, 300, 500, 1000];
   const [walletId, setWalletId] = useState("");
   const [txHash, setTxHash] = useState("");
   const [amount, setAmount] = useState("");
@@ -90,6 +91,18 @@ export function TopupModal({ isOpen, wallets, onClose, onSubmit, t }) {
               <input id="modal-topup-hash" className="dash-input form-control" value={txHash} onChange={(e) => setTxHash(e.target.value)} />
               <label htmlFor="modal-topup-amount">{t("dashboardCabinet.table.amount")}</label>
               <input id="modal-topup-amount" className="dash-input form-control" type="number" step="0.00000001" value={amount} onChange={(e) => setAmount(e.target.value)} />
+              <div className="d-flex flex-wrap gap-2 mt-2 mb-1">
+                {quickAmounts.map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className="dash-btn is-secondary is-sm"
+                    onClick={() => setAmount(String(value))}
+                  >
+                    {value}
+                  </button>
+                ))}
+              </div>
             </>
           ) : (
             <div className="dash-state-card">

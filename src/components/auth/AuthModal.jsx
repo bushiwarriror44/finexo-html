@@ -7,6 +7,7 @@ import ReactFlagsSelect from "react-flags-select";
 import { detectDefaultCountryCode, getCountryDisplayLabels } from "../../utils/countryCatalog";
 import { getAuthErrorMessage, getAuthFieldErrors } from "../../utils/authErrorI18n";
 import { getPasswordStrength } from "../../utils/passwordStrength";
+import { AuthCaptcha } from "./AuthCaptcha";
 
 const MODES = new Set(["login", "register", "forgot", "reset"]);
 
@@ -30,6 +31,8 @@ export function AuthModal() {
   const [resultType, setResultType] = useState("success");
   const [resultMessage, setResultMessage] = useState("");
   const [pendingAction, setPendingAction] = useState("");
+  const [captchaId, setCaptchaId] = useState("");
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
   const modalRef = useRef(null);
   const lastFocusedRef = useRef(null);
   const autoSelectedCountryRef = useRef(false);
@@ -68,6 +71,8 @@ export function AuthModal() {
     setFirstName("");
     setLastName("");
     setCountryCode("");
+    setCaptchaId("");
+    setCaptchaAnswer("");
     setCountrySelectorKey((prev) => prev + 1);
     autoSelectedCountryRef.current = false;
   };
@@ -87,6 +92,8 @@ export function AuthModal() {
     setFirstName("");
     setLastName("");
     setCountryCode("");
+    setCaptchaId("");
+    setCaptchaAnswer("");
     setCountrySelectorKey((prev) => prev + 1);
     autoSelectedCountryRef.current = false;
   };
@@ -99,7 +106,7 @@ export function AuthModal() {
     setBusy(true);
     try {
       if (mode === "login") {
-        await login(email, password, rememberMe);
+        await login(email, password, rememberMe, captchaId, captchaAnswer);
         setResultType("success");
         setResultMessage(t("auth.result.loginSuccess"));
         setPendingAction("goDashboard");
@@ -114,6 +121,8 @@ export function AuthModal() {
           firstName,
           lastName,
           countryCode,
+          captchaId,
+          captchaAnswer,
         });
         setResultType("success");
         setResultMessage(t("auth.result.registerSuccess"));
@@ -260,6 +269,15 @@ export function AuthModal() {
               <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
               <span>{t("auth.rememberMe")}</span>
             </label>
+          ) : null}
+          {(mode === "login" || mode === "register") ? (
+            <AuthCaptcha
+              t={t}
+              value={captchaAnswer}
+              onChange={setCaptchaAnswer}
+              onMetaChange={({ captchaId: nextId }) => setCaptchaId(nextId)}
+              className="mb-2"
+            />
           ) : null}
           {mode === "register" ? (
             <>

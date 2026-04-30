@@ -6,6 +6,7 @@ import ReactFlagsSelect from "react-flags-select";
 import { detectDefaultCountryCode, getCountryDisplayLabels } from "../utils/countryCatalog";
 import { getAuthErrorMessage, getAuthFieldErrors } from "../utils/authErrorI18n";
 import { getPasswordStrength } from "../utils/passwordStrength";
+import { AuthCaptcha } from "../components/auth/AuthCaptcha";
 
 export function RegisterPage() {
   const { t } = useTranslation();
@@ -24,6 +25,8 @@ export function RegisterPage() {
   const [resultType, setResultType] = useState("success");
   const [resultMessage, setResultMessage] = useState("");
   const [pendingRedirect, setPendingRedirect] = useState("");
+  const [captchaId, setCaptchaId] = useState("");
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
   const autoSelectedCountryRef = useRef(false);
   const countryLabels = useMemo(() => getCountryDisplayLabels(), []);
   const countryCodes = useMemo(() => Object.keys(countryLabels), [countryLabels]);
@@ -42,6 +45,8 @@ export function RegisterPage() {
         firstName,
         lastName,
         countryCode,
+        captchaId,
+        captchaAnswer,
       });
       setResultType("success");
       setResultMessage(t("auth.result.registerSuccess"));
@@ -125,6 +130,12 @@ export function RegisterPage() {
             />
             {fieldErrors.countryCode ? <div className="invalid-feedback d-block mt-2">{fieldErrors.countryCode}</div> : null}
           </div>
+          <AuthCaptcha
+            t={t}
+            value={captchaAnswer}
+            onChange={setCaptchaAnswer}
+            onMetaChange={({ captchaId: nextId }) => setCaptchaId(nextId)}
+          />
           <button className="btn btn-info text-white w-100" type="submit">{t("auth.createAccount")}</button>
           <div className="mt-3">
             <Link to="/login">{t("auth.backToLogin")}</Link>

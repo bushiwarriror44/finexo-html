@@ -2453,6 +2453,55 @@ h6 {
 }
 
 @media (max-width: 992px) {
+  body.mobile-menu-open {
+    overflow: hidden;
+  }
+
+  .header_section .container-fluid {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .header_section .fintech-header-nav {
+    min-height: 72px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .header_section .navbar-toggler {
+    position: relative;
+    z-index: 1401;
+  }
+
+  .header_section .navbar-collapse.show {
+    position: fixed;
+    inset: 0;
+    z-index: 1400;
+    margin: 0;
+    padding: 88px 24px 24px;
+    min-height: 100dvh;
+    height: 100dvh;
+    overflow-y: auto;
+    background: linear-gradient(180deg, rgba(4, 20, 45, 0.98), rgba(4, 20, 45, 0.98));
+  }
+
+  .header_section .navbar-collapse.show .navbar-nav {
+    width: 100%;
+    min-height: calc(100dvh - 112px);
+    padding: 20px;
+    border: 1px solid rgba(148, 197, 255, 0.18);
+    background: rgba(2, 20, 49, 0.78);
+    justify-content: flex-start;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .header_section .navbar-collapse.show .navbar-nav .nav-item,
+  .header_section .navbar-collapse.show .navbar-nav .nav-link {
+    width: 100%;
+    justify-content: center;
+  }
+
   .custom_nav-container .navbar-nav .form-inline {
     margin-left: 0;
   }
@@ -2550,7 +2599,7 @@ h6 {
   --space-4: 16px;
   --space-6: 24px;
   --space-8: 32px;
-  background: #f5f7fb;
+ 
   color: var(--text-primary);
   position: relative;
 }
@@ -2941,6 +2990,38 @@ h6 {
   line-height: 1.45;
 }
 
+.dash-ref-link-btn {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #0f4c81;
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.dash-ref-link-btn:hover {
+  color: #0a3a64;
+}
+
+.dash-copy-toast {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 1200;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: #0f6e3a;
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(7, 24, 18, 0.28);
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .dashboard-action-strip {
   margin-top: 12px;
   display: flex;
@@ -3242,6 +3323,21 @@ h6 {
 
 .dash-state-card p {
   margin: 0;
+}
+
+.dash-end-date-highlight {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(90deg, rgba(15, 76, 129, 0.1), rgba(15, 110, 58, 0.12));
+  border: 1px solid rgba(15, 76, 129, 0.28);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary);
 }
 
 .dash-state-title {
