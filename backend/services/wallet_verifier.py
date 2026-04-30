@@ -167,7 +167,7 @@ def settle_topup(topup: TopUpTransaction) -> TopUpTransaction:
             reason=f"Top-up confirmed: {topup.tx_hash} ({topup.asset}->{conversion['convertedAmount']} USDT)",
             topup_id=topup.id,
             asset="USDT",
-            network="USDT",
+            network="TRX",
         )
     )
     db.session.commit()

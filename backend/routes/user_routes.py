@@ -59,6 +59,7 @@ from services.withdrawal_service import (
     cancel_withdrawal_by_user,
     create_withdrawal_request,
     get_available_balance,
+    normalize_asset_network,
 )
 from services.email_service import EmailServiceError, send_team_application_email
 from services.rate_limit import rate_limit
@@ -383,25 +384,36 @@ def balance():
     available_breakdown = {}
     withdrawable_breakdown = {}
     purchase_only_breakdown = {}
+    canonical_keys = set()
     for key, value in breakdown.items():
         asset, network = key.split(":", 1)
         if asset == "ALL" or network == "ALL":
             continue
-        wallet_balance = get_available_balance(user.id, asset, network)
-        withdrawable_balance = get_available_balance(user.id, asset, network)
-        held_breakdown[key] = round(float(wallet_balance["held"]), 8)
-        available_breakdown[key] = round(float(wallet_balance["available"]), 8)
-        withdrawable_breakdown[key] = round(float(withdrawable_balance["available"]), 8)
+        canonical_asset, canonical_network = normalize_asset_network(asset, network)
+        canonical_key = f"{canonical_asset}:{canonical_network}"
+        if canonical_key in canonical_keys:
+            continue
+        canonical_keys.add(canonical_key)
+        wallet_balance = get_available_balance(user.id, canonical_asset, canonical_network)
+        withdrawable_balance = get_available_balance(user.id, canonical_asset, canonical_network)
+        held_breakdown[canonical_key] = round(float(wallet_balance["held"]), 8)
+        available_breakdown[canonical_key] = round(float(wallet_balance["available"]), 8)
+        withdrawable_breakdown[canonical_key] = round(float(withdrawable_balance["available"]), 8)
         purchase_only_amount = 0.0
         for entry in all_entries:
+            network_matches = (
+                str(entry.network or "") in {"USDT", "TRX"}
+                if canonical_asset == "USDT" and canonical_network == "TRX"
+                else str(entry.network or "") == canonical_network
+            )
             if (
-                str(entry.asset or "") == asset
-                and str(entry.network or "") == network
+                str(entry.asset or "") == canonical_asset
+                and network_matches
                 and entry.entry_type == "credit"
                 and str(entry.reason or "").startswith(MANUAL_CREDIT_REASON_PREFIX)
             ):
                 purchase_only_amount += float(entry.amount)
-        purchase_only_breakdown[key] = round(purchase_only_amount, 8)
+        purchase_only_breakdown[canonical_key] = round(purchase_only_amount, 8)
     return jsonify(
         {
             "balance": round(sum(breakdown.values()), 8),

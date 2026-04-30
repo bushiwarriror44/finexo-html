@@ -6,6 +6,7 @@ from models import KycProfile, UserBalanceLedger, WithdrawalEventLog, Withdrawal
 from services.audit_service import write_audit
 
 MANUAL_CREDIT_REASON_PREFIX = "MANUAL_CREDIT_PURCHASE_ONLY:"
+USDT_NETWORK_ALIASES = {"USDT", "TRX"}
 
 
 ADMIN_TRANSITIONS = {
@@ -34,8 +35,24 @@ def _event(withdrawal_id: int, actor_type: str, actor_id: Optional[int], event: 
     )
 
 
+def normalize_asset_network(asset: str, network: str) -> tuple[str, str]:
+    normalized_asset = (asset or "").strip().upper()
+    normalized_network = (network or "").strip().upper()
+    if normalized_asset == "USDT" and normalized_network in USDT_NETWORK_ALIASES:
+        return "USDT", "TRX"
+    return normalized_asset, normalized_network
+
+
 def get_available_balance(user_id: int, asset: str, network: str, include_purchase_only: bool = True) -> dict:
-    rows = UserBalanceLedger.query.filter_by(user_id=user_id, asset=asset, network=network).all()
+    asset, network = normalize_asset_network(asset, network)
+    if asset == "USDT" and network == "TRX":
+        rows = UserBalanceLedger.query.filter(
+            UserBalanceLedger.user_id == user_id,
+            UserBalanceLedger.asset == "USDT",
+            UserBalanceLedger.network.in_(tuple(USDT_NETWORK_ALIASES)),
+        ).all()
+    else:
+        rows = UserBalanceLedger.query.filter_by(user_id=user_id, asset=asset, network=network).all()
     total = Decimal("0")
     held = Decimal("0")
     for row in rows:
@@ -67,8 +84,7 @@ def create_withdrawal_request(user_id: int, asset: str, network: str, address: s
         raise ValueError("invalid amount")
     if amount <= 0:
         raise ValueError("amount must be positive")
-    asset = (asset or "").strip().upper()
-    network = (network or "").strip().upper()
+    asset, network = normalize_asset_network(asset, network)
     address = (address or "").strip()
     memo = (memo or "").strip() or None
     if not asset or not network or not address:

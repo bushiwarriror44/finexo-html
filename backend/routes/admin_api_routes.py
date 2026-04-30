@@ -78,7 +78,11 @@ def _get_bot_settings(create=False):
 
 
 def _ledger_breakdown(user_id: int) -> dict:
-    rows = UserBalanceLedger.query.filter_by(user_id=user_id, asset="USDT", network="USDT").all()
+    rows = UserBalanceLedger.query.filter(
+        UserBalanceLedger.user_id == user_id,
+        UserBalanceLedger.asset == "USDT",
+        UserBalanceLedger.network.in_(("USDT", "TRX")),
+    ).all()
     total = Decimal("0")
     held = Decimal("0")
     purchase_only = Decimal("0")
@@ -97,9 +101,7 @@ def _ledger_breakdown(user_id: int) -> dict:
     if held < 0:
         held = Decimal("0")
     available = total - held
-    withdrawable = available - purchase_only
-    if withdrawable < 0:
-        withdrawable = Decimal("0")
+    withdrawable = available
     return {
         "total": total,
         "held": held,

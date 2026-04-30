@@ -4120,6 +4120,7 @@ h6 {
 
   .dashboard-content {
     order: 2;
+    width: 100%;
   }
 
   .dashboard-sidebar-panel {
@@ -4424,3 +4425,5 @@ textarea:focus-visible,
     scroll-behavior: auto !important;
   }
 }
+
+

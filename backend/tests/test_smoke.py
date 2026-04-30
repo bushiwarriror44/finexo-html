@@ -540,6 +540,9 @@ class SmokeTestCase(unittest.TestCase):
 
         with self.client.session_transaction() as sess:
             sess["admin_user_id"] = admin_id
+        admin_list = self.client.get("/admin/api/withdrawals")
+        self.assertEqual(admin_list.status_code, 200)
+        self.assertTrue(any(int(item["id"]) == int(withdrawal_id) for item in (admin_list.get_json() or [])))
         approve = self.client.post(
             f"/admin/api/withdrawals/{withdrawal_id}/action", json={"action": "approve"}
         )
@@ -565,6 +568,36 @@ class SmokeTestCase(unittest.TestCase):
             self.assertEqual(finalize_entries, 1)
             row = WithdrawalRequest.query.get(withdrawal_id)
             self.assertEqual(row.status, "completed")
+        self.client.post("/api/auth/logout", json={})
+        self.login_user("wd@test.com")
+        user_withdrawals = self.client.get("/api/user/withdrawals")
+        self.assertEqual(user_withdrawals.status_code, 200)
+        mapped = next((item for item in (user_withdrawals.get_json() or []) if int(item["id"]) == int(withdrawal_id)), None)
+        self.assertIsNotNone(mapped)
+        self.assertEqual(mapped.get("status"), "completed")
+        self.assertEqual(mapped.get("rawStatus"), "completed")
+
+    def test_withdrawal_legacy_usdt_network_bucket_supported(self):
+        self.register_user("wdlegacy@test.com")
+        self.login_user("wdlegacy@test.com")
+        with app.app_context():
+            user = User.query.filter_by(email="wdlegacy@test.com").first()
+            db.session.add(
+                UserBalanceLedger(
+                    user_id=user.id,
+                    amount=80,
+                    entry_type="credit",
+                    reason="Legacy seed balance",
+                    asset="USDT",
+                    network="USDT",
+                )
+            )
+            db.session.commit()
+        create = self.client.post(
+            "/api/user/withdrawals",
+            json={"asset": "USDT", "network": "TRX", "address": "TLEGACY", "amount": 25},
+        )
+        self.assertEqual(create.status_code, 201)
 
     def test_withdrawal_reject_releases_funds(self):
         self.register_user("wd2@test.com")
@@ -776,7 +809,7 @@ class SmokeTestCase(unittest.TestCase):
                 ).first()
                 self.assertIsNotNone(credit)
                 self.assertEqual(credit.asset, "USDT")
-                self.assertEqual(credit.network, "USDT")
+                self.assertEqual(credit.network, "TRX")
         finally:
             wallet_verifier_module.convert_to_usdt = original_convert
 

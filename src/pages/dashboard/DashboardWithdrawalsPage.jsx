@@ -33,10 +33,13 @@ export function DashboardWithdrawalsPage() {
   const [presets, setPresets] = useState([]);
   const [risk, setRisk] = useState(null);
   const [withdrawalTraces, setWithdrawalTraces] = useState([]);
+  const [initialLoaded, setInitialLoaded] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const load = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) {
+      setLoading(true);
+      setError("");
+    }
     try {
       const query = new URLSearchParams();
       if (quickFilter !== "all") query.set("status", quickFilter === "processing" ? "processing" : quickFilter);
@@ -60,10 +63,15 @@ export function DashboardWithdrawalsPage() {
       setWithdrawalsSyncAt(new Date().toISOString());
       setPresets(Array.isArray(presetData) ? presetData : []);
       setWithdrawalTraces(Array.isArray(tracesData) ? tracesData : []);
+      setInitialLoaded(true);
     } catch (err) {
-      setError(getSafeErrorMessage(err, t("dashboardCabinet.messages.failedLoadWithdrawals")));
+      if (!silent) {
+        setError(getSafeErrorMessage(err, t("dashboardCabinet.messages.failedLoadWithdrawals")));
+      }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }, [amountMax, amountMin, dateFrom, dateTo, quickFilter, t]);
 
@@ -81,6 +89,18 @@ export function DashboardWithdrawalsPage() {
     }
     return () => clearTimeout(timer);
   }, [load]);
+
+  useEffect(() => {
+    if (!initialLoaded) return undefined;
+    const hasActiveRequests = withdrawals.some((row) =>
+      ["pending", "approved", "processing", "review"].includes(String(row.status || "").toLowerCase())
+    );
+    if (!hasActiveRequests) return undefined;
+    const interval = setInterval(() => {
+      load({ silent: true }).catch(() => {});
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [initialLoaded, load, withdrawals]);
 
   useEffect(() => {
     window.localStorage.setItem("cm_withdrawals_search", search);
@@ -134,7 +154,7 @@ export function DashboardWithdrawalsPage() {
     <>
       <ErrorState message={error} onRetry={() => load().catch(() => {})} retryLabel={t("dashboardCabinet.actions.retry")} />
       {status ? <p className="dash-alert is-success">{status}</p> : null}
-      {loading ? <LoadingSkeleton rows={3} /> : null}
+      {loading && !initialLoaded ? <LoadingSkeleton rows={3} /> : null}
       <div className="dashboard-grid dashboard-grid-2 withdrawals-layout-grid">
         <div className="dashboard-panel is-accent">
           <div className="dashboard-panel-header"><h5>{t("dashboardCabinet.withdrawals.title")}</h5></div>
