@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiGet, apiPost } from "../../api/client";
 import { useTranslation } from "react-i18next";
-import { copyTextWithFeedback, formatLastUpdatedLabel, getSafeErrorMessage, money } from "./utils";
+import { copyTextWithFeedback, getSafeErrorMessage, money } from "./utils";
 import { FiCheckCircle, FiCreditCard, FiDollarSign, FiLock, FiTrendingUp, FiUserCheck } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { ActionPopupCard } from "../../components/dashboard/ActionPopupCard";
@@ -18,9 +18,7 @@ export function DashboardOverviewPage() {
   const [referral, setReferral] = useState(null);
   const [kyc, setKyc] = useState(null);
   const [miningSummary, setMiningSummary] = useState(null);
-  const [activeSessions] = useState(Number(window.localStorage.getItem("cm_security_active_sessions") || "1"));
   const [confirmRegenerate, setConfirmRegenerate] = useState(false);
-  const [overviewSyncAt, setOverviewSyncAt] = useState("");
   const [copyToastVisible, setCopyToastVisible] = useState(false);
 
   const load = useCallback(async () => {
@@ -39,7 +37,6 @@ export function DashboardOverviewPage() {
       setReferral(referralData || null);
       setKyc(kycData || null);
       setMiningSummary(summaryData || null);
-      setOverviewSyncAt(new Date().toISOString());
     } catch (err) {
       setError(getSafeErrorMessage(err, t("dashboardCabinet.messages.failedLoadOverview")));
     } finally {
@@ -75,15 +72,6 @@ export function DashboardOverviewPage() {
   }, [copyToastVisible]);
 
 
-  const kycStatus = String(kyc?.status || "not_started").toLowerCase();
-  const kycStepLabel =
-    kycStatus === "approved"
-      ? t("dashboardCabinet.overview.kycApproved", { defaultValue: "Approved" })
-      : kycStatus === "rejected"
-      ? t("dashboardCabinet.overview.kycRejected", { defaultValue: "Rejected" })
-      : kycStatus === "submitted" || kycStatus === "review"
-      ? t("dashboardCabinet.overview.kycReview", { defaultValue: "Under review" })
-      : t("dashboardCabinet.overview.kycNotStarted", { defaultValue: "Not started" });
   const referralAbsoluteLink = useMemo(() => {
     const raw = String(referral?.link || "").trim();
     if (!raw) return "";
@@ -99,24 +87,6 @@ export function DashboardOverviewPage() {
       {loading ? <p className="dash-muted">{t("dashboardCabinet.messages.loadingOverview")}</p> : null}
       
       <p className="dash-help">{t("dashboardCabinet.overview.hourlyUpdateHint", { defaultValue: "Mining earnings are updated hourly and displayed with 4 decimal precision." })}</p>
-      <div className="dashboard-trust-strip">
-        <div className="dashboard-trust-strip-item">
-          <strong>{t("dashboardCabinet.trust.verification", { defaultValue: "Verification level" })}</strong>
-          <span>{kycStepLabel}</span>
-        </div>
-        <div className="dashboard-trust-strip-item">
-          <strong>{t("dashboardCabinet.trust.withdrawPolicy", { defaultValue: "Withdrawal policy" })}</strong>
-          <span>{kyc?.verificationRequested && kycStatus !== "approved" ? t("dashboardCabinet.trust.policyFreeze", { defaultValue: "Policy freeze" }) : t("dashboardCabinet.trust.normal", { defaultValue: "Normal" })}</span>
-        </div>
-        <div className="dashboard-trust-strip-item">
-          <strong>{t("dashboardCabinet.trust.finality", { defaultValue: "Finality" })}</strong>
-          <span>{t("dashboardCabinet.trust.onchainRequired", { defaultValue: "On-chain confirmation" })}</span>
-        </div>
-        <div className="dashboard-trust-strip-item">
-          <strong>{t("dashboardCabinet.trust.sync", { defaultValue: "Sync" })}</strong>
-          <span>{formatLastUpdatedLabel(overviewSyncAt, t, { withRelativeHint: false })}</span>
-        </div>
-      </div>
       <div className="dashboard-priority-grid dashboard-priority-grid-compact">
         <div className="dashboard-priority-card">
           <strong>{t("dashboardCabinet.overview.profileIdentity", { defaultValue: "Identity" })}</strong>
@@ -125,10 +95,6 @@ export function DashboardOverviewPage() {
         <div className="dashboard-priority-card">
           <strong>{t("dashboardCabinet.overview.residenceCountry", { defaultValue: "Residence country" })}</strong>
           <span>{user?.country_code || t("dashboardCabinet.overview.notSet", { defaultValue: "Not set" })}</span>
-        </div>
-        <div className="dashboard-priority-card">
-          <strong>{t("dashboardCabinet.overview.sessionState", { defaultValue: "Session state" })}</strong>
-          <span>{activeSessions > 1 ? t("dashboardCabinet.overview.multiSession", { defaultValue: "Multiple sessions" }) : t("dashboardCabinet.overview.singleSession", { defaultValue: "Single session" })}</span>
         </div>
       </div>
       <div className="dashboard-grid dashboard-grid-5">

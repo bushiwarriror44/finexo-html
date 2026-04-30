@@ -388,7 +388,7 @@ def balance():
         if asset == "ALL" or network == "ALL":
             continue
         wallet_balance = get_available_balance(user.id, asset, network)
-        withdrawable_balance = get_available_balance(user.id, asset, network, include_purchase_only=False)
+        withdrawable_balance = get_available_balance(user.id, asset, network)
         held_breakdown[key] = round(float(wallet_balance["held"]), 8)
         available_breakdown[key] = round(float(wallet_balance["available"]), 8)
         withdrawable_breakdown[key] = round(float(withdrawable_balance["available"]), 8)

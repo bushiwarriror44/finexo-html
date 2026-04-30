@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-export function WithdrawModal({ isOpen, withdrawableBalance, purchaseOnlyBalance = 0, initialAddress = "", onClose, onSubmit, t }) {
+export function WithdrawModal({ isOpen, withdrawableBalance, availableBalance = 0, purchaseOnlyBalance = 0, initialAddress = "", onClose, onSubmit, t }) {
   const [asset] = useState("USDT");
   const [network] = useState("TRX");
   const [address, setAddress] = useState(initialAddress);
@@ -13,6 +13,10 @@ export function WithdrawModal({ isOpen, withdrawableBalance, purchaseOnlyBalance
   const [step, setStep] = useState("form");
   const modalRef = useRef(null);
   const lastActiveRef = useRef(null);
+  const mainBalance = useMemo(() => {
+    const calculated = Number(withdrawableBalance || 0) - Number(purchaseOnlyBalance || 0);
+    return calculated > 0 ? calculated : 0;
+  }, [purchaseOnlyBalance, withdrawableBalance]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -121,12 +125,22 @@ export function WithdrawModal({ isOpen, withdrawableBalance, purchaseOnlyBalance
           )}
           <p className="dash-help">{t("dashboardCabinet.withdrawals.available")}: ${Number(withdrawableBalance || 0).toFixed(2)}</p>
           <p className="dash-help">{t("dashboardCabinet.withdrawals.exactWithdrawable", { defaultValue: "Exact withdrawable amount" })}: ${Number(withdrawableBalance || 0).toFixed(2)}</p>
-          <p className="dash-help">{t("dashboardCabinet.withdrawals.profitOnlyWithdrawableHint", { defaultValue: "Only profit/withdrawable balance can be withdrawn." })}</p>
-          {Number(purchaseOnlyBalance || 0) > 0 ? (
-            <p className="dash-alert is-warning">
-              {t("dashboardCabinet.withdrawals.bonusNonWithdrawable", { defaultValue: "Bonus tokens are not withdrawable and can only be used for buying power/tariffs." })} (${Number(purchaseOnlyBalance || 0).toFixed(2)})
+          <p className="dash-help">{t("dashboardCabinet.withdrawals.withdrawableIncludesBonuses", { defaultValue: "Withdrawable amount includes both main balance and bonus tokens." })}</p>
+          <div className="dash-state-card">
+            <p className="dash-state-title">{t("dashboardCabinet.withdrawals.balanceBreakdownTitle", { defaultValue: "Balance breakdown for withdrawal" })}</p>
+            <p className="dash-state-description">
+              {t("dashboardCabinet.withdrawals.mainBalance", { defaultValue: "Main balance" })}: <strong>${Number(mainBalance || 0).toFixed(2)}</strong>
             </p>
-          ) : null}
+            <p className="dash-state-description">
+              {t("dashboardCabinet.withdrawals.bonusTokens", { defaultValue: "Bonus tokens" })}: <strong>${Number(purchaseOnlyBalance || 0).toFixed(2)}</strong>
+            </p>
+            <p className="dash-state-description">
+              {t("dashboardCabinet.withdrawals.totalWithdrawable", { defaultValue: "Total available to withdraw" })}: <strong>${Number(withdrawableBalance || 0).toFixed(2)}</strong>
+            </p>
+            <p className="dash-help mb-0">
+              {t("dashboardCabinet.withdrawals.availableBalanceInfo", { defaultValue: "Available balance (informational):" })} ${Number(availableBalance || 0).toFixed(2)}
+            </p>
+          </div>
           <p className="dash-help">{t("dashboardCabinet.withdrawals.disclosure", { defaultValue: "Withdrawal requests are reviewed for security and compliance before execution." })}</p>
           {error ? <p className="dash-alert is-error">{error}</p> : null}
           <div className="dash-actions-cell">

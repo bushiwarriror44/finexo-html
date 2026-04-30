@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiGet, apiPost } from "../../api/client";
 import { useTranslation } from "react-i18next";
 import { formatDateTimeRu, formatLastUpdatedLabel, getSafeErrorMessage, money, normalizeApiList, statusBadgeClass } from "./utils";
@@ -13,6 +13,7 @@ export function DashboardWithdrawalsPage() {
   const [status, setStatus] = useState("");
   const [withdrawals, setWithdrawals] = useState([]);
   const [withdrawableBalance, setWithdrawableBalance] = useState(0);
+  const [availableBalance, setAvailableBalance] = useState(0);
   const [purchaseOnlyBalance, setPurchaseOnlyBalance] = useState(0);
   const [withdrawAddress, setWithdrawAddress] = useState("");
   const [addressBook, setAddressBook] = useState([]);
@@ -50,6 +51,7 @@ export function DashboardWithdrawalsPage() {
         apiGet("/api/user/dashboard/filter-presets?scope=withdrawals"),
         apiGet("/api/user/dashboard/audit-traces?scope=withdrawals"),
       ]);
+      setAvailableBalance(balanceData.availableBalance || 0);
       setWithdrawableBalance(balanceData.withdrawableBalance || 0);
       setPurchaseOnlyBalance(balanceData.purchaseOnlyBalance || 0);
       setWithdrawals(normalizeApiList(withdrawalData));
@@ -123,6 +125,11 @@ export function DashboardWithdrawalsPage() {
     return () => clearTimeout(timer);
   }, [status]);
 
+  const mainBalance = useMemo(() => {
+    const calculated = Number(withdrawableBalance || 0) - Number(purchaseOnlyBalance || 0);
+    return calculated > 0 ? calculated : 0;
+  }, [purchaseOnlyBalance, withdrawableBalance]);
+
   return (
     <>
       <ErrorState message={error} onRetry={() => load().catch(() => {})} retryLabel={t("dashboardCabinet.actions.retry")} />
@@ -183,13 +190,23 @@ export function DashboardWithdrawalsPage() {
               {t("dashboardCabinet.withdrawals.exactWithdrawable", { defaultValue: "Exact withdrawable amount" })}: {money(withdrawableBalance)}
             </p>
             <p className="dash-help">
-              {t("dashboardCabinet.withdrawals.profitOnlyWithdrawableHint", { defaultValue: "Only profit/withdrawable balance can be withdrawn." })}
+              {t("dashboardCabinet.withdrawals.withdrawableIncludesBonuses", { defaultValue: "Withdrawable amount includes both main balance and bonus tokens." })}
             </p>
-            {Number(purchaseOnlyBalance || 0) > 0 ? (
-              <p className="dash-help">
-                {t("dashboardCabinet.withdrawals.bonusNonWithdrawable", { defaultValue: "Bonus tokens are not withdrawable and can only be used for buying power/tariffs." })} ({money(purchaseOnlyBalance)})
+            <div className="dash-state-card mb-3">
+              <p className="dash-state-title">{t("dashboardCabinet.withdrawals.balanceBreakdownTitle", { defaultValue: "Balance breakdown for withdrawal" })}</p>
+              <p className="dash-state-description">
+                {t("dashboardCabinet.withdrawals.mainBalance", { defaultValue: "Main balance" })}: <strong>{money(mainBalance)}</strong>
               </p>
-            ) : null}
+              <p className="dash-state-description">
+                {t("dashboardCabinet.withdrawals.bonusTokens", { defaultValue: "Bonus tokens" })}: <strong>{money(purchaseOnlyBalance)}</strong>
+              </p>
+              <p className="dash-state-description">
+                {t("dashboardCabinet.withdrawals.totalWithdrawable", { defaultValue: "Total available to withdraw" })}: <strong>{money(withdrawableBalance)}</strong>
+              </p>
+              <p className="dash-help mb-0">
+                {t("dashboardCabinet.withdrawals.availableBalanceInfo", { defaultValue: "Available balance (informational):" })} {money(availableBalance)}
+              </p>
+            </div>
             <div className="dash-trust-strip is-warning">
               <FiAlertTriangle />
               <span>{t("dashboardCabinet.withdrawals.finalityStrip", { defaultValue: "Completed withdrawals are final. Double-check destination address before confirming." })}</span>
@@ -359,6 +376,7 @@ export function DashboardWithdrawalsPage() {
       <WithdrawModal
         isOpen={showWithdrawModal}
         withdrawableBalance={withdrawableBalance}
+        availableBalance={availableBalance}
         purchaseOnlyBalance={purchaseOnlyBalance}
         initialAddress={withdrawAddress}
         onClose={() => setShowWithdrawModal(false)}

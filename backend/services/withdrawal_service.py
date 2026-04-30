@@ -39,12 +39,8 @@ def get_available_balance(user_id: int, asset: str, network: str, include_purcha
     total = Decimal("0")
     held = Decimal("0")
     for row in rows:
-        if (
-            not include_purchase_only
-            and row.entry_type == "credit"
-            and str(row.reason or "").startswith(MANUAL_CREDIT_REASON_PREFIX)
-        ):
-            continue
+        # Bonus/purchase-only credits are withdrawable by current business rules.
+        # The include_purchase_only flag is kept for backward compatibility but no longer excludes entries.
         amount = Decimal(str(row.amount))
         total += amount * _entry_sign(row.entry_type)
         if row.entry_type == "withdrawal_hold":
@@ -54,8 +50,8 @@ def get_available_balance(user_id: int, asset: str, network: str, include_purcha
     if held < 0:
         held = Decimal("0")
     available = total - held
-    # Withdrawable balance should never be negative in UI/API.
-    if not include_purchase_only and available < 0:
+    # Available/withdrawable balance should never be negative in UI/API.
+    if available < 0:
         available = Decimal("0")
     return {
         "total": total,

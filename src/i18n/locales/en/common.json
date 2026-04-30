@@ -1197,8 +1197,8 @@
       "nextRetry": "Next retry",
       "deadLetter": "Dead letter",
       "exactWithdrawable": "Exact withdrawable amount",
-      "bonusNonWithdrawable": "Bonus tokens are not withdrawable and can only be used for buying power/tariffs.",
-      "profitOnlyWithdrawableHint": "Only profit/withdrawable balance can be withdrawn."
+      "bonusNonWithdrawable": "Bonus tokens are shown separately for clarity.",
+      "profitOnlyWithdrawableHint": "Withdrawable amount is based on available balance."
     },
     "withdrawals": {
       "title": "Withdraw funds",
@@ -1214,8 +1214,14 @@
       "securityCode": "Security code",
       "riskConfirm": "I understand withdrawals are irreversible after processing.",
       "exactWithdrawable": "Exact withdrawable amount",
-      "bonusNonWithdrawable": "Bonus tokens are not withdrawable and can only be used for buying power/tariffs.",
-      "profitOnlyWithdrawableHint": "Only profit/withdrawable balance can be withdrawn.",
+      "bonusNonWithdrawable": "Bonus tokens are shown separately for clarity.",
+      "profitOnlyWithdrawableHint": "Withdrawable amount is based on available balance.",
+      "withdrawableIncludesBonuses": "Withdrawable amount includes both main balance and bonus tokens.",
+      "balanceBreakdownTitle": "Balance breakdown for withdrawal",
+      "mainBalance": "Main balance",
+      "bonusTokens": "Bonus tokens",
+      "totalWithdrawable": "Total available to withdraw",
+      "availableBalanceInfo": "Available balance (info):",
       "disclosure": "Withdrawal requests are reviewed for security and compliance before execution.",
       "cancelConfirm": "Cancel this withdrawal request? This action cannot be undone.",
       "reviewTitle": "Review withdrawal request",

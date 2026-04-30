@@ -19,9 +19,13 @@ TRON_USDT_CONTRACTS = {
 }
 TRON_PUBLIC_API_URLS = [
     item.strip()
-    for item in os.getenv("TRON_PUBLIC_API_URLS", "https://api.trongrid.io").split(",")
+    for item in os.getenv(
+        "TRON_PUBLIC_API_URLS",
+        "https://api.trongrid.io,https://api.tronstack.io,https://tronapi.io",
+    ).split(",")
     if item.strip()
 ]
+TRONSCAN_API_BASE = os.getenv("TRONSCAN_API_BASE", "https://apilist.tronscanapi.com/api").strip().rstrip("/")
 
 
 class TronProviderError(Exception):
@@ -40,8 +44,27 @@ def _normalize_tron_amount(raw_amount):
         return None
 
 
+def _normalize_contract_address(value: str) -> str:
+    return str(value or "").strip().lower()
+
+
+def _extract_raw_amount_from_tronscan(value) -> Decimal:
+    return Decimal(str(value or "0"))
+
+
+def _parse_tronscan_amount(raw_value, decimals=None) -> Optional[Decimal]:
+    try:
+        raw = _extract_raw_amount_from_tronscan(raw_value)
+        if decimals is None:
+            return raw
+        decimals_num = int(decimals)
+        return raw / (Decimal("10") ** Decimal(str(decimals_num)))
+    except Exception:
+        return None
+
+
 def _extract_transfer_from_events(events: List[Dict]) -> Tuple[Optional[str], Optional[str]]:
-    expected_contracts = {contract.lower() for contract in TRON_USDT_CONTRACTS}
+    expected_contracts = {_normalize_contract_address(contract) for contract in TRON_USDT_CONTRACTS}
     for event in events:
         event_name = (event.get("event_name") or event.get("eventName") or "").strip()
         if event_name and event_name != "Transfer":
@@ -50,7 +73,7 @@ def _extract_transfer_from_events(events: List[Dict]) -> Tuple[Optional[str], Op
         contract_address = (event.get("contract_address") or "").strip()
         if not contract_address:
             continue
-        if contract_address.lower() not in expected_contracts:
+        if _normalize_contract_address(contract_address) not in expected_contracts:
             continue
         to_address = (result.get("to") or result.get("to_address") or "").strip()
         amount = result.get("value")
@@ -100,6 +123,145 @@ def _http_error_to_code(status_code: Optional[int]) -> str:
     return "PROVIDER_HTTP_ERROR"
 
 
+def _get_tronscan_usdt_wallet_balance(wallet_address: str) -> Optional[Decimal]:
+    address = (wallet_address or "").strip()
+    if not address:
+        return None
+    try:
+        response = requests.get(
+            "https://apilist.tronscanapi.com/api/account",
+            params={"address": address},
+            timeout=20,
+        )
+        if not response.ok:
+            return None
+        payload = response.json() or {}
+        rows = payload.get("trc20token_balances") or payload.get("trc20TokenBalances") or []
+        expected_contracts = {_normalize_contract_address(contract) for contract in TRON_USDT_CONTRACTS}
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            symbol = str(row.get("tokenAbbr") or row.get("symbol") or "").strip().upper()
+            contract = _normalize_contract_address(row.get("tokenId") or row.get("contract_address"))
+            if symbol != "USDT" and contract not in expected_contracts:
+                continue
+            raw_balance = row.get("balance")
+            decimals = row.get("tokenDecimal")
+            amount = _parse_tronscan_amount(raw_balance, decimals if decimals is not None else 6)
+            if amount is not None:
+                return amount
+        return None
+    except Exception:
+        return None
+
+
+def _get_tronscan_incoming_transfers(wallet_address: str, min_timestamp_ms: int = 0) -> List[Dict]:
+    address = (wallet_address or "").strip()
+    if not address:
+        return []
+    try:
+        params = {
+            "limit": 200,
+            "start": 0,
+            "relatedAddress": address,
+            "toAddress": address,
+            "sort": "-timestamp",
+            "contract_address": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+            "start_timestamp": int(min_timestamp_ms or 0),
+        }
+        response = requests.get(f"{TRONSCAN_API_BASE}/token_trc20/transfers", params=params, timeout=20)
+        if not response.ok:
+            return []
+        payload = response.json() or {}
+        rows = payload.get("token_transfers") or payload.get("data") or []
+        expected_contracts = {_normalize_contract_address(contract) for contract in TRON_USDT_CONTRACTS}
+        items: List[Dict] = []
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            tx_hash = str(row.get("transaction_id") or row.get("hash") or "").strip()
+            to_address = str(row.get("to_address") or row.get("toAddress") or row.get("to") or "").strip()
+            contract = _normalize_contract_address(
+                row.get("contract_address")
+                or row.get("tokenInfo", {}).get("tokenId")
+                or row.get("tokenInfo", {}).get("address")
+            )
+            symbol = str(
+                row.get("tokenInfo", {}).get("tokenAbbr")
+                or row.get("tokenInfo", {}).get("symbol")
+                or row.get("token_symbol")
+                or ""
+            ).strip().upper()
+            if not tx_hash or not to_address:
+                continue
+            if symbol != "USDT" and contract not in expected_contracts:
+                continue
+            decimals = row.get("tokenInfo", {}).get("tokenDecimal") or row.get("token_decimal") or 6
+            amount = _parse_tronscan_amount(row.get("quant") or row.get("amount") or row.get("value"), decimals)
+            if amount is None:
+                continue
+            confirmations = int(row.get("confirmations") or 0)
+            timestamp_ms = int(row.get("block_ts") or row.get("timestamp") or row.get("block_timestamp") or 0)
+            items.append(
+                {
+                    "txHash": tx_hash,
+                    "toAddress": to_address,
+                    "amount": str(amount.quantize(Decimal("0.00000001"))),
+                    "confirmations": confirmations,
+                    "timestampMs": timestamp_ms,
+                }
+            )
+        return items
+    except Exception:
+        return []
+
+
+def _get_tronscan_transaction(tx_hash: str) -> Optional[Dict]:
+    hash_value = (tx_hash or "").strip()
+    if not hash_value:
+        return None
+    try:
+        response = requests.get(
+            f"{TRONSCAN_API_BASE}/transaction-info",
+            params={"hash": hash_value},
+            timeout=20,
+        )
+        if not response.ok:
+            return None
+        payload = response.json() or {}
+        result = payload.get("contractRet") or payload.get("result")
+        confirmed = str(result or "").upper() == "SUCCESS"
+        transfer_rows = payload.get("trc20TransferInfo") or payload.get("tokenTransfers") or []
+        to_address = None
+        amount_value = None
+        expected_contracts = {_normalize_contract_address(contract) for contract in TRON_USDT_CONTRACTS}
+        for row in transfer_rows:
+            if not isinstance(row, dict):
+                continue
+            symbol = str(row.get("symbol") or row.get("tokenSymbol") or "").strip().upper()
+            contract = _normalize_contract_address(row.get("contract_address") or row.get("tokenId"))
+            if symbol != "USDT" and contract not in expected_contracts:
+                continue
+            to_address = str(row.get("to_address") or row.get("toAddress") or row.get("to") or "").strip() or None
+            amount_value = row.get("amount_str") or row.get("amount") or row.get("quant")
+            decimals = row.get("decimals") or row.get("tokenDecimal")
+            amount_decimal = _parse_tronscan_amount(amount_value, decimals if decimals is not None else None)
+            if amount_decimal is not None:
+                amount_value = str(amount_decimal.quantize(Decimal("0.00000001")))
+            break
+        confirmations = int(payload.get("confirmations") or payload.get("confirmed") or 0)
+        return {
+            "confirmed": confirmed,
+            "toAddress": to_address,
+            "amount": amount_value,
+            "confirmations": confirmations,
+            "message": "confirmed" if confirmed else f"status={result or 'unknown'}",
+            "errorCode": None if confirmed else "TX_NOT_CONFIRMED",
+        }
+    except Exception:
+        return None
+
+
 def _fetch_json_with_fallback(api_url: str, api_key: str, path: str, params: Optional[Dict] = None, timeout: int = 20) -> Dict:
     candidates = _candidate_tron_endpoints(api_url, api_key)
     if not candidates:
@@ -132,9 +294,15 @@ def verify_tron_transaction(api_url: str, api_key: str, tx_hash: str) -> dict:
     try:
         payload = _fetch_json_with_fallback(api_url, api_key, f"transactions/{tx_hash}")
     except TronProviderError as exc:
+        tronscan_payload = _get_tronscan_transaction(tx_hash)
+        if tronscan_payload:
+            return tronscan_payload
         return {"confirmed": False, "errorCode": exc.error_code, "message": exc.message}
     rows = payload.get("data") or []
     if not rows:
+        tronscan_payload = _get_tronscan_transaction(tx_hash)
+        if tronscan_payload:
+            return tronscan_payload
         return {"confirmed": False, "errorCode": "TX_NOT_FOUND", "message": "transaction not found"}
 
     tx = rows[0]
@@ -180,7 +348,8 @@ def get_tron_usdt_wallet_balance(api_url: str, api_key: str, wallet_address: str
         )
         rows = payload.get("data") or []
         if not rows:
-            return Decimal("0")
+            tronscan_fallback = _get_tronscan_usdt_wallet_balance(wallet_address)
+            return tronscan_fallback if tronscan_fallback is not None else Decimal("0")
         trc20_rows = rows[0].get("trc20") or []
         contract_expected = {contract.lower() for contract in TRON_USDT_CONTRACTS}
         for token_map in trc20_rows:
@@ -190,11 +359,14 @@ def get_tron_usdt_wallet_balance(api_url: str, api_key: str, wallet_address: str
                 if str(contract or "").strip().lower() not in contract_expected:
                     continue
                 return Decimal(str(amount_raw or "0"))
-        return Decimal("0")
+        tronscan_fallback = _get_tronscan_usdt_wallet_balance(wallet_address)
+        return tronscan_fallback if tronscan_fallback is not None else Decimal("0")
     except TronProviderError:
-        return None
+        tronscan_fallback = _get_tronscan_usdt_wallet_balance(wallet_address)
+        return tronscan_fallback
     except Exception:
-        return None
+        tronscan_fallback = _get_tronscan_usdt_wallet_balance(wallet_address)
+        return tronscan_fallback
 
 
 def list_tron_usdt_incoming_transfers(api_url: str, api_key: str, wallet_address: str, min_timestamp_ms: int = 0) -> List[Dict]:
@@ -226,8 +398,8 @@ def list_tron_usdt_incoming_transfers(api_url: str, api_key: str, wallet_address
             for row in raw_rows:
                 token_info = row.get("token_info") or {}
                 symbol = str(token_info.get("symbol") or "").strip().upper()
-                contract_address = str(token_info.get("address") or row.get("token_id") or "").strip()
-                if symbol == "USDT" or contract_address in TRON_USDT_CONTRACTS:
+                contract_address = _normalize_contract_address(token_info.get("address") or row.get("token_id"))
+                if symbol == "USDT" or contract_address in {_normalize_contract_address(c) for c in TRON_USDT_CONTRACTS}:
                     rows.append(row)
 
         dedup: Dict[str, Dict] = {}
@@ -266,8 +438,15 @@ def list_tron_usdt_incoming_transfers(api_url: str, api_key: str, wallet_address
                     "timestampMs": timestamp_ms,
                 }
             )
+        if not items:
+            tronscan_items = _get_tronscan_incoming_transfers(wallet_address, min_timestamp_ms=min_timestamp_ms)
+            if tronscan_items:
+                return tronscan_items
         return items
     except TronProviderError as exc:
+        tronscan_items = _get_tronscan_incoming_transfers(wallet_address, min_timestamp_ms=min_timestamp_ms)
+        if tronscan_items:
+            return tronscan_items
         raise exc
     except Exception:
         return []

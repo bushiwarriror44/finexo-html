@@ -275,8 +275,13 @@ def upsert_bot_settings():
         return _json_error("botToken is required", "BOT_TOKEN_REQUIRED", 400)
     is_active = bool(data.get("isActive", True))
     row = _get_bot_settings(create=True)
+    previous_token = row.get_bot_token() if row else ""
     row.set_bot_token(bot_token)
     row.is_active = is_active
+    if previous_token != bot_token:
+        # Token rotation means update offsets from the previous bot are invalid.
+        row.last_chat_id = None
+        row.last_update_id = None
     row.updated_at = datetime.utcnow()
     db.session.commit()
     write_audit("admin", admin.id, "bot_settings_update", f"bot_settings_id={row.id}; active={row.is_active}")
@@ -302,6 +307,9 @@ def sync_bot_chat():
         return _json_error("bot token is not configured", "BOT_TOKEN_REQUIRED", 400)
     offset = (int(row.last_update_id) + 1) if row.last_update_id is not None else None
     sync_result = sync_last_chat_id(row.get_bot_token(), offset=offset)
+    if not sync_result.get("ok") and offset is not None:
+        # Fallback: stale offset can hide existing updates.
+        sync_result = sync_last_chat_id(row.get_bot_token(), offset=None)
     if not sync_result.get("ok"):
         return _json_error(sync_result.get("error") or "bot chat sync failed", "BOT_SYNC_FAILED", 400)
     row.last_chat_id = str(sync_result.get("chatId") or "")

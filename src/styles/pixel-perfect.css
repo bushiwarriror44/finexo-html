@@ -4037,23 +4037,55 @@ h6 {
 
   .dashboard-layout {
     grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 12px;
   }
 
   .dashboard-sidebar {
     position: static;
+    display: contents;
   }
 
   .dashboard-subnav {
-    display: flex;
-    flex-direction: row;
-    overflow-x: auto;
-    padding-bottom: 2px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    overflow: visible;
+    padding-bottom: 0;
   }
 
   .dashboard-subnav-link {
-    flex: 0 0 auto;
-    min-width: 180px;
+    min-width: 0;
+    padding: 8px 8px;
+    gap: 6px;
+    font-size: 12px;
+    line-height: 1.2;
+  }
+
+  .dashboard-subnav-link svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .dashboard-subnav-counter {
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+    padding: 0 4px;
+  }
+
+  .dashboard-subnav {
+    order: 1;
+  }
+
+  .dashboard-content {
+    order: 2;
+  }
+
+  .dashboard-sidebar-panel {
+    order: 3;
+    margin-top: 8px;
   }
 
   .dashboard-action-strip-sticky {
@@ -4229,6 +4261,12 @@ h6 {
   .plans-table tr.is-row-selected {
     border-color: #7dd3fc;
     background: #eef6ff;
+  }
+}
+
+@media (max-width: 767px) {
+  .dashboard-subnav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
