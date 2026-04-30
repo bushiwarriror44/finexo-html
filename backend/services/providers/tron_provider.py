@@ -5,6 +5,18 @@ from typing import Dict, List, Optional, Tuple
 
 TRON_USDT_DECIMALS = Decimal("1000000")
 TRON_MAINNET_USDT_CONTRACT = os.getenv("TRON_USDT_CONTRACT", "TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj")
+TRON_USDT_KNOWN_CONTRACTS = {
+    "TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj",  # legacy/common mapping
+    "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",  # current main USDT TRC20
+}
+TRON_USDT_CONTRACTS = {
+    item.strip()
+    for item in os.getenv(
+        "TRON_USDT_CONTRACTS",
+        ",".join(sorted({TRON_MAINNET_USDT_CONTRACT, *TRON_USDT_KNOWN_CONTRACTS})),
+    ).split(",")
+    if item.strip()
+}
 TRON_PUBLIC_API_URLS = [
     item.strip()
     for item in os.getenv("TRON_PUBLIC_API_URLS", "https://api.trongrid.io").split(",")
@@ -29,6 +41,7 @@ def _normalize_tron_amount(raw_amount):
 
 
 def _extract_transfer_from_events(events: List[Dict]) -> Tuple[Optional[str], Optional[str]]:
+    expected_contracts = {contract.lower() for contract in TRON_USDT_CONTRACTS}
     for event in events:
         event_name = (event.get("event_name") or event.get("eventName") or "").strip()
         if event_name and event_name != "Transfer":
@@ -37,7 +50,7 @@ def _extract_transfer_from_events(events: List[Dict]) -> Tuple[Optional[str], Op
         contract_address = (event.get("contract_address") or "").strip()
         if not contract_address:
             continue
-        if contract_address != TRON_MAINNET_USDT_CONTRACT:
+        if contract_address.lower() not in expected_contracts:
             continue
         to_address = (result.get("to") or result.get("to_address") or "").strip()
         amount = result.get("value")
@@ -169,12 +182,12 @@ def get_tron_usdt_wallet_balance(api_url: str, api_key: str, wallet_address: str
         if not rows:
             return Decimal("0")
         trc20_rows = rows[0].get("trc20") or []
-        contract_expected = TRON_MAINNET_USDT_CONTRACT.lower()
+        contract_expected = {contract.lower() for contract in TRON_USDT_CONTRACTS}
         for token_map in trc20_rows:
             if not isinstance(token_map, dict):
                 continue
             for contract, amount_raw in token_map.items():
-                if str(contract or "").strip().lower() != contract_expected:
+                if str(contract or "").strip().lower() not in contract_expected:
                     continue
                 return Decimal(str(amount_raw or "0"))
         return Decimal("0")
@@ -190,14 +203,39 @@ def list_tron_usdt_incoming_transfers(api_url: str, api_key: str, wallet_address
     if not api_url or not wallet_address:
         return []
     try:
-        params = {
-            "only_confirmed": "true",
-            "limit": 200,
-            "contract_address": TRON_MAINNET_USDT_CONTRACT,
-            "min_timestamp": int(min_timestamp_ms or 0),
-        }
-        payload = _fetch_json_with_fallback(api_url, api_key, f"accounts/{wallet_address}/transactions/trc20", params=params)
-        rows = (payload or {}).get("data") or []
+        rows: List[Dict] = []
+        for contract in TRON_USDT_CONTRACTS:
+            params = {
+                "only_confirmed": "true",
+                "limit": 200,
+                "contract_address": contract,
+                "min_timestamp": int(min_timestamp_ms or 0),
+            }
+            payload = _fetch_json_with_fallback(api_url, api_key, f"accounts/{wallet_address}/transactions/trc20", params=params)
+            rows.extend((payload or {}).get("data") or [])
+
+        # Fallback without contract filter; keep only USDT by token symbol when provider supports it.
+        if not rows:
+            fallback_params = {
+                "only_confirmed": "true",
+                "limit": 200,
+                "min_timestamp": int(min_timestamp_ms or 0),
+            }
+            payload = _fetch_json_with_fallback(api_url, api_key, f"accounts/{wallet_address}/transactions/trc20", params=fallback_params)
+            raw_rows = (payload or {}).get("data") or []
+            for row in raw_rows:
+                token_info = row.get("token_info") or {}
+                symbol = str(token_info.get("symbol") or "").strip().upper()
+                contract_address = str(token_info.get("address") or row.get("token_id") or "").strip()
+                if symbol == "USDT" or contract_address in TRON_USDT_CONTRACTS:
+                    rows.append(row)
+
+        dedup: Dict[str, Dict] = {}
+        for row in rows:
+            tx_hash = str(row.get("transaction_id") or "").strip()
+            if tx_hash and tx_hash not in dedup:
+                dedup[tx_hash] = row
+        rows = list(dedup.values())
         items = []
         for row in rows:
             tx_hash = (row.get("transaction_id") or "").strip()
