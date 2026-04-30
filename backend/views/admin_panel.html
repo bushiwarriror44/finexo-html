@@ -497,6 +497,29 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
+function formatDecimalValue(value) {
+  if (value === null || value === undefined || value === "") return "-";
+  const raw = String(value).trim();
+  if (!raw) return "-";
+  const numeric = Number(raw);
+  if (!Number.isFinite(numeric)) return raw;
+  if (Math.abs(numeric) < 1e-12) return "0";
+  return numeric.toFixed(8).replace(/\.?0+$/, "");
+}
+
+function normalizeScientificCells() {
+  document.querySelectorAll("table.table td").forEach((cell) => {
+    const text = (cell.textContent || "").trim();
+    if (!text) return;
+    if (/^-?\d+(\.\d+)?e[+-]?\d+$/i.test(text)) {
+      cell.textContent = formatDecimalValue(text);
+    }
+    if (text === "0E-8" || text === "0e-8") {
+      cell.textContent = "0";
+    }
+  });
+}
+
 function showFeedback(message, tone = "success") {
   if (!adminFeedback) return;
   adminFeedback.className = `alert alert-${tone}`;
@@ -766,10 +789,10 @@ async function fetchUsers() {
         <td>${escapeHtml(row.email)}</td>
         <td>${escapeHtml(row.isAdmin ? "admin" : "user")}</td>
         <td>${escapeHtml(row.isActive ? "active" : "inactive")}</td>
-        <td>${escapeHtml(row.availableBalanceUsdt)}</td>
-        <td>${escapeHtml(row.heldBalanceUsdt)}</td>
-        <td>${escapeHtml(row.withdrawableBalanceUsdt)}</td>
-        <td>${escapeHtml(row.purchaseOnlyBalanceUsdt)}</td>
+        <td>${escapeHtml(formatDecimalValue(row.availableBalanceUsdt))}</td>
+        <td>${escapeHtml(formatDecimalValue(row.heldBalanceUsdt))}</td>
+        <td>${escapeHtml(formatDecimalValue(row.withdrawableBalanceUsdt))}</td>
+        <td>${escapeHtml(formatDecimalValue(row.purchaseOnlyBalanceUsdt))}</td>
         <td class="d-flex gap-1">
           <button type="button" class="btn btn-sm btn-outline-success manual-credit-prefill-btn" data-user-id="${row.id}">Manual credit</button>
           <button type="button" class="btn btn-sm btn-outline-primary filter-topups-user-btn" data-user-id="${row.id}">Top-ups</button>
@@ -961,6 +984,7 @@ fetchWallets();
 fetchTopups();
 fetchVerificationProfiles();
 setupAdminTabs();
+normalizeScientificCells();
 
 verificationFilterForm?.addEventListener("submit", async (e) => {
   e.preventDefault();
