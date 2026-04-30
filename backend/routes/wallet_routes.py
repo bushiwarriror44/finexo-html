@@ -1,6 +1,6 @@
-import re
+import secrets
 from decimal import Decimal, InvalidOperation
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import Blueprint, jsonify, request, session
 
@@ -10,7 +10,8 @@ from services.dashboard_contract import api_error, iso_or_none, map_topup_status
 from services.wallet_verifier import process_topup
 
 wallet_bp = Blueprint("wallet", __name__, url_prefix="/api/wallet")
-TRON_TX_HASH_RE = re.compile(r"^[A-Fa-f0-9]{64}$")
+TOPUP_SUFFIX_SCALE = Decimal("0.0001")
+TOPUP_RESERVATION_MINUTES = 60
 
 
 def _require_user():
@@ -23,6 +24,24 @@ def _require_user():
 def _err(message: str, code: str, status: int):
     payload, status_code = api_error(message, code, status)
     return jsonify(payload), status_code
+
+
+def _generate_expected_amount(base_amount: Decimal, wallet_id: int) -> tuple[Decimal, int]:
+    now = datetime.utcnow()
+    active = TopUpTransaction.query.filter(
+        TopUpTransaction.wallet_id == wallet_id,
+        TopUpTransaction.status == "pending",
+        TopUpTransaction.expires_at.isnot(None),
+        TopUpTransaction.expires_at > now,
+    ).all()
+    busy_suffixes = {int(row.unique_suffix) for row in active if row.unique_suffix is not None}
+    for _ in range(100):
+        suffix = secrets.randbelow(9999) + 1
+        if suffix in busy_suffixes:
+            continue
+        expected = (base_amount + (Decimal(suffix) * TOPUP_SUFFIX_SCALE)).quantize(Decimal("0.00000001"))
+        return expected, suffix
+    raise ValueError("no unique suffix available")
 
 
 @wallet_bp.get("/addresses")
@@ -55,18 +74,17 @@ def create_topup():
 
     data = request.get_json(silent=True) or {}
     wallet_id = data.get("walletId")
-    tx_hash = (data.get("txHash") or "").strip()
     amount = data.get("amount")
     try:
         amount = Decimal(str(amount or "0"))
     except (InvalidOperation, TypeError):
         return _err("amount must be numeric", "INVALID_AMOUNT", 400)
-    if not wallet_id or not tx_hash or amount <= 0:
+    if not wallet_id or amount <= 0:
         payload, status = api_error(
-            "walletId, txHash and positive amount are required",
+            "walletId and positive amount are required",
             "INVALID_TOPUP_REQUEST",
             400,
-            {"fields": {"walletId": "REQUIRED", "txHash": "REQUIRED", "amount": "INVALID"}},
+            {"fields": {"walletId": "REQUIRED", "amount": "INVALID"}},
         )
         return jsonify(payload), status
 
@@ -77,25 +95,29 @@ def create_topup():
         return _err("only USDT top-ups are supported", "UNSUPPORTED_ASSET", 400)
     if (wallet.network or "").upper() != "TRX":
         return _err("only TRON network is supported", "UNSUPPORTED_NETWORK", 400)
-    if not TRON_TX_HASH_RE.match(tx_hash):
-        return _err("invalid TRON transaction hash format", "INVALID_TX_HASH", 400)
-
-    if TopUpTransaction.query.filter_by(tx_hash=tx_hash).first():
-        return _err("transaction already exists", "TX_REPLAY", 409)
+    try:
+        expected_amount, unique_suffix = _generate_expected_amount(amount, wallet.id)
+    except ValueError:
+        return _err("failed to reserve unique topup amount", "TOPUP_RESERVATION_FAILED", 409)
+    pending_marker = f"PENDING:{secrets.token_urlsafe(16)}"
 
     topup = TopUpTransaction(
         user_id=user.id,
         wallet_id=wallet.id,
         asset=wallet.asset,
         network=wallet.network,
-        tx_hash=tx_hash,
-        amount=amount,
+        tx_hash=pending_marker,
+        amount=expected_amount,
+        base_amount=amount,
+        unique_suffix=unique_suffix,
+        expected_amount=expected_amount,
+        expires_at=datetime.utcnow() + timedelta(minutes=TOPUP_RESERVATION_MINUTES),
         status="pending",
         verification_status="queued",
     )
     db.session.add(topup)
     db.session.commit()
-    write_audit("user", user.id, "topup_create", f"tx={tx_hash}")
+    write_audit("user", user.id, "topup_create", f"topup_id={topup.id}; expected_amount={expected_amount}")
     return (
         jsonify(
             {
@@ -104,8 +126,12 @@ def create_topup():
                     "id": topup.id,
                     "asset": topup.asset,
                     "network": topup.network,
-                    "txHash": topup.tx_hash,
+                    "txHash": None,
                     "amount": str(Decimal(str(topup.amount)).quantize(Decimal("0.00000001"))),
+                    "baseAmount": str(Decimal(str(topup.base_amount or amount)).quantize(Decimal("0.00000001"))),
+                    "expectedAmount": str(Decimal(str(topup.expected_amount or topup.amount)).quantize(Decimal("0.00000001"))),
+                    "uniqueSuffix": topup.unique_suffix,
+                    "expiresAt": iso_or_none(topup.expires_at),
                     "status": map_topup_status(topup.status),
                     "rawStatus": topup.status,
                     "verificationStatus": map_topup_verification_status(topup.verification_status),
@@ -176,8 +202,11 @@ def topups():
                 "id": row.id,
                 "asset": row.asset,
                 "network": row.network,
-                "txHash": row.tx_hash,
                 "amount": float(row.amount),
+                "baseAmount": float(row.base_amount) if row.base_amount is not None else float(row.amount),
+                "expectedAmount": float(row.expected_amount) if row.expected_amount is not None else float(row.amount),
+                "uniqueSuffix": row.unique_suffix,
+                "expiresAt": iso_or_none(row.expires_at),
                 "status": map_topup_status(row.status),
                 "rawStatus": row.status,
                 "verificationStatus": map_topup_verification_status(row.verification_status),
@@ -190,6 +219,7 @@ def topups():
                 "isDeadLetter": bool(row.is_dead_letter),
                 "createdAt": iso_or_none(row.created_at),
                 "confirmedAt": iso_or_none(row.confirmed_at),
+                "txHash": None if str(row.tx_hash or "").startswith("PENDING:") else row.tx_hash,
             }
             for row in rows
         ]

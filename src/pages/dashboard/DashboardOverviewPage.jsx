@@ -134,8 +134,9 @@ export function DashboardOverviewPage() {
       <div className="dashboard-grid dashboard-grid-5">
         <article className="dashboard-panel metric-card is-primary is-accent">
           <FiCreditCard className="metric-icon" />
-          <p className="metric-label">{t("dashboardCabinet.metrics.balance")}</p>
+          <p className="metric-label">{t("dashboardCabinet.metrics.totalBalance", { defaultValue: t("dashboardCabinet.metrics.balance") })}</p>
           <h4 className="metric-value">{money(balance)}</h4>
+          <small className="dash-help">{t("dashboardCabinet.metrics.balanceIncludesBonus", { defaultValue: "Including bonus tokens" })}</small>
         </article>
         <article className="dashboard-panel metric-card">
           <FiDollarSign className="metric-icon" />

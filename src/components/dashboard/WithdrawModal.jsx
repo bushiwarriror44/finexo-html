@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
 export function WithdrawModal({ isOpen, withdrawableBalance, purchaseOnlyBalance = 0, initialAddress = "", onClose, onSubmit, t }) {
-  const [asset, setAsset] = useState("USDT");
-  const [network, setNetwork] = useState("TRX");
+  const [asset] = useState("USDT");
+  const [network] = useState("TRX");
   const [address, setAddress] = useState(initialAddress);
   const [memo, setMemo] = useState("");
   const [amount, setAmount] = useState("");
@@ -89,9 +89,9 @@ export function WithdrawModal({ isOpen, withdrawableBalance, purchaseOnlyBalance
           {step === "form" ? (
             <>
               <label>{t("dashboardCabinet.table.asset")}</label>
-              <input className="dash-input form-control" value={asset} onChange={(e) => setAsset(e.target.value.toUpperCase())} />
+              <input className="dash-input form-control" value={asset} disabled readOnly />
               <label>{t("dashboardCabinet.table.network")}</label>
-              <input className="dash-input form-control" value={network} onChange={(e) => setNetwork(e.target.value.toUpperCase())} />
+              <input className="dash-input form-control" value={network} disabled readOnly />
               <label>{t("dashboardCabinet.withdrawals.address")}</label>
               <input className="dash-input form-control" value={address} onChange={(e) => setAddress(e.target.value)} />
               <label>{t("dashboardCabinet.withdrawals.memo")}</label>

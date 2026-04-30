@@ -23,6 +23,7 @@ from models import (
     SupportMessage,
     SupportSlaRule,
     SupportTicket,
+    TelegramBotSettings,
     TopUpTransaction,
     User,
     UserBalanceLedger,
@@ -37,6 +38,7 @@ from services.dashboard_contract import api_error, map_kyc_status, map_ticket_st
 from services.withdrawal_service import transition_withdrawal_status
 from services.wallet_verifier import process_topup
 from services.providers.tron_provider import get_tron_usdt_wallet_balance
+from services.telegram_service import sync_last_chat_id
 
 admin_api_bp = Blueprint("admin_api", __name__, url_prefix="/admin/api")
 MANUAL_CREDIT_REASON_PREFIX = "MANUAL_CREDIT_PURCHASE_ONLY:"
@@ -64,6 +66,15 @@ def _parse_int(value, default=None):
         return int(value)
     except (TypeError, ValueError):
         return None
+
+
+def _get_bot_settings(create=False):
+    row = TelegramBotSettings.query.order_by(TelegramBotSettings.id.asc()).first()
+    if not row and create:
+        row = TelegramBotSettings(is_active=True)
+        db.session.add(row)
+        db.session.flush()
+    return row
 
 
 def _ledger_breakdown(user_id: int) -> dict:
@@ -233,6 +244,79 @@ def upsert_credentials():
     db.session.commit()
     write_audit("admin", admin.id, "credential_upsert", f"provider={provider}")
     return jsonify({"success": True})
+
+
+@admin_api_bp.get("/bot/settings")
+def get_bot_settings():
+    admin = _require_admin()
+    if not admin:
+        return _json_error("forbidden", "FORBIDDEN", 403)
+    row = _get_bot_settings(create=False)
+    token = row.get_bot_token() if row else ""
+    return jsonify(
+        {
+            "configured": bool(token),
+            "isActive": bool(row.is_active) if row else False,
+            "lastChatId": row.last_chat_id if row else None,
+            "lastUpdateId": row.last_update_id if row else None,
+            "updatedAt": row.updated_at.isoformat() if row and row.updated_at else None,
+        }
+    )
+
+
+@admin_api_bp.post("/bot/settings")
+def upsert_bot_settings():
+    admin = _require_admin()
+    if not admin:
+        return _json_error("forbidden", "FORBIDDEN", 403)
+    data = request.get_json(silent=True) or {}
+    bot_token = (data.get("botToken") or "").strip()
+    if not bot_token:
+        return _json_error("botToken is required", "BOT_TOKEN_REQUIRED", 400)
+    is_active = bool(data.get("isActive", True))
+    row = _get_bot_settings(create=True)
+    row.set_bot_token(bot_token)
+    row.is_active = is_active
+    row.updated_at = datetime.utcnow()
+    db.session.commit()
+    write_audit("admin", admin.id, "bot_settings_update", f"bot_settings_id={row.id}; active={row.is_active}")
+    return jsonify(
+        {
+            "success": True,
+            "configured": bool(row.get_bot_token()),
+            "isActive": bool(row.is_active),
+            "lastChatId": row.last_chat_id,
+            "lastUpdateId": row.last_update_id,
+            "updatedAt": row.updated_at.isoformat() if row.updated_at else None,
+        }
+    )
+
+
+@admin_api_bp.post("/bot/sync-chat")
+def sync_bot_chat():
+    admin = _require_admin()
+    if not admin:
+        return _json_error("forbidden", "FORBIDDEN", 403)
+    row = _get_bot_settings(create=False)
+    if not row or not row.get_bot_token():
+        return _json_error("bot token is not configured", "BOT_TOKEN_REQUIRED", 400)
+    offset = (int(row.last_update_id) + 1) if row.last_update_id is not None else None
+    sync_result = sync_last_chat_id(row.get_bot_token(), offset=offset)
+    if not sync_result.get("ok"):
+        return _json_error(sync_result.get("error") or "bot chat sync failed", "BOT_SYNC_FAILED", 400)
+    row.last_chat_id = str(sync_result.get("chatId") or "")
+    row.last_update_id = sync_result.get("lastUpdateId")
+    row.updated_at = datetime.utcnow()
+    db.session.commit()
+    write_audit("admin", admin.id, "bot_chat_sync", f"bot_settings_id={row.id}; chat_id={row.last_chat_id}")
+    return jsonify(
+        {
+            "success": True,
+            "lastChatId": row.last_chat_id,
+            "lastUpdateId": row.last_update_id,
+            "updatedAt": row.updated_at.isoformat() if row.updated_at else None,
+        }
+    )
 
 
 @admin_api_bp.get("/credentials/<int:credential_id>/versions")

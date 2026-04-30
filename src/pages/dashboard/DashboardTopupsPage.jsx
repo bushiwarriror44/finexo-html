@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiGet, apiPost } from "../../api/client";
 import { useTranslation } from "react-i18next";
 import { copyTextWithFeedback, formatDateTimeRu, formatLastUpdatedLabel, getSafeErrorMessage, normalizeApiList, shortenHash, statusBadgeClass } from "./utils";
@@ -27,6 +27,8 @@ export function DashboardTopupsPage() {
   const [presetName, setPresetName] = useState("");
   const [presets, setPresets] = useState([]);
   const [showFiltersModal, setShowFiltersModal] = useState(false);
+  const [initialLoaded, setInitialLoaded] = useState(false);
+  const didInitRef = useRef(false);
 
   const selectedWallet = useMemo(
     () => wallets.find((item) => item.asset === "USDT" && item.network === "TRX") || null,
@@ -58,9 +60,9 @@ export function DashboardTopupsPage() {
     });
   }, [topups, search, sortBy, quickFilter]);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const load = useCallback(async ({ silent = false, includeWallets = false, includePresets = false } = {}) => {
+    if (!silent) setLoading(true);
+    if (!silent) setError("");
     try {
       const query = new URLSearchParams();
       if (quickFilter !== "all") query.set("status", quickFilter);
@@ -68,19 +70,19 @@ export function DashboardTopupsPage() {
       if (dateTo) query.set("dateTo", dateTo);
       if (amountMin) query.set("amountMin", amountMin);
       if (amountMax) query.set("amountMax", amountMax);
-      const [walletData, topupData] = await Promise.all([
-        apiGet("/api/wallet/addresses"),
+      const [topupData, walletData, presetData] = await Promise.all([
         apiGet(`/api/wallet/topups?${query.toString()}`),
+        includeWallets ? apiGet("/api/wallet/addresses") : Promise.resolve(null),
+        includePresets ? apiGet("/api/user/dashboard/filter-presets?scope=topups") : Promise.resolve(null),
       ]);
-      const presetData = await apiGet("/api/user/dashboard/filter-presets?scope=topups");
-      setWallets(normalizeApiList(walletData));
       setTopups(normalizeApiList(topupData));
-      setPresets(Array.isArray(presetData) ? presetData : []);
+      if (includeWallets) setWallets(normalizeApiList(walletData));
+      if (includePresets) setPresets(Array.isArray(presetData) ? presetData : []);
       setTopupsSyncAt(new Date().toISOString());
     } catch (err) {
-      setError(getSafeErrorMessage(err, t("dashboardCabinet.messages.failedLoadTopups")));
+      if (!silent) setError(getSafeErrorMessage(err, t("dashboardCabinet.messages.failedLoadTopups")));
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [amountMax, amountMin, dateFrom, dateTo, quickFilter, t]);
 
@@ -92,11 +94,19 @@ export function DashboardTopupsPage() {
     return undefined;
   }, []);
   useEffect(() => {
+    if (didInitRef.current) return undefined;
+    didInitRef.current = true;
     const timer = setTimeout(() => {
-      load().catch(() => {});
+      load({ includeWallets: true, includePresets: true }).catch(() => {}).finally(() => setInitialLoaded(true));
     }, 0);
     return () => clearTimeout(timer);
   }, [load]);
+
+  useEffect(() => {
+    if (!didInitRef.current) return undefined;
+    load({ silent: true }).catch(() => {});
+    return undefined;
+  }, [quickFilter, dateFrom, dateTo, amountMin, amountMax, load]);
 
   useEffect(() => {
     window.localStorage.setItem("cm_topups_search", search);
@@ -110,7 +120,7 @@ export function DashboardTopupsPage() {
     const hasActiveTopups = topups.some((item) => ["queued", "running", "failed"].includes(item.verificationStatus));
     if (!hasActiveTopups) return undefined;
     const interval = setInterval(() => {
-      load().catch(() => {});
+      load({ silent: true }).catch(() => {});
     }, 5000);
     return () => clearInterval(interval);
   }, [load, topups]);
@@ -125,8 +135,8 @@ export function DashboardTopupsPage() {
     <>
       <ErrorState message={error} onRetry={() => load().catch(() => {})} retryLabel={t("dashboardCabinet.actions.retry")} />
       {status ? <p className="dash-alert is-success">{status}</p> : null}
-      {loading ? <LoadingSkeleton rows={3} /> : null}
-      <div className="dashboard-grid dashboard-grid-2">
+      {loading && !initialLoaded ? <LoadingSkeleton rows={3} /> : null}
+      <div className="dashboard-grid">
         <div className="dashboard-panel is-accent">
           <div className="dashboard-panel-header"><h5>{t("dashboardCabinet.topups.title")}</h5></div>
           <div className="dashboard-panel-body">
@@ -181,7 +191,7 @@ export function DashboardTopupsPage() {
                 if (!presetName.trim()) return;
                 await apiPost("/api/user/dashboard/filter-presets", { scope: "topups", name: presetName.trim(), payload: { quickFilter, dateFrom, dateTo, amountMin, amountMax } });
                 setPresetName("");
-                await load();
+                await load({ includePresets: true, silent: true });
               }}>{t("dashboardCabinet.actions.save", { defaultValue: "Save" })}</button>
               <select className="dash-input dash-select-sm" defaultValue="" onChange={(e) => {
                 const picked = presets.find((item) => String(item.id) === String(e.target.value));
@@ -265,7 +275,7 @@ export function DashboardTopupsPage() {
                 </tbody>
               </table>
             </div>
-            <button className="dash-btn is-secondary is-sm dash-inline-btn" type="button" onClick={() => load().catch(() => {})}>
+            <button className="dash-btn is-secondary is-sm dash-inline-btn" type="button" onClick={() => load({ includeWallets: true, includePresets: true }).catch(() => {})}>
               {t("dashboardCabinet.actions.retry")}
             </button>
           </div>
@@ -277,9 +287,10 @@ export function DashboardTopupsPage() {
         onClose={() => setShowTopupModal(false)}
         onSubmit={async (payload) => {
           try {
-            await apiPost("/api/wallet/topup", payload);
+            const response = await apiPost("/api/wallet/topup", payload);
             setStatus(t("dashboardCabinet.messages.topupSubmitted"));
-            await load();
+            await load({ silent: true });
+            return response;
           } catch (err) {
             throw new Error(getSafeErrorMessage(err, t("dashboardCabinet.messages.topupSubmitFailed")), {
               cause: err,

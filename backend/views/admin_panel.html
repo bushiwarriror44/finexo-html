@@ -19,6 +19,7 @@
     <li class="nav-item" role="presentation"><button class="nav-link" type="button" data-admin-tab="mining">Майнинг</button></li>
     <li class="nav-item" role="presentation"><button class="nav-link" type="button" data-admin-tab="staking">Стейкинг</button></li>
     <li class="nav-item" role="presentation"><button class="nav-link" type="button" data-admin-tab="settings">Настройки</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" type="button" data-admin-tab="bot">Бот</button></li>
   </ul>
 
   <div class="row g-4 admin-section-block" data-section="settings">
@@ -81,6 +82,35 @@
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mt-4 admin-section-block d-none" data-section="bot">
+    <div class="card-header"><strong>Telegram бот</strong></div>
+    <div class="card-body">
+      <p class="text-muted small mb-3">Укажите токен бота, затем нажмите «Синхронизировать чат» после любого сообщения боту от администратора.</p>
+      <form id="botSettingsForm" class="row g-2 mb-3">
+        <div class="col-md-8">
+          <input class="form-control" name="botToken" placeholder="Telegram bot token" required />
+        </div>
+        <div class="col-md-2">
+          <div class="form-check mt-2">
+            <input class="form-check-input" type="checkbox" name="isActive" id="botIsActive" checked />
+            <label class="form-check-label" for="botIsActive">Активен</label>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-primary w-100" type="submit">Сохранить</button>
+        </div>
+      </form>
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        <button id="botSyncChatBtn" type="button" class="btn btn-outline-primary">Синхронизировать чат</button>
+      </div>
+      <div class="small">
+        <div><strong>Токен:</strong> <span id="botConfiguredStatus">—</span></div>
+        <div><strong>Chat ID:</strong> <span id="botLastChatId">—</span></div>
+        <div><strong>Обновлено:</strong> <span id="botUpdatedAt">—</span></div>
       </div>
     </div>
   </div>
@@ -793,6 +823,11 @@ const walletsTableBody = document.getElementById("walletsTableBody");
 const verificationFilterForm = document.getElementById("verificationFilterForm");
 const verificationFilterReset = document.getElementById("verificationFilterReset");
 const verificationTableBody = document.getElementById("verificationTableBody");
+const botSettingsForm = document.getElementById("botSettingsForm");
+const botSyncChatBtn = document.getElementById("botSyncChatBtn");
+const botConfiguredStatus = document.getElementById("botConfiguredStatus");
+const botLastChatId = document.getElementById("botLastChatId");
+const botUpdatedAt = document.getElementById("botUpdatedAt");
 const verificationDocsModalElement = document.getElementById("verificationDocsModal");
 const verificationDocsModalBody = document.getElementById("verificationDocsModalBody");
 const bootstrapModalFactory = window.bootstrap?.Modal || null;
@@ -1091,6 +1126,60 @@ manualCreditForm?.addEventListener("submit", async (e) => {
   }
 });
 
+function renderBotSettings(data) {
+  if (botConfiguredStatus) botConfiguredStatus.textContent = data?.configured ? "сохранен" : "не сохранен";
+  if (botLastChatId) botLastChatId.textContent = data?.lastChatId || "не найден";
+  if (botUpdatedAt) botUpdatedAt.textContent = data?.updatedAt || "-";
+  if (botSettingsForm) {
+    const activeBox = botSettingsForm.querySelector('[name="isActive"]');
+    if (activeBox) activeBox.checked = !!data?.isActive;
+  }
+}
+
+async function fetchBotSettings() {
+  if (!botSettingsForm) return;
+  try {
+    const data = await submitJson("/admin/api/bot/settings", "GET");
+    renderBotSettings(data || {});
+  } catch (err) {
+    showFeedback(err.message || "Bot settings loading failed", "danger");
+  }
+}
+
+botSettingsForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const submitButton = form.querySelector('button[type="submit"]');
+  markPending(submitButton, true);
+  try {
+    const payload = {
+      botToken: (form.querySelector('[name="botToken"]')?.value || "").trim(),
+      isActive: !!form.querySelector('[name="isActive"]')?.checked,
+    };
+    await submitJson("/admin/api/bot/settings", "POST", payload);
+    showFeedback("Настройки Telegram-бота сохранены.");
+    form.querySelector('[name="botToken"]').value = "";
+    await fetchBotSettings();
+  } catch (err) {
+    showFeedback(err.message || "Bot settings save failed", "danger");
+  } finally {
+    markPending(submitButton, false);
+  }
+});
+
+botSyncChatBtn?.addEventListener("click", async () => {
+  markPending(botSyncChatBtn, true);
+  try {
+    await submitJson("/admin/api/bot/sync-chat", "POST", {});
+    showFeedback("Chat ID успешно синхронизирован.");
+    await fetchBotSettings();
+  } catch (err) {
+    showFeedback(err.message || "Chat sync failed", "danger");
+  } finally {
+    markPending(botSyncChatBtn, false);
+  }
+});
+
 async function fetchStakingMetrics() {
   const root = document.getElementById("stakingMetricsRow");
   if (!root) return;
@@ -1239,6 +1328,7 @@ fetchVerificationProfiles();
 fetchStakingMetrics();
 fetchStakingTiers();
 fetchStakingUsers();
+fetchBotSettings();
 setupAdminTabs();
 normalizeScientificCells();
 

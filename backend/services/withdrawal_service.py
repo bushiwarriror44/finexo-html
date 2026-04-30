@@ -53,10 +53,14 @@ def get_available_balance(user_id: int, asset: str, network: str, include_purcha
             held -= amount
     if held < 0:
         held = Decimal("0")
+    available = total - held
+    # Withdrawable balance should never be negative in UI/API.
+    if not include_purchase_only and available < 0:
+        available = Decimal("0")
     return {
         "total": total,
         "held": held,
-        "available": total - held,
+        "available": available,
     }
 
 

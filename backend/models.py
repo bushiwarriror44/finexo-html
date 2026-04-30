@@ -85,6 +85,10 @@ class TopUpTransaction(db.Model):
     network = db.Column(db.String(20), nullable=False)
     tx_hash = db.Column(db.String(255), nullable=False, unique=True, index=True)
     amount = db.Column(Numeric(24, 8), nullable=False)
+    base_amount = db.Column(Numeric(24, 8), nullable=True)
+    unique_suffix = db.Column(db.Integer, nullable=True)
+    expected_amount = db.Column(Numeric(24, 8), nullable=True, index=True)
+    expires_at = db.Column(db.DateTime, nullable=True, index=True)
     status = db.Column(db.String(20), nullable=False, default="pending")  # pending/confirmed/rejected
     provider_note = db.Column(db.Text, nullable=True)
     verification_status = db.Column(db.String(20), nullable=False, default="queued")  # queued/running/done/failed
@@ -146,6 +150,24 @@ class ApiCredentialVersion(db.Model):
     version = db.Column(db.Integer, nullable=False)
     api_key_encrypted = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+
+class TelegramBotSettings(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    bot_token_encrypted = db.Column(db.Text, nullable=True)
+    last_chat_id = db.Column(db.String(64), nullable=True)
+    last_update_id = db.Column(db.BigInteger, nullable=True)
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def set_bot_token(self, value: str) -> None:
+        token = (value or "").strip()
+        self.bot_token_encrypted = encrypt_secret(token) if token else None
+
+    def get_bot_token(self) -> str:
+        if not self.bot_token_encrypted:
+            return ""
+        return decrypt_secret(self.bot_token_encrypted)
 
 
 class AuditLog(db.Model):
@@ -877,6 +899,10 @@ def init_all_models():
         "ALTER TABLE top_up_transaction ADD COLUMN next_retry_at DATETIME",
         "ALTER TABLE top_up_transaction ADD COLUMN last_error_code VARCHAR(64)",
         "ALTER TABLE top_up_transaction ADD COLUMN is_dead_letter BOOLEAN DEFAULT 0",
+        "ALTER TABLE top_up_transaction ADD COLUMN base_amount NUMERIC(24,8)",
+        "ALTER TABLE top_up_transaction ADD COLUMN unique_suffix INTEGER",
+        "ALTER TABLE top_up_transaction ADD COLUMN expected_amount NUMERIC(24,8)",
+        "ALTER TABLE top_up_transaction ADD COLUMN expires_at DATETIME",
         "ALTER TABLE user_balance_ledger ADD COLUMN asset VARCHAR(20)",
         "ALTER TABLE user_balance_ledger ADD COLUMN network VARCHAR(20)",
         "ALTER TABLE user_balance_ledger ADD COLUMN withdrawal_id INTEGER",

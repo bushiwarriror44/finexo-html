@@ -3,10 +3,12 @@ from decimal import Decimal, InvalidOperation
 import os
 from typing import Optional
 
-from models import ApiCredential, TopUpTransaction, UserBalanceLedger, WalletAddress, db
+from models import ApiCredential, TelegramBotSettings, TopUpTransaction, User, UserBalanceLedger, WalletAddress, db
 from services.pricing_service import convert_to_usdt, save_conversion_snapshot
 from services.referral_service import apply_referral_payouts_for_topup
 from services.providers import verify_with_provider
+from services.providers.tron_provider import list_tron_usdt_incoming_transfers
+from services.telegram_service import send_topup_confirmed_notification
 
 
 NETWORK_PROVIDER = {
@@ -46,10 +48,55 @@ def verify_transaction(topup: TopUpTransaction) -> dict:
     api_key = (credential.get_api_key() or "").strip()
     if not api_key:
         return {"confirmed": False, "errorCode": "PROVIDER_CONFIG", "message": "Provider API key is not configured"}
-    try:
-        provider_result = verify_with_provider(provider, provider_url, api_key, topup.tx_hash)
-    except Exception:
-        return {"confirmed": False, "errorCode": "PROVIDER_REQUEST_FAILED", "message": "Provider request failed"}
+    expected_amount = topup.expected_amount if topup.expected_amount is not None else topup.amount
+    if topup.expires_at and topup.expires_at <= datetime.utcnow():
+        return {"confirmed": False, "errorCode": "TOPUP_EXPIRED", "message": "Top-up request expired"}
+
+    tx_hash = (topup.tx_hash or "").strip()
+    if tx_hash.startswith("PENDING:"):
+        wallet = db.session.get(WalletAddress, topup.wallet_id)
+        if not wallet:
+            return {"confirmed": False, "errorCode": "WALLET_INACTIVE", "message": "Wallet is not available"}
+        min_ts_ms = 0
+        if topup.created_at:
+            min_ts_ms = int(topup.created_at.timestamp() * 1000)
+        transfers = list_tron_usdt_incoming_transfers(provider_url, api_key, wallet.address, min_timestamp_ms=min_ts_ms)
+        expected_decimal = Decimal(str(expected_amount or 0)).quantize(Decimal("0.00000001"))
+        for item in transfers:
+            try:
+                candidate_amount = Decimal(str(item.get("amount") or "0")).quantize(Decimal("0.00000001"))
+            except Exception:
+                continue
+            if candidate_amount != expected_decimal:
+                continue
+            candidate_hash = (item.get("txHash") or "").strip()
+            if not candidate_hash:
+                continue
+            used_by_other = TopUpTransaction.query.filter(
+                TopUpTransaction.id != topup.id,
+                TopUpTransaction.tx_hash == candidate_hash,
+                TopUpTransaction.status == "confirmed",
+            ).first()
+            if used_by_other:
+                continue
+            topup.tx_hash = candidate_hash
+            db.session.commit()
+            provider_result = {
+                "confirmed": True,
+                "toAddress": item.get("toAddress"),
+                "amount": str(candidate_amount),
+                "confirmations": int(item.get("confirmations") or 0),
+                "message": "matched by expected unique amount",
+                "errorCode": None,
+            }
+            break
+        else:
+            return {"confirmed": False, "errorCode": "PAYMENT_NOT_FOUND", "message": "Matching payment not found yet"}
+    else:
+        try:
+            provider_result = verify_with_provider(provider, provider_url, api_key, topup.tx_hash)
+        except Exception:
+            return {"confirmed": False, "errorCode": "PROVIDER_REQUEST_FAILED", "message": "Provider request failed"}
 
     if not provider_result.get("confirmed"):
         return provider_result
@@ -67,7 +114,7 @@ def verify_transaction(topup: TopUpTransaction) -> dict:
         return {"confirmed": False, "errorCode": "AMOUNT_UNAVAILABLE", "message": "Unable to extract transfer amount"}
     try:
         provider_decimal = Decimal(str(provider_amount))
-        expected_decimal = Decimal(str(topup.amount))
+        expected_decimal = Decimal(str(expected_amount))
         if provider_decimal < expected_decimal:
             return {"confirmed": False, "errorCode": "AMOUNT_MISMATCH", "message": "On-chain amount is lower than requested"}
     except (InvalidOperation, TypeError):
@@ -131,6 +178,26 @@ def settle_topup(topup: TopUpTransaction) -> TopUpTransaction:
         topup_id=topup.id,
     )
     apply_referral_payouts_for_topup(topup)
+    try:
+        bot_settings = TelegramBotSettings.query.filter_by(is_active=True).order_by(TelegramBotSettings.id.asc()).first()
+        if bot_settings and bot_settings.last_chat_id:
+            bot_token = bot_settings.get_bot_token()
+            if bot_token:
+                user = User.query.get(topup.user_id)
+                send_topup_confirmed_notification(
+                    bot_token,
+                    bot_settings.last_chat_id,
+                    topup_id=topup.id,
+                    user_id=topup.user_id,
+                    user_email=(user.email if user else f"user_{topup.user_id}"),
+                    amount=topup.amount,
+                    asset=topup.asset,
+                    network=topup.network,
+                    tx_hash=topup.tx_hash,
+                    confirmed_at=topup.confirmed_at,
+                )
+    except Exception:
+        pass
     return topup
 
 
@@ -167,10 +234,20 @@ def process_topup(topup: TopUpTransaction) -> TopUpTransaction:
         db.session.commit()
     else:
         topup.verification_status = "failed"
+        if topup.last_error_code == "TOPUP_EXPIRED":
+            topup.status = "rejected"
+            topup.is_dead_letter = True
+            topup.next_retry_at = None
+            db.session.commit()
+            return topup
         attempt = int(topup.verification_attempts or 1)
         delay_seconds = min(300, 2 ** min(attempt, 8))
         topup.next_retry_at = datetime.utcnow() + timedelta(seconds=delay_seconds)
-        if attempt >= max_attempts:
+        transient_provider_errors = {"PROVIDER_REQUEST_FAILED", "PROVIDER_HTTP_ERROR", "PROVIDER_RATE_LIMIT"}
+        if attempt >= max_attempts and topup.last_error_code not in transient_provider_errors:
             topup.is_dead_letter = True
+        elif topup.last_error_code in transient_provider_errors:
+            topup.is_dead_letter = False
+            topup.next_retry_at = datetime.utcnow() + timedelta(seconds=300)
         db.session.commit()
     return topup
