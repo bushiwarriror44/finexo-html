@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Admin Sign In{% endblock %}
+{% block title %}Вход в админ-панель{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="/admin-static/css/login.css" />
@@ -10,7 +10,7 @@
 <div class="login-container">
     <div class="login-card">
         <div class="login-body">
-            <p class="text-muted small" style="margin-bottom: 14px;">Use your authorized admin account. All actions are logged for security review.</p>
+            <p class="text-muted small" style="margin-bottom: 14px;">Используйте авторизованную учетную запись администратора. Все действия логируются для контроля безопасности.</p>
             {% if error %}
             <div class="alert-error" role="alert">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,25 +28,25 @@
             <form method="post" id="loginForm">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="form-group">
-                    <label for="email" class="form-label">Admin email</label>
+                    <label for="email" class="form-label">Email администратора</label>
                     <input
                         type="email"
                         name="email"
                         id="email"
                         class="form-control-custom"
-                        placeholder="admin@example.com"
+                        placeholder="admin@cloud-mine.com"
                         autocomplete="email"
                     />
                 </div>
                 <div class="form-group">
-                    <label for="password" class="form-label">Password</label>
+                    <label for="password" class="form-label">Пароль</label>
                     <div class="password-input-wrapper">
                         <input
                             type="password"
                             name="password"
                             id="password"
                             class="form-control-custom password-input"
-                            placeholder="Enter password"
+                            placeholder="Введите пароль"
                             required
                             autocomplete="current-password"
                         />
@@ -92,7 +92,7 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn-login">Sign in</button>
+                <button type="submit" class="btn-login">Войти</button>
             </form>
         </div>
     </div>

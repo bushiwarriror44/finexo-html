@@ -2,7 +2,17 @@ import logging
 import os
 from functools import wraps
 
-from flask import Blueprint, make_response, redirect, render_template, request, session, url_for
+from flask import (
+    Blueprint,
+    abort,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
+    session,
+    url_for,
+)
 
 from models import (
     ApiCredential,
@@ -24,6 +34,7 @@ from services.security import verify_password
 from services.withdrawal_service import MANUAL_CREDIT_REASON_PREFIX
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ADMIN_STATIC_DIR = os.path.join(BASE_DIR, "views", "src")
 admin_bp = Blueprint("admin", __name__)
 security_logger = logging.getLogger("security")
 
@@ -50,6 +61,14 @@ def require_login(f):
 @admin_bp.route("/admin/")
 def admin_redirect():
     return redirect(url_for("admin.admin_panel"))
+
+
+@admin_bp.route("/admin-static/<path:filename>")
+def admin_static(filename):
+    safe_path = os.path.normpath(filename or "")
+    if safe_path.startswith("..") or os.path.isabs(safe_path):
+        abort(404)
+    return send_from_directory(ADMIN_STATIC_DIR, safe_path)
 
 
 @admin_bp.route("/admin/login", methods=["GET", "POST"])

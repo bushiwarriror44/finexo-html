@@ -6,23 +6,33 @@
 <div class="container py-4">
   <div id="admin-feedback" class="alert d-none" role="status"></div>
   <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 m-0">Admin panel</h1>
-    <a class="btn btn-outline-danger" href="/admin/logout">Sign out</a>
+    <h1 class="h3 m-0">Админ-панель</h1>
+    <a class="btn btn-outline-danger" href="/admin/logout">Выйти</a>
   </div>
 
-  <div class="row g-4">
+  <ul class="nav nav-tabs mb-4" id="admin-sections-tabs" role="tablist">
+    <li class="nav-item" role="presentation"><button class="nav-link active" type="button" data-admin-tab="users">Пользователи</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" type="button" data-admin-tab="topups">Пополнения</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" type="button" data-admin-tab="withdrawals">Выводы</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" type="button" data-admin-tab="support">Поддержка</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" type="button" data-admin-tab="kyc">KYC</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" type="button" data-admin-tab="mining">Майнинг</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" type="button" data-admin-tab="settings">Настройки</button></li>
+  </ul>
+
+  <div class="row g-4 admin-section-block" data-section="settings">
     <div class="col-lg-6">
       <div class="card shadow-sm">
-        <div class="card-header"><strong>API credentials</strong></div>
+        <div class="card-header"><strong>API-учетные данные</strong></div>
         <div class="card-body">
           <form id="credentialForm" class="row g-2 mb-3">
-            <div class="col-md-4"><input class="form-control" name="provider" placeholder="provider: tron/evm/btc" required /></div>
-            <div class="col-md-4"><input class="form-control" name="apiUrl" placeholder="API url" /></div>
-            <div class="col-md-4"><input class="form-control" name="apiKey" placeholder="API key" /></div>
-            <div class="col-12"><button class="btn btn-primary" type="submit">Save credentials</button></div>
+            <div class="col-md-4"><input class="form-control" name="provider" placeholder="Провайдер: tron/evm/btc" required /></div>
+            <div class="col-md-4"><input class="form-control" name="apiUrl" placeholder="URL API" /></div>
+            <div class="col-md-4"><input class="form-control" name="apiKey" placeholder="API ключ" /></div>
+            <div class="col-12"><button class="btn btn-primary" type="submit">Сохранить</button></div>
           </form>
           <table class="table table-sm">
-            <thead><tr><th>Provider</th><th>URL</th><th>Version</th><th>Status</th></tr></thead>
+            <thead><tr><th>Провайдер</th><th>URL</th><th>Версия</th><th>Статус</th></tr></thead>
             <tbody>
               {% for row in credentials %}
                 <tr>
@@ -32,7 +42,7 @@
                   <td>{{ 'active' if row.is_active else 'inactive' }}</td>
                 </tr>
               {% else %}
-                <tr><td colspan="4">No credentials</td></tr>
+                <tr><td colspan="4">Нет данных</td></tr>
               {% endfor %}
             </tbody>
           </table>
@@ -42,19 +52,19 @@
 
     <div class="col-lg-6">
       <div class="card shadow-sm">
-        <div class="card-header"><strong>Wallet addresses</strong></div>
+        <div class="card-header"><strong>Адреса кошельков</strong></div>
         <div class="card-body">
           <div class="alert alert-info py-2 mb-3" role="alert">
-            Deposit wallets support only <strong>USDT</strong> on <strong>TRON (TRX)</strong>.
+            Для депозитов поддерживается только <strong>USDT</strong> в сети <strong>TRON (TRX)</strong>.
           </div>
           <form id="walletForm" class="row g-2 mb-3">
             <div class="col-md-4"><input class="form-control" name="asset" value="USDT" readonly required /></div>
             <div class="col-md-4"><input class="form-control" name="network" value="TRX" readonly required /></div>
-            <div class="col-md-4"><input class="form-control" name="address" placeholder="Wallet address" required /></div>
-            <div class="col-12"><button class="btn btn-primary" type="submit">Add wallet</button></div>
+            <div class="col-md-4"><input class="form-control" name="address" placeholder="Адрес кошелька" required /></div>
+            <div class="col-12"><button class="btn btn-primary" type="submit">Добавить кошелек</button></div>
           </form>
           <table class="table table-sm">
-            <thead><tr><th>Asset</th><th>Network</th><th>Address</th><th>USDT on wallet</th><th>Status</th></tr></thead>
+            <thead><tr><th>Актив</th><th>Сеть</th><th>Адрес</th><th>USDT на кошельке</th><th>Статус</th></tr></thead>
             <tbody id="walletsTableBody">
               {% for row in wallets %}
                 <tr>
@@ -65,7 +75,7 @@
                   <td>{{ 'active' if row.is_active else 'inactive' }}</td>
                 </tr>
               {% else %}
-                <tr><td colspan="5">No wallets</td></tr>
+                <tr><td colspan="5">Нет кошельков</td></tr>
               {% endfor %}
             </tbody>
           </table>
@@ -74,52 +84,52 @@
     </div>
   </div>
 
-  <div class="card shadow-sm mt-4">
-    <div class="card-header"><strong>Users</strong></div>
+  <div class="card shadow-sm mt-4 admin-section-block" data-section="users">
+    <div class="card-header"><strong>Пользователи</strong></div>
     <div class="card-body">
       <form id="adminUsersFilterForm" class="row g-2 mb-3">
-        <div class="col-md-4"><input class="form-control" name="q" placeholder="Search by email or id" /></div>
+        <div class="col-md-4"><input class="form-control" name="q" placeholder="Поиск по email или ID" /></div>
         <div class="col-md-3">
           <select class="form-select" name="role">
-            <option value="">All roles</option>
-            <option value="user">Users only</option>
-            <option value="admin">Admins only</option>
+            <option value="">Все роли</option>
+            <option value="user">Только пользователи</option>
+            <option value="admin">Только админы</option>
           </select>
         </div>
         <div class="col-md-3">
           <select class="form-select" name="isActive">
-            <option value="">Any status</option>
-            <option value="true">Active</option>
-            <option value="false">Inactive</option>
+            <option value="">Любой статус</option>
+            <option value="true">Активные</option>
+            <option value="false">Неактивные</option>
           </select>
         </div>
         <div class="col-md-2 d-flex gap-2">
-          <button class="btn btn-primary w-100" type="submit">Apply</button>
+          <button class="btn btn-primary w-100" type="submit">Применить</button>
         </div>
       </form>
       <div class="table-responsive">
         <table class="table table-sm">
-          <thead><tr><th>ID</th><th>Email</th><th>Role</th><th>Status</th><th>Available USDT</th><th>Held USDT</th><th>Withdrawable USDT</th><th>Purchase-only USDT</th><th>Action</th></tr></thead>
+          <thead><tr><th>ID</th><th>Email</th><th>Роль</th><th>Статус</th><th>Доступно USDT</th><th>В холде USDT</th><th>К выводу USDT</th><th>Только для покупки USDT</th><th>Действие</th></tr></thead>
           <tbody id="adminUsersTableBody">
-            <tr><td colspan="9">Loading users...</td></tr>
+            <tr><td colspan="9">Загрузка пользователей...</td></tr>
           </tbody>
         </table>
       </div>
       <hr />
       <form id="manualCreditForm" class="row g-2">
-        <div class="col-md-2"><input class="form-control" name="userId" type="number" min="1" placeholder="User ID" required /></div>
-        <div class="col-md-3"><input class="form-control" name="amount" type="number" step="0.00000001" min="0.00000001" placeholder="Amount USDT" required /></div>
-        <div class="col-md-5"><input class="form-control" name="reason" placeholder="Reason (required)" required /></div>
-        <div class="col-md-2"><button class="btn btn-success w-100" type="submit">Manual Credit</button></div>
+        <div class="col-md-2"><input class="form-control" name="userId" type="number" min="1" placeholder="ID пользователя" required /></div>
+        <div class="col-md-3"><input class="form-control" name="amount" type="number" step="0.00000001" min="0.00000001" placeholder="Сумма USDT" required /></div>
+        <div class="col-md-5"><input class="form-control" name="reason" placeholder="Причина (обязательно)" required /></div>
+        <div class="col-md-2"><button class="btn btn-success w-100" type="submit">Ручное начисление</button></div>
       </form>
-      <p class="text-muted small mt-2 mb-0">Manual Credit adds purchase-only virtual USDT. These funds can be used for buying plans but are excluded from withdrawals.</p>
+      <p class="text-muted small mt-2 mb-0">Ручное начисление добавляет виртуальные USDT только для покупок. Эти средства можно использовать для тарифов, но нельзя вывести.</p>
     </div>
   </div>
 
-  <div class="card shadow-sm mt-4">
-    <div class="card-header"><strong>Top-up monitor</strong></div>
+  <div class="card shadow-sm mt-4 admin-section-block" data-section="topups">
+    <div class="card-header"><strong>Мониторинг пополнений</strong></div>
     <div class="card-body">
-      <p class="text-muted small mb-2">Review verification status first, then use Retry only for failed or stuck requests.</p>
+      <p class="text-muted small mb-2">Сначала проверяйте статус верификации. Retry используйте только для зависших или неуспешных заявок.</p>
       <form id="topupsFilterForm" class="row g-2 mb-3">
         <div class="col-md-3"><input class="form-control" name="userId" type="number" min="1" placeholder="Filter by User ID" /></div>
         <div class="col-md-3"><input class="form-control" name="status" placeholder="status (pending/confirmed/rejected)" /></div>
@@ -162,8 +172,8 @@
 
   <div class="row g-4 mt-1">
     <div class="col-lg-6">
-      <div class="card shadow-sm">
-        <div class="card-header"><strong>Referral rules</strong></div>
+      <div class="card shadow-sm admin-section-block" data-section="settings">
+        <div class="card-header"><strong>Реферальные правила</strong></div>
         <div class="card-body">
           <form id="referralRuleForm" class="row g-2 mb-3">
             <div class="col-md-12"><input class="form-control" name="name" placeholder="Campaign name" required /></div>
@@ -196,8 +206,8 @@
       </div>
     </div>
     <div class="col-lg-6">
-      <div class="card shadow-sm">
-        <div class="card-header"><strong>Verification</strong></div>
+      <div class="card shadow-sm admin-section-block" data-section="kyc">
+        <div class="card-header"><strong>Верификация (KYC)</strong></div>
         <div class="card-body">
           <form id="verificationFilterForm" class="row g-2 mb-3">
             <div class="col-md-5">
@@ -243,8 +253,8 @@
     </div>
   </div>
 
-  <div class="card shadow-sm mt-4">
-    <div class="card-header"><strong>Support inbox + SLA</strong></div>
+  <div class="card shadow-sm mt-4 admin-section-block" data-section="support">
+    <div class="card-header"><strong>Поддержка + SLA</strong></div>
     <div class="card-body">
       <table class="table table-sm">
         <thead><tr><th>ID</th><th>User</th><th>Subject</th><th>Priority</th><th>Status</th><th>SLA</th><th>Actions</th></tr></thead>
@@ -286,8 +296,8 @@
     </div>
   </div>
 
-  <div class="card shadow-sm mt-4">
-    <div class="card-header"><strong>Withdrawals inbox</strong></div>
+  <div class="card shadow-sm mt-4 admin-section-block" data-section="withdrawals">
+    <div class="card-header"><strong>Очередь выводов</strong></div>
     <div class="card-body">
       <p class="text-muted small mb-2">Confirm network, amount, and compliance note before changing withdrawal state.</p>
       <table class="table table-sm">
@@ -328,7 +338,7 @@
     </div>
   </div>
 
-  <div class="row g-4 mt-1">
+  <div class="row g-4 mt-1 admin-section-block" data-section="mining">
     <div class="col-lg-6">
       <div class="card shadow-sm">
         <div class="card-header"><strong>Mining plans</strong></div>
@@ -401,8 +411,8 @@
     </div>
   </div>
 
-  <div class="card shadow-sm mt-4">
-    <div class="card-header"><strong>Team applications inbox</strong></div>
+  <div class="card shadow-sm mt-4 admin-section-block" data-section="settings">
+    <div class="card-header"><strong>Заявки в команду</strong></div>
     <div class="card-body">
       <table class="table table-sm">
         <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Experience</th><th>Message</th><th>Email delivery</th><th>Created</th></tr></thead>
@@ -475,6 +485,8 @@ async function submitJson(url, method, payload) {
 
 const adminFeedback = document.getElementById("admin-feedback");
 const tableBodies = document.querySelectorAll("table.table tbody");
+const adminTabButtons = document.querySelectorAll("[data-admin-tab]");
+const adminSectionBlocks = document.querySelectorAll(".admin-section-block");
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -513,6 +525,25 @@ function clearRefreshing() {
   tableBodies.forEach((tbody) => {
     tbody.style.opacity = "";
   });
+}
+
+function setupAdminTabs() {
+  if (!adminTabButtons.length || !adminSectionBlocks.length) return;
+  const setActiveTab = (tabKey) => {
+    adminTabButtons.forEach((button) => {
+      const active = button.getAttribute("data-admin-tab") === tabKey;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-selected", active ? "true" : "false");
+    });
+    adminSectionBlocks.forEach((block) => {
+      const section = block.getAttribute("data-section");
+      block.classList.toggle("d-none", section !== tabKey);
+    });
+  };
+  adminTabButtons.forEach((button) => {
+    button.addEventListener("click", () => setActiveTab(button.getAttribute("data-admin-tab")));
+  });
+  setActiveTab("users");
 }
 
 function removeRowByButton(button) {
@@ -925,6 +956,7 @@ fetchUsers();
 fetchWallets();
 fetchTopups();
 fetchVerificationProfiles();
+setupAdminTabs();
 
 verificationFilterForm?.addEventListener("submit", async (e) => {
   e.preventDefault();
