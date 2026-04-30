@@ -1332,6 +1332,7 @@ def admin_staking_tiers_list():
                 "minAmount": float(row.min_amount),
                 "maxAmount": float(row.max_amount),
                 "dailyRate": float(row.daily_rate),
+                "durationDays": int(row.duration_days or 30),
                 "isHotOffer": bool(row.is_hot_offer),
                 "isActive": bool(row.is_active),
                 "updatedAt": row.updated_at.isoformat() if row.updated_at else None,
@@ -1361,6 +1362,14 @@ def admin_staking_tier_update():
         if dr < Decimal("0") or dr > Decimal("0.5"):
             return _json_error("dailyRate out of allowed range (0 - 0.5)", "STAKING_RATE_RANGE", 400)
         tier.daily_rate = dr
+    if "durationDays" in data and data.get("durationDays") is not None:
+        try:
+            duration_days = int(data.get("durationDays"))
+        except Exception:
+            return _json_error("invalid durationDays", "STAKING_INVALID_DURATION_DAYS", 400)
+        if duration_days < 1 or duration_days > 3650:
+            return _json_error("durationDays out of allowed range (1 - 3650)", "STAKING_DURATION_DAYS_RANGE", 400)
+        tier.duration_days = duration_days
     next_min = tier.min_amount
     next_max = tier.max_amount
     if "minAmount" in data and data.get("minAmount") is not None:
@@ -1404,7 +1413,7 @@ def admin_staking_tier_update():
         "admin",
         admin.id,
         "staking_tier_update",
-        f"tier_id={tier.id}; min={float(tier.min_amount)}; max={float(tier.max_amount)}; daily_rate={float(tier.daily_rate)}; active={tier.is_active}",
+        f"tier_id={tier.id}; min={float(tier.min_amount)}; max={float(tier.max_amount)}; daily_rate={float(tier.daily_rate)}; duration_days={int(tier.duration_days or 30)}; active={tier.is_active}",
     )
     return jsonify(
         {
@@ -1415,6 +1424,7 @@ def admin_staking_tier_update():
                 "minAmount": float(tier.min_amount),
                 "maxAmount": float(tier.max_amount),
                 "dailyRate": float(tier.daily_rate),
+                "durationDays": int(tier.duration_days or 30),
                 "isHotOffer": bool(tier.is_hot_offer),
                 "isActive": bool(tier.is_active),
                 "updatedAt": tier.updated_at.isoformat() if tier.updated_at else None,

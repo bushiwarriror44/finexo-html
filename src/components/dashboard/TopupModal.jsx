@@ -151,18 +151,35 @@ export function TopupModal({ isOpen, wallets, onClose, onSubmit, t }) {
               </div>
             </>
           ) : (
-            <div className="dash-state-card">
+            <div className="dash-state-card topup-review-card">
               <p className="dash-state-title">{t("dashboardCabinet.topups.reviewTitle", { defaultValue: "Top-up payment details" })}</p>
-              <p className="dash-state-description">{t("dashboardCabinet.topups.wallet", { defaultValue: "Wallet" })}: {selectedWallet?.asset} / {selectedWallet?.network}</p>
-              <p className="dash-state-description">{t("dashboardCabinet.withdrawals.address", { defaultValue: "Address" })}: {selectedWallet?.address || "-"}</p>
-              <p className="dash-state-description">{t("dashboardCabinet.table.amount", { defaultValue: "Base amount" })}: {Number(reservedTopup?.baseAmount || amount || 0).toFixed(8)} USDT</p>
-              <p className="dash-state-description"><strong>{t("dashboardCabinet.topups.amountToPay", { defaultValue: "Amount to pay" })}: {expectedAmount} USDT</strong></p>
-              <p className="dash-state-description">{t("dashboardCabinet.topups.paymentWindow", { defaultValue: "Payment window" })}: 60 min</p>
+              <div className="topup-review-grid">
+                <p className="dash-state-description">
+                  <span>{t("dashboardCabinet.topups.wallet", { defaultValue: "Wallet" })}</span>
+                  <strong>{selectedWallet?.asset} / {selectedWallet?.network}</strong>
+                </p>
+                <p className="dash-state-description">
+                  <span>{t("dashboardCabinet.withdrawals.address", { defaultValue: "Address" })}</span>
+                  <strong className="topup-review-address">{selectedWallet?.address || "-"}</strong>
+                </p>
+                <p className="dash-state-description">
+                  <span>{t("dashboardCabinet.topups.baseAmount", { defaultValue: "Base amount" })}</span>
+                  <strong>{Number(reservedTopup?.baseAmount || amount || 0).toFixed(8)} USDT</strong>
+                </p>
+                <p className="dash-state-description topup-review-amount">
+                  <span>{t("dashboardCabinet.topups.amountToPay", { defaultValue: "Amount to pay" })}</span>
+                  <strong>{expectedAmount} USDT</strong>
+                </p>
+                <p className="dash-state-description">
+                  <span>{t("dashboardCabinet.topups.paymentWindow", { defaultValue: "Payment window" })}</span>
+                  <strong>{t("dashboardCabinet.topups.paymentWindowValue", { defaultValue: "60 min" })}</strong>
+                </p>
+              </div>
               {qrValue ? (
-                <div className="text-center mt-2">
+                <div className="topup-review-qr-wrap">
                   <img
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrValue)}`}
-                    alt="Top-up QR"
+                    alt={t("dashboardCabinet.topups.qrAlt", { defaultValue: "Top-up QR code" })}
                     width="180"
                     height="180"
                   />
@@ -185,7 +202,7 @@ export function TopupModal({ isOpen, wallets, onClose, onSubmit, t }) {
         </form>
         {copyToastVisible ? (
           <div className="dash-copy-toast" role="status" aria-live="polite">
-            адресс скопирован
+            {t("dashboardCabinet.topups.addressCopied", { defaultValue: "Адрес скопирован" })}
           </div>
         ) : null}
       </div>

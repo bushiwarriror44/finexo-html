@@ -5,6 +5,18 @@ from typing import Dict, List, Optional, Tuple
 
 TRON_USDT_DECIMALS = Decimal("1000000")
 TRON_MAINNET_USDT_CONTRACT = os.getenv("TRON_USDT_CONTRACT", "TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj")
+TRON_PUBLIC_API_URLS = [
+    item.strip()
+    for item in os.getenv("TRON_PUBLIC_API_URLS", "https://api.trongrid.io").split(",")
+    if item.strip()
+]
+
+
+class TronProviderError(Exception):
+    def __init__(self, error_code: str, message: str):
+        super().__init__(message)
+        self.error_code = error_code
+        self.message = message
 
 
 def _normalize_tron_amount(raw_amount):
@@ -42,28 +54,72 @@ def _build_v1_url(api_url: str, path: str) -> str:
     return f"{base}/v1/{path.lstrip('/')}"
 
 
+def _candidate_tron_endpoints(api_url: str, api_key: str) -> List[Tuple[str, str]]:
+    endpoints: List[Tuple[str, str]] = []
+    primary_url = (api_url or "").strip()
+    primary_key = (api_key or "").strip()
+    if primary_url:
+        endpoints.append((primary_url, primary_key))
+    for public_url in TRON_PUBLIC_API_URLS:
+        if public_url == primary_url:
+            if not primary_key:
+                continue
+            endpoints.append((public_url, ""))
+            continue
+        endpoints.append((public_url, ""))
+    # de-duplicate while preserving order
+    seen = set()
+    unique_endpoints: List[Tuple[str, str]] = []
+    for base_url, key in endpoints:
+        marker = (base_url.rstrip("/"), bool(key))
+        if marker in seen:
+            continue
+        seen.add(marker)
+        unique_endpoints.append((base_url, key))
+    return unique_endpoints
+
+
+def _http_error_to_code(status_code: Optional[int]) -> str:
+    if status_code == 429:
+        return "PROVIDER_RATE_LIMIT"
+    if status_code in {401, 403}:
+        return "PROVIDER_CONFIG"
+    return "PROVIDER_HTTP_ERROR"
+
+
+def _fetch_json_with_fallback(api_url: str, api_key: str, path: str, params: Optional[Dict] = None, timeout: int = 20) -> Dict:
+    candidates = _candidate_tron_endpoints(api_url, api_key)
+    if not candidates:
+        raise TronProviderError("PROVIDER_CONFIG", "TRON api url is not configured")
+
+    last_error_code = "PROVIDER_REQUEST_FAILED"
+    last_error_message = "TRON provider request failed"
+    for base_url, current_key in candidates:
+        headers = {"TRON-PRO-API-KEY": current_key} if current_key else {}
+        url = _build_v1_url(base_url, path)
+        try:
+            response = requests.get(url, headers=headers, params=params, timeout=timeout)
+            response.raise_for_status()
+            return response.json() or {}
+        except requests.HTTPError as exc:
+            status_code = exc.response.status_code if exc.response is not None else None
+            last_error_code = _http_error_to_code(status_code)
+            last_error_message = f"TRON provider HTTP error {status_code or 'unknown'}"
+            continue
+        except Exception:
+            last_error_code = "PROVIDER_REQUEST_FAILED"
+            last_error_message = "TRON provider request failed"
+            continue
+    raise TronProviderError(last_error_code, last_error_message)
+
+
 def verify_tron_transaction(api_url: str, api_key: str, tx_hash: str) -> dict:
     if not api_url:
         return {"confirmed": False, "errorCode": "PROVIDER_CONFIG", "message": "TRON api url is not configured"}
-
-    api_key = (api_key or "").strip()
-    if not api_key:
-        return {"confirmed": False, "errorCode": "PROVIDER_CONFIG", "message": "TRON api key is not configured"}
-    headers = {"TRON-PRO-API-KEY": api_key}
-    url = _build_v1_url(api_url, f"transactions/{tx_hash}")
     try:
-        response = requests.get(url, headers=headers, timeout=20)
-        response.raise_for_status()
-        payload = response.json()
-    except requests.HTTPError as exc:
-        status_code = exc.response.status_code if exc.response is not None else None
-        if status_code in {401, 403}:
-            return {"confirmed": False, "errorCode": "PROVIDER_CONFIG", "message": "TRON provider rejected API key"}
-        if status_code == 429:
-            return {"confirmed": False, "errorCode": "PROVIDER_RATE_LIMIT", "message": "TRON provider rate limit exceeded"}
-        return {"confirmed": False, "errorCode": "PROVIDER_HTTP_ERROR", "message": f"TRON provider HTTP error {status_code or 'unknown'}"}
-    except Exception:
-        return {"confirmed": False, "errorCode": "PROVIDER_REQUEST_FAILED", "message": "TRON provider request failed"}
+        payload = _fetch_json_with_fallback(api_url, api_key, f"transactions/{tx_hash}")
+    except TronProviderError as exc:
+        return {"confirmed": False, "errorCode": exc.error_code, "message": exc.message}
     rows = payload.get("data") or []
     if not rows:
         return {"confirmed": False, "errorCode": "TX_NOT_FOUND", "message": "transaction not found"}
@@ -77,12 +133,10 @@ def verify_tron_transaction(api_url: str, api_key: str, tx_hash: str) -> dict:
     to_address = value.get("to_address")
     amount = value.get("amount")
     confirmations = int(tx.get("confirmations") or 0)
-    events_url = _build_v1_url(api_url, f"transactions/{tx_hash}/events")
     events_rows = []
     try:
-        events_response = requests.get(events_url, headers=headers, timeout=20)
-        events_response.raise_for_status()
-        events_rows = (events_response.json() or {}).get("data") or []
+        events_payload = _fetch_json_with_fallback(api_url, api_key, f"transactions/{tx_hash}/events")
+        events_rows = (events_payload or {}).get("data") or []
     except Exception:
         events_rows = []
     event_to_address, event_amount = _extract_transfer_from_events(events_rows)
@@ -101,16 +155,16 @@ def verify_tron_transaction(api_url: str, api_key: str, tx_hash: str) -> dict:
 
 def get_tron_usdt_wallet_balance(api_url: str, api_key: str, wallet_address: str):
     api_url = (api_url or "").strip()
-    api_key = (api_key or "").strip()
     wallet_address = (wallet_address or "").strip()
-    if not api_url or not api_key or not wallet_address:
+    if not api_url or not wallet_address:
         return None
     try:
-        headers = {"TRON-PRO-API-KEY": api_key}
-        url = f"{api_url.rstrip('/')}/v1/accounts/{wallet_address}"
-        response = requests.get(url, headers=headers, params={"only_confirmed": "true"}, timeout=20)
-        response.raise_for_status()
-        payload = response.json() or {}
+        payload = _fetch_json_with_fallback(
+            api_url,
+            api_key,
+            f"accounts/{wallet_address}",
+            params={"only_confirmed": "true"},
+        )
         rows = payload.get("data") or []
         if not rows:
             return Decimal("0")
@@ -124,28 +178,26 @@ def get_tron_usdt_wallet_balance(api_url: str, api_key: str, wallet_address: str
                     continue
                 return Decimal(str(amount_raw or "0"))
         return Decimal("0")
+    except TronProviderError:
+        return None
     except Exception:
         return None
 
 
 def list_tron_usdt_incoming_transfers(api_url: str, api_key: str, wallet_address: str, min_timestamp_ms: int = 0) -> List[Dict]:
     api_url = (api_url or "").strip()
-    api_key = (api_key or "").strip()
     wallet_address = (wallet_address or "").strip()
-    if not api_url or not api_key or not wallet_address:
+    if not api_url or not wallet_address:
         return []
     try:
-        headers = {"TRON-PRO-API-KEY": api_key}
-        url = _build_v1_url(api_url, f"accounts/{wallet_address}/transactions/trc20")
         params = {
             "only_confirmed": "true",
             "limit": 200,
             "contract_address": TRON_MAINNET_USDT_CONTRACT,
             "min_timestamp": int(min_timestamp_ms or 0),
         }
-        response = requests.get(url, headers=headers, params=params, timeout=20)
-        response.raise_for_status()
-        rows = (response.json() or {}).get("data") or []
+        payload = _fetch_json_with_fallback(api_url, api_key, f"accounts/{wallet_address}/transactions/trc20", params=params)
+        rows = (payload or {}).get("data") or []
         items = []
         for row in rows:
             tx_hash = (row.get("transaction_id") or "").strip()
@@ -177,5 +229,7 @@ def list_tron_usdt_incoming_transfers(api_url: str, api_key: str, wallet_address
                 }
             )
         return items
+    except TronProviderError as exc:
+        raise exc
     except Exception:
         return []

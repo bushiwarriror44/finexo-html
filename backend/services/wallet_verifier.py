@@ -7,7 +7,7 @@ from models import ApiCredential, TelegramBotSettings, TopUpTransaction, User, U
 from services.pricing_service import convert_to_usdt, save_conversion_snapshot
 from services.referral_service import apply_referral_payouts_for_topup
 from services.providers import verify_with_provider
-from services.providers.tron_provider import list_tron_usdt_incoming_transfers
+from services.providers.tron_provider import TronProviderError, list_tron_usdt_incoming_transfers
 from services.telegram_service import send_topup_confirmed_notification
 
 
@@ -21,6 +21,7 @@ NETWORK_PROVIDER = {
 SUPPORTED_ASSET = "USDT"
 SUPPORTED_NETWORK = "TRX"
 MIN_TRON_CONFIRMATIONS = int(os.getenv("TOPUP_MIN_CONFIRMATIONS_TRX", "12"))
+TOPUP_MAX_PROCESSING_HOURS = int(os.getenv("TOPUP_MAX_PROCESSING_HOURS", "72"))
 
 
 def _get_provider_credential(provider: str) -> Optional[ApiCredential]:
@@ -46,8 +47,6 @@ def verify_transaction(topup: TopUpTransaction) -> dict:
         return {"confirmed": False, "errorCode": "PROVIDER_CONFIG", "message": "Provider API url is not configured"}
 
     api_key = (credential.get_api_key() or "").strip()
-    if not api_key:
-        return {"confirmed": False, "errorCode": "PROVIDER_CONFIG", "message": "Provider API key is not configured"}
     expected_amount = topup.expected_amount if topup.expected_amount is not None else topup.amount
     if topup.expires_at and topup.expires_at <= datetime.utcnow():
         return {"confirmed": False, "errorCode": "TOPUP_EXPIRED", "message": "Top-up request expired"}
@@ -60,7 +59,10 @@ def verify_transaction(topup: TopUpTransaction) -> dict:
         min_ts_ms = 0
         if topup.created_at:
             min_ts_ms = int(topup.created_at.timestamp() * 1000)
-        transfers = list_tron_usdt_incoming_transfers(provider_url, api_key, wallet.address, min_timestamp_ms=min_ts_ms)
+        try:
+            transfers = list_tron_usdt_incoming_transfers(provider_url, api_key, wallet.address, min_timestamp_ms=min_ts_ms)
+        except TronProviderError as exc:
+            return {"confirmed": False, "errorCode": exc.error_code, "message": exc.message}
         expected_decimal = Decimal(str(expected_amount or 0)).quantize(Decimal("0.00000001"))
         for item in transfers:
             try:
@@ -206,6 +208,19 @@ def process_topup(topup: TopUpTransaction) -> TopUpTransaction:
         return topup
     if topup.status == "confirmed":
         topup.verification_status = "done"
+        db.session.commit()
+        return topup
+
+    created_at = topup.created_at or datetime.utcnow()
+    processing_deadline = created_at + timedelta(hours=max(TOPUP_MAX_PROCESSING_HOURS, 1))
+    if datetime.utcnow() >= processing_deadline:
+        topup.status = "rejected"
+        topup.verification_status = "failed"
+        topup.is_dead_letter = True
+        topup.last_error_code = "TOPUP_TIMEOUT_72H"
+        topup.provider_note = f"Top-up was not confirmed within {TOPUP_MAX_PROCESSING_HOURS} hours"
+        topup.next_retry_at = None
+        topup.last_checked_at = datetime.utcnow()
         db.session.commit()
         return topup
 

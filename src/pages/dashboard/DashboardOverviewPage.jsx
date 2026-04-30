@@ -14,7 +14,7 @@ export function DashboardOverviewPage() {
   const [status, setStatus] = useState("");
   const [balance, setBalance] = useState(0);
   const [availableBalance, setAvailableBalance] = useState(0);
-  const [heldBalance, setHeldBalance] = useState(0);
+  const [withdrawableBalance, setWithdrawableBalance] = useState(0);
   const [referral, setReferral] = useState(null);
   const [kyc, setKyc] = useState(null);
   const [miningSummary, setMiningSummary] = useState(null);
@@ -35,7 +35,7 @@ export function DashboardOverviewPage() {
       ]);
       setBalance(Number(balanceData.balance || 0));
       setAvailableBalance(Number(balanceData.availableBalance || 0));
-      setHeldBalance(Number(balanceData.heldBalance || 0));
+      setWithdrawableBalance(Number(balanceData.withdrawableBalance || 0));
       setReferral(referralData || null);
       setKyc(kycData || null);
       setMiningSummary(summaryData || null);
@@ -136,17 +136,22 @@ export function DashboardOverviewPage() {
           <FiCreditCard className="metric-icon" />
           <p className="metric-label">{t("dashboardCabinet.metrics.totalBalance", { defaultValue: t("dashboardCabinet.metrics.balance") })}</p>
           <h4 className="metric-value">{money(balance)}</h4>
-          <small className="dash-help">{t("dashboardCabinet.metrics.balanceIncludesBonus", { defaultValue: "Including bonus tokens" })}</small>
+          <small className="dash-help">
+            {t("dashboardCabinet.metrics.balanceIncludesBonus", { defaultValue: "Including bonus tokens" })}
+            {" · "}
+            {t("dashboardCabinet.metrics.withdrawableDiffHint", { defaultValue: "May differ from withdrawable amount" })}
+          </small>
         </article>
         <article className="dashboard-panel metric-card">
           <FiDollarSign className="metric-icon" />
-          <p className="metric-label">{t("dashboardCabinet.metrics.available")}</p>
-          <h4 className="metric-value">{money(availableBalance)}</h4>
+          <p className="metric-label">{t("dashboardCabinet.metrics.withdrawable", { defaultValue: "К выводу" })}</p>
+          <h4 className="metric-value">{money(withdrawableBalance)}</h4>
+          <small className="dash-help">{t("dashboardCabinet.withdrawals.profitOnlyWithdrawableHint", { defaultValue: "Only profit/withdrawable balance can be withdrawn." })}</small>
         </article>
         <article className="dashboard-panel metric-card">
           <FiLock className="metric-icon" />
-          <p className="metric-label">{t("dashboardCabinet.metrics.held")}</p>
-          <h4 className="metric-value">{money(heldBalance)}</h4>
+          <p className="metric-label">{t("dashboardCabinet.metrics.available")}</p>
+          <h4 className="metric-value">{money(availableBalance)}</h4>
         </article>
         <article className="dashboard-panel metric-card is-muted">
           <FiUserCheck className="metric-icon" />

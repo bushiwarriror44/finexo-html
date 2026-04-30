@@ -404,6 +404,7 @@ class StakingTier(db.Model):
     min_amount = db.Column(Numeric(24, 8), nullable=False)
     max_amount = db.Column(Numeric(24, 8), nullable=False)
     daily_rate = db.Column(Numeric(12, 8), nullable=False)
+    duration_days = db.Column(db.Integer, nullable=False, default=30)
     is_hot_offer = db.Column(db.Boolean, nullable=False, default=False)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
@@ -927,6 +928,7 @@ def init_all_models():
         "ALTER TABLE user_staking_position ADD COLUMN locked_daily_rate NUMERIC(12,8)",
         "ALTER TABLE user_staking_position ADD COLUMN locked_min_amount NUMERIC(24,8)",
         "ALTER TABLE user_staking_position ADD COLUMN locked_max_amount NUMERIC(24,8)",
+        "ALTER TABLE staking_tier ADD COLUMN duration_days INTEGER DEFAULT 30",
     ]:
         try:
             db.session.execute(text(sql))
@@ -1176,10 +1178,10 @@ def init_all_models():
 
     if StakingTier.query.count() == 0:
         defaults = [
-            {"asset": "USDT", "min_amount": 900, "max_amount": 9900, "daily_rate": 0.01, "is_hot_offer": True, "is_active": True},
-            {"asset": "USDT", "min_amount": 10000, "max_amount": 19900, "daily_rate": 0.013, "is_hot_offer": True, "is_active": True},
-            {"asset": "USDT", "min_amount": 20000, "max_amount": 29900, "daily_rate": 0.015, "is_hot_offer": True, "is_active": True},
-            {"asset": "USDT", "min_amount": 30000, "max_amount": 39990, "daily_rate": 0.016, "is_hot_offer": True, "is_active": True},
+            {"asset": "USDT", "min_amount": 900, "max_amount": 9900, "daily_rate": 0.01, "duration_days": 30, "is_hot_offer": True, "is_active": True},
+            {"asset": "USDT", "min_amount": 10000, "max_amount": 19900, "daily_rate": 0.013, "duration_days": 30, "is_hot_offer": True, "is_active": True},
+            {"asset": "USDT", "min_amount": 20000, "max_amount": 29900, "daily_rate": 0.015, "duration_days": 30, "is_hot_offer": True, "is_active": True},
+            {"asset": "USDT", "min_amount": 30000, "max_amount": 39990, "daily_rate": 0.016, "duration_days": 30, "is_hot_offer": True, "is_active": True},
         ]
         for row in defaults:
             db.session.add(StakingTier(**row))

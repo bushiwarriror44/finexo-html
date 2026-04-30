@@ -5,8 +5,6 @@ import { EmptyState, ErrorState, LoadingSkeleton } from '../../components/dashbo
 import { formatDateTimeRu, getSafeErrorMessage, money } from './utils';
 import { FiCheckCircle, FiClock, FiDollarSign, FiTrendingUp } from 'react-icons/fi';
 
-const STAKING_TERM_DAYS = 30;
-
 export function DashboardStakingPage() {
 	const { t } = useTranslation();
 	const [tiers, setTiers] = useState([]);
@@ -97,13 +95,15 @@ export function DashboardStakingPage() {
 		if (!confirmTier) return 0;
 		const value = Number(confirmAmount || 0);
 		if (!Number.isFinite(value) || value <= 0) return 0;
-		return value * Number(confirmTier.dailyRate || 0) * STAKING_TERM_DAYS;
+		const termDays = Number(confirmTier.durationDays || 30);
+		return value * Number(confirmTier.dailyRate || 0) * termDays;
 	}, [confirmTier, confirmAmount]);
 
 	const confirmSchedule = useMemo(() => {
 		if (!confirmTier) return null;
+		const termDays = Number(confirmTier.durationDays || 30);
 		const start = new Date();
-		const end = new Date(start.getTime() + STAKING_TERM_DAYS * 24 * 60 * 60 * 1000);
+		const end = new Date(start.getTime() + termDays * 24 * 60 * 60 * 1000);
 		return { start, end };
 	}, [confirmTier]);
 
@@ -117,6 +117,8 @@ export function DashboardStakingPage() {
 		if (!confirmTier || !Number.isFinite(principal) || principal <= 0) return 0;
 		return principal + projectedDividends30d;
 	}, [confirmTier, confirmAmount, projectedDividends30d]);
+
+	const confirmTermDays = useMemo(() => Number(confirmTier?.durationDays || 30), [confirmTier]);
 
 	const confirmInvest = async () => {
 		if (!confirmTier) return;
@@ -341,6 +343,13 @@ export function DashboardStakingPage() {
 						role="dialog"
 						aria-modal="true"
 						onClick={(e) => e.stopPropagation()}>
+						<button
+							className="auth-modal-close"
+							type="button"
+							onClick={closeConfirm}
+							aria-label={t('dashboardCabinet.actions.close', { defaultValue: 'Close' })}>
+							×
+						</button>
 						<h3 className="auth-modal-title">
 							{t('dashboardCabinet.staking.confirmTitle', {
 								defaultValue: 'Confirm staking investment',
@@ -391,8 +400,9 @@ export function DashboardStakingPage() {
 										{t('dashboardCabinet.staking.confirmTerm', { defaultValue: 'Term' })}
 									</strong>
 									:{' '}
-									{t('dashboardCabinet.staking.defaultTerm', {
-										defaultValue: '30 days (1 month)',
+									{t('dashboardCabinet.staking.termDays', {
+										defaultValue: '{{days}} days',
+										days: confirmTermDays,
 									})}
 								</li>
 								<li>
@@ -417,7 +427,8 @@ export function DashboardStakingPage() {
 								<li>
 									<strong>
 										{t('dashboardCabinet.staking.projected30d', {
-											defaultValue: 'Projected dividends (term)',
+											defaultValue: 'Projected dividends for {{days}} calendar days',
+											days: confirmTermDays,
 										})}
 									</strong>
 									: {money(projectedDividends30d || 0)}
@@ -451,12 +462,13 @@ export function DashboardStakingPage() {
 						<p className="dash-alert is-warning">
 							{t('dashboardCabinet.staking.lockNotice', {
 								defaultValue:
-									'Important: principal amount is locked for 30 days. Dividends are credited to your main balance and stay available for normal use.',
+									'Important: principal amount is locked for {{days}} days. Dividends are credited to your main balance and stay available for normal use.',
+								days: confirmTermDays,
 							})}
 						</p>
-						<div className="dash-actions-cell">
+						<div className="dash-actions-cell" style={{ marginTop: 10 }}>
 							<button
-								className="dash-btn is-secondary is-sm"
+								className="dash-btn is-secondary"
 								type="button"
 								onClick={closeConfirm}
 								disabled={submittingTierId === confirmTier.id}>

@@ -32,6 +32,8 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [initialLoaded, setInitialLoaded] = useState(false);
   const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
+  const [markAllBusy, setMarkAllBusy] = useState(false);
   const lastLoadAtRef = useRef(0);
   const load = useCallback(async ({ silent = false } = {}) => {
     if (!silent) {
@@ -102,6 +104,12 @@ export function DashboardPage() {
     };
   }, [load]);
 
+  useEffect(() => {
+    if (!status) return undefined;
+    const timer = setTimeout(() => setStatus(""), 2200);
+    return () => clearTimeout(timer);
+  }, [status]);
+
   const badgeByRoute = useMemo(
     () => ({
       "/dashboard/topups": counters.topups,
@@ -164,6 +172,7 @@ export function DashboardPage() {
           </div>
         ) : null}
         <ErrorState message={error} onRetry={() => load().catch(() => {})} retryLabel={t("dashboardCabinet.actions.retry")} />
+        {status ? <p className="dash-alert is-success">{status}</p> : null}
         {loading && !initialLoaded ? <LoadingSkeleton rows={2} /> : null}
         <ActionPopupCard
           icon={FiTrendingUp}
@@ -230,8 +239,33 @@ export function DashboardPage() {
                     </button>
                   ))
                 )}
-                <button className="dash-btn is-secondary is-sm" type="button" onClick={() => apiPost("/api/user/dashboard/notifications/mark-all-read", {}).then(() => load().catch(() => {}))}>
-                  {t("dashboardCabinet.notificationsMarkAllRead", { defaultValue: "Mark all read" })}
+                <button
+                  className="dash-btn is-secondary is-sm"
+                  type="button"
+                  disabled={markAllBusy || activityFeed.every((item) => item.isRead)}
+                  onClick={async () => {
+                    setError("");
+                    setMarkAllBusy(true);
+                    try {
+                      await apiPost("/api/user/dashboard/notifications/mark-all-read", {});
+                      setActivityFeed((prev) => prev.map((item) => ({ ...item, isRead: true })));
+                      setStatus(t("dashboardCabinet.messages.saved", { defaultValue: "Changes saved." }));
+                      load({ silent: true }).catch(() => {});
+                    } catch (err) {
+                      setError(
+                        err?.message ||
+                          t("dashboardCabinet.messages.failedLoadOverview", {
+                            defaultValue: "Failed to process request.",
+                          })
+                      );
+                    } finally {
+                      setMarkAllBusy(false);
+                    }
+                  }}
+                >
+                  {markAllBusy
+                    ? t("dashboardCabinet.actions.submitting", { defaultValue: "Submitting..." })
+                    : t("dashboardCabinet.notificationsMarkAllRead", { defaultValue: "Mark all read" })}
                 </button>
               </div>
             </div>

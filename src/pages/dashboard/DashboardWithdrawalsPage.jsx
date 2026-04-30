@@ -128,10 +128,10 @@ export function DashboardWithdrawalsPage() {
       <ErrorState message={error} onRetry={() => load().catch(() => {})} retryLabel={t("dashboardCabinet.actions.retry")} />
       {status ? <p className="dash-alert is-success">{status}</p> : null}
       {loading ? <LoadingSkeleton rows={3} /> : null}
-      <div className="dashboard-grid dashboard-grid-2">
+      <div className="dashboard-grid dashboard-grid-2 withdrawals-layout-grid">
         <div className="dashboard-panel is-accent">
           <div className="dashboard-panel-header"><h5>{t("dashboardCabinet.withdrawals.title")}</h5></div>
-          <div className="dashboard-panel-body">
+          <div className="dashboard-panel-body withdrawals-panel-body">
             <p className="dash-help">{t("dashboardCabinet.withdrawals.preActionHint", { defaultValue: "Verify network and address before submitting a withdrawal request." })}</p>
             <p className="dash-help">{t("dashboardCabinet.withdrawals.disclosure", { defaultValue: "Withdrawal requests are reviewed for security and compliance before execution." })}</p>
             {kycFreezeActive ? (
@@ -144,7 +144,7 @@ export function DashboardWithdrawalsPage() {
               <span>{t("dashboardCabinet.withdrawals.trustStrip", { defaultValue: "Withdrawals pass security and compliance review before settlement." })}</span>
             </div>
             {addressBook.length ? (
-              <select className="dash-input dash-select-sm" value={savedAddress} onChange={(e) => {
+              <select className="dash-input dash-select-sm withdrawals-full-width" value={savedAddress} onChange={(e) => {
                 setSavedAddress(e.target.value);
                 setWithdrawAddress(e.target.value);
               }}>
@@ -152,7 +152,7 @@ export function DashboardWithdrawalsPage() {
                 {addressBook.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
             ) : null}
-            <input className="dash-input" value={withdrawAddress} onChange={(e) => setWithdrawAddress(e.target.value)} placeholder={t("dashboardCabinet.withdrawals.address")} />
+            <input className="dash-input withdrawals-full-width" value={withdrawAddress} onChange={(e) => setWithdrawAddress(e.target.value)} placeholder={t("dashboardCabinet.withdrawals.address")} />
             <button className="dash-btn is-secondary is-sm" type="button" onClick={saveAddress}>
               {t("dashboardCabinet.withdrawals.saveAddress", { defaultValue: "Save address" })}
             </button>
@@ -216,7 +216,7 @@ export function DashboardWithdrawalsPage() {
         </div>
         <div className="dashboard-panel is-accent">
           <div className="dashboard-panel-header"><h5>{t("dashboardCabinet.withdrawals.requests")}</h5></div>
-          <div className="dashboard-panel-body">
+          <div className="dashboard-panel-body withdrawals-panel-body">
             <p className="dash-help">{t("dashboardCabinet.withdrawals.tableHint", { defaultValue: "Use timeline and notes to understand current processing stage." })}</p>
             <div className="dash-meta-row">
               <span className="dash-meta-badge is-info">
@@ -225,7 +225,7 @@ export function DashboardWithdrawalsPage() {
               </span>
             </div>
             <input
-              className="dash-input"
+              className="dash-input withdrawals-full-width"
               placeholder={t("dashboardCabinet.actions.search", { defaultValue: "Search..." })}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -244,7 +244,7 @@ export function DashboardWithdrawalsPage() {
                 {t("dashboardCabinet.status.completed", { defaultValue: "Completed" })}
               </button>
             </div>
-            <div className="dashboard-grid dashboard-grid-5">
+            <div className="dashboard-grid dashboard-grid-5 withdrawals-filters-grid">
               <input type="date" className="dash-input" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
               <input type="date" className="dash-input" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
               <input className="dash-input" placeholder={t("dashboardCabinet.filters.amountMin", { defaultValue: "Amount min" })} value={amountMin} onChange={(e) => setAmountMin(e.target.value)} />
@@ -253,15 +253,15 @@ export function DashboardWithdrawalsPage() {
                 {t("dashboardCabinet.actions.reset", { defaultValue: "Reset" })}
               </button>
             </div>
-            <div className="dash-chip-row mt-2">
-              <input className="dash-input" placeholder={t("dashboardCabinet.actions.savePreset", { defaultValue: "Save preset" })} value={presetName} onChange={(e) => setPresetName(e.target.value)} />
+            <div className="dash-chip-row mt-2 withdrawals-preset-row">
+              <input className="dash-input withdrawals-full-width" placeholder={t("dashboardCabinet.actions.savePreset", { defaultValue: "Save preset" })} value={presetName} onChange={(e) => setPresetName(e.target.value)} />
               <button className="dash-btn is-secondary is-sm" type="button" onClick={async () => {
                 if (!presetName.trim()) return;
                 await apiPost("/api/user/dashboard/filter-presets", { scope: "withdrawals", name: presetName.trim(), payload: { quickFilter, dateFrom, dateTo, amountMin, amountMax } });
                 setPresetName("");
                 await load();
               }}>{t("dashboardCabinet.actions.save", { defaultValue: "Save" })}</button>
-              <select className="dash-input dash-select-sm" defaultValue="" onChange={(e) => {
+              <select className="dash-input dash-select-sm withdrawals-full-width" defaultValue="" onChange={(e) => {
                 const picked = presets.find((item) => String(item.id) === String(e.target.value));
                 const payload = picked?.payload || {};
                 setQuickFilter(payload.quickFilter || "all");
@@ -274,7 +274,7 @@ export function DashboardWithdrawalsPage() {
                 {presets.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
               </select>
             </div>
-            <div className="table-shell">
+            <div className="table-shell withdrawals-table-shell">
               <table className="dash-table">
                 <thead><tr><th>ID</th><th>{t("dashboardCabinet.table.asset")}</th><th>{t("dashboardCabinet.table.network")}</th><th>{t("dashboardCabinet.table.amount")}</th><th>{t("dashboardCabinet.table.status")}</th><th>{t("dashboardCabinet.table.note")}</th><th>{t("dashboardCabinet.table.action")}</th></tr></thead>
                 <tbody>

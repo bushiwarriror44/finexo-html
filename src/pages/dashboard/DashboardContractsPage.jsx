@@ -95,12 +95,12 @@ export function DashboardContractsPage() {
     <>
       <ErrorState message={error} onRetry={() => load().catch(() => {})} retryLabel={t("dashboardCabinet.actions.retry")} />
       {loading ? <LoadingSkeleton rows={3} /> : null}
-      <div className="dashboard-grid dashboard-grid-2">
+      <div className="dashboard-grid dashboard-grid-2 contracts-layout-grid">
         <div className="dashboard-panel">
           <div className="dashboard-panel-header"><h5>{t("dashboardCabinet.contracts.balanceTitle", { defaultValue: "Баланс" })}</h5></div>
-          <div className="dashboard-panel-body">
+          <div className="dashboard-panel-body contracts-panel-body">
             <p className="dash-help">{t("dashboardCabinet.contracts.balanceHint", { defaultValue: "Доходы и баланс учитываются по всем активным направлениям кабинета." })}</p>
-            <div className="dashboard-grid dashboard-grid-2">
+            <div className="dashboard-grid dashboard-grid-2 contracts-balance-grid">
               <article className="metric-card is-primary">
                 <FiDollarSign className="metric-icon" />
                 <p className="metric-label">{t("dashboardCabinet.contracts.totalBalance", { defaultValue: "Общий баланс" })}</p>
@@ -121,15 +121,15 @@ export function DashboardContractsPage() {
         </div>
         <div className="dashboard-panel">
           <div className="dashboard-panel-header"><h5>{t("dashboardCabinet.contracts.listTitle", { defaultValue: "Мои контракты и стейкинги" })}</h5></div>
-          <div className="dashboard-panel-body">
+          <div className="dashboard-panel-body contracts-panel-body">
             <p className="dash-help">{t("dashboardCabinet.contracts.listHint", { defaultValue: "Фильтруйте по статусу, чтобы отслеживать майнинг и стейкинг в одном месте." })}</p>
-            <select className="dash-input dash-select-sm" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <select className="dash-input dash-select-sm contracts-filter-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="all">{t("dashboardCabinet.contracts.allStatuses", { defaultValue: "All statuses" })}</option>
               <option value="active">active</option>
               <option value="completed">completed</option>
               <option value="cancelled">cancelled</option>
             </select>
-            <div className="table-shell">
+            <div className="table-shell contracts-table-shell">
               <table className="dash-table">
                 <thead><tr><th>ID</th><th>{t("dashboardCabinet.contracts.type", { defaultValue: "Тип" })}</th><th>{t("dashboardCabinet.contracts.strategy")}</th><th>{t("dashboardCabinet.contracts.hashrate")}</th><th>{t("dashboardCabinet.contracts.days")}</th><th>{t("dashboardCabinet.contracts.remaining", { defaultValue: "Remaining" })}</th><th>{t("dashboardCabinet.contracts.invested")}</th><th>{t("dashboardCabinet.table.status")}</th><th>{t("dashboardCabinet.contracts.ends")}</th></tr></thead>
                 <tbody>

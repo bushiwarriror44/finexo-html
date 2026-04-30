@@ -1144,6 +1144,7 @@ def staking_tiers():
                 "minAmount": float(row.min_amount),
                 "maxAmount": float(row.max_amount),
                 "dailyRate": float(row.daily_rate),
+                "durationDays": int(row.duration_days or 30),
                 "hourlyRate": float(Decimal(str(row.daily_rate)) / Decimal("24")),
                 "isHotOffer": bool(row.is_hot_offer),
             }
@@ -1257,7 +1258,7 @@ def staking_invest():
         locked_min_amount=tier.min_amount,
         locked_max_amount=tier.max_amount,
         status="active",
-        lock_until=datetime.utcnow() + timedelta(days=30),
+        lock_until=datetime.utcnow() + timedelta(days=int(tier.duration_days or 30)),
     )
     db.session.add(position)
     db.session.flush()

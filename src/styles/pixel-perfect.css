@@ -2834,6 +2834,63 @@ h6 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.contracts-layout-grid > .dashboard-panel {
+  width: 100%;
+  min-width: 0;
+}
+
+.contracts-panel-body {
+  width: 100%;
+  min-width: 0;
+}
+
+.contracts-balance-grid {
+  width: 100%;
+}
+
+.contracts-balance-grid .metric-card {
+  width: 100%;
+}
+
+.contracts-filter-select {
+  width: 100%;
+}
+
+.contracts-table-shell {
+  width: 100%;
+}
+
+.withdrawals-layout-grid > .dashboard-panel {
+  width: 100%;
+  min-width: 0;
+}
+
+.withdrawals-panel-body {
+  width: 100%;
+  min-width: 0;
+}
+
+.withdrawals-full-width {
+  width: 100%;
+}
+
+.withdrawals-filters-grid {
+  width: 100%;
+}
+
+.withdrawals-filters-grid .dash-input,
+.withdrawals-filters-grid .dash-btn {
+  width: 100%;
+}
+
+.withdrawals-preset-row {
+  width: 100%;
+}
+
+.withdrawals-table-shell {
+  width: 100%;
+}
+
 .dashboard-grid-5 {
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
@@ -3360,6 +3417,62 @@ h6 {
   margin-top: 4px !important;
   color: var(--text-muted);
   font-size: 12px;
+}
+
+.topup-review-card {
+  border-color: rgba(37, 99, 235, 0.25);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.topup-review-grid {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.topup-review-grid .dash-state-description {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 0 !important;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(148, 163, 184, 0.08);
+  font-size: 13px;
+}
+
+.topup-review-grid .dash-state-description span {
+  color: var(--text-muted);
+}
+
+.topup-review-grid .dash-state-description strong {
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.topup-review-address {
+  max-width: 220px;
+  overflow-wrap: anywhere;
+}
+
+.topup-review-amount {
+  border: 1px solid rgba(14, 116, 144, 0.25);
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.12), rgba(16, 185, 129, 0.12)) !important;
+}
+
+.topup-review-amount strong {
+  font-size: 15px;
+}
+
+.topup-review-qr-wrap {
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+  border: 1px dashed rgba(100, 116, 139, 0.35);
+  border-radius: 12px;
+  background: #fff;
 }
 
 .dash-skeleton-wrap {

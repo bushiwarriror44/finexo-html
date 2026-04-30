@@ -59,9 +59,16 @@ export function DashboardSupportPage() {
 			const data = await apiGet(`/api/user/support/tickets/${ticketId}/messages`);
 			setMessages(normalizeApiList(data.messages));
 		} catch (err) {
+			if (err?.code === 'SUPPORT_TICKET_NOT_FOUND') {
+				setActiveTicketId(null);
+				setMessages([]);
+				window.localStorage.removeItem('cm_support_active_ticket');
+				await loadTickets();
+				return;
+			}
 			setError(getSafeErrorMessage(err, t('dashboardCabinet.messages.failedLoadMessages')));
 		}
-	}, [t]);
+	}, [loadTickets, t]);
 
 	useEffect(() => {
 		const persistedSearch = window.localStorage.getItem('cm_support_search');
@@ -101,6 +108,18 @@ export function DashboardSupportPage() {
 			clearInterval(interval);
 		};
 	}, [activeTicketId, loadMessages]);
+
+	useEffect(() => {
+		if (!activeTicketId) return;
+		const exists = tickets.some((ticket) => Number(ticket.id) === Number(activeTicketId));
+		if (exists) return;
+		const timer = setTimeout(() => {
+			setActiveTicketId(null);
+			setMessages([]);
+		}, 0);
+		window.localStorage.removeItem('cm_support_active_ticket');
+		return () => clearTimeout(timer);
+	}, [activeTicketId, tickets]);
 
 	useEffect(() => {
 		if (!status) return undefined;
