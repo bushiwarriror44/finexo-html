@@ -450,6 +450,15 @@ def get_wallets():
     return jsonify(payload)
 
 
+def _deactivate_other_active_wallets(asset: str, network: str, keep_wallet_id: int) -> None:
+    WalletAddress.query.filter(
+        WalletAddress.asset == asset,
+        WalletAddress.network == network,
+        WalletAddress.id != keep_wallet_id,
+        WalletAddress.is_active.is_(True),
+    ).update({"is_active": False}, synchronize_session=False)
+
+
 @admin_api_bp.post("/wallets")
 def create_wallet():
     admin = _require_admin()
@@ -466,10 +475,34 @@ def create_wallet():
     if network != "TRX":
         return jsonify({"error": "only TRX network wallets are supported"}), 400
 
-    wallet = WalletAddress(asset=asset, network=network, address=address, is_active=True)
+    normalized_address = address.strip()
+    existing = WalletAddress.query.filter(
+        WalletAddress.asset == asset,
+        WalletAddress.network == network,
+        func.trim(WalletAddress.address) == normalized_address,
+    ).first()
+    if existing:
+        _deactivate_other_active_wallets(asset, network, existing.id)
+        existing.is_active = True
+        db.session.commit()
+        write_audit(
+            "admin",
+            admin.id,
+            "wallet_create",
+            f"{asset}:{network}:{normalized_address}; reactivated_id={existing.id}; rotated_active=1",
+        )
+        return jsonify({"success": True, "id": existing.id}), 200
+
+    _deactivate_other_active_wallets(asset, network, -1)
+    wallet = WalletAddress(asset=asset, network=network, address=normalized_address, is_active=True)
     db.session.add(wallet)
     db.session.commit()
-    write_audit("admin", admin.id, "wallet_create", f"{asset}:{network}")
+    write_audit(
+        "admin",
+        admin.id,
+        "wallet_create",
+        f"{asset}:{network}:{normalized_address}; id={wallet.id}; rotated_active=1",
+    )
     return jsonify({"success": True, "id": wallet.id}), 201
 
 
@@ -482,9 +515,15 @@ def update_wallet(wallet_id: int):
     if not wallet:
         return jsonify({"error": "wallet not found"}), 404
     data = request.get_json(silent=True) or {}
-    wallet.is_active = bool(data.get("isActive", wallet.is_active))
-    db.session.commit()
-    write_audit("admin", admin.id, "wallet_update", f"wallet_id={wallet_id}")
+    if "address" in data:
+        return jsonify({"error": "address cannot be updated; add a new wallet instead"}), 400
+    if "isActive" in data:
+        want_active = bool(data.get("isActive"))
+        if want_active:
+            _deactivate_other_active_wallets(wallet.asset, wallet.network, wallet.id)
+        wallet.is_active = want_active
+        db.session.commit()
+        write_audit("admin", admin.id, "wallet_update", f"wallet_id={wallet_id}; is_active={wallet.is_active}")
     return jsonify({"success": True})
 
 

@@ -79,22 +79,28 @@
           <form id="walletForm" class="row g-2 mb-3">
             <div class="col-md-4"><input class="form-control" name="asset" value="USDT" readonly required /></div>
             <div class="col-md-4"><input class="form-control" name="network" value="TRX" readonly required /></div>
-            <div class="col-md-4"><input class="form-control" name="address" placeholder="Адрес кошелька" value="TQq2xFNkcEhAhzVPhY3y1EifaRNgtwthAd" required /></div>
+            <div class="col-md-4"><input class="form-control" name="address" placeholder="Адрес кошелька" autocomplete="off" required /></div>
             <div class="col-12"><button class="btn btn-primary" type="submit">Добавить кошелек</button></div>
           </form>
+          <p class="text-muted small mb-3">
+            После добавления нового адреса предыдущий USDT/TRX кошелёк будет автоматически деактивирован.
+            Адрес у уже сохранённой записи изменить нельзя — добавьте новый.
+          </p>
           <table class="table table-sm">
-            <thead><tr><th>Актив</th><th>Сеть</th><th>Адрес</th><th>USDT на кошельке</th><th>Статус</th></tr></thead>
+            <thead><tr><th>ID</th><th>Валюта</th><th>Сеть</th><th>Адрес</th><th>USDT на кошельке</th><th>Статус</th><th>Действие</th></tr></thead>
             <tbody id="walletsTableBody">
               {% for row in wallets %}
                 <tr>
+                  <td>{{ row.id }}</td>
                   <td>{{ row.asset }}</td>
                   <td>{{ row.network }}</td>
                   <td style="max-width: 220px; word-break: break-all">{{ row.address }}</td>
                   <td>-</td>
                   <td>{{ 'active' if row.is_active else 'inactive' }}</td>
+                  <td>—</td>
                 </tr>
               {% else %}
-                <tr><td colspan="5">Нет кошельков</td></tr>
+                <tr><td colspan="7">Нет кошельков</td></tr>
               {% endfor %}
             </tbody>
           </table>
@@ -798,18 +804,25 @@ async function fetchWallets() {
   try {
     const rows = await submitJson("/admin/api/wallets", "GET");
     if (!Array.isArray(rows) || !rows.length) {
-      walletsTableBody.innerHTML = `<tr><td colspan="5">No wallets</td></tr>`;
+      walletsTableBody.innerHTML = `<tr><td colspan="7">Нет кошельков</td></tr>`;
       return;
     }
-    walletsTableBody.innerHTML = rows.map((row) => `
+    walletsTableBody.innerHTML = rows.map((row) => {
+      const id = Number(row.id);
+      const actionCell = row.isActive
+        ? `<button type="button" class="btn btn-sm btn-outline-warning wallet-active-btn" data-id="${id}" data-set-active="false">Деактивировать</button>`
+        : `<button type="button" class="btn btn-sm btn-outline-success wallet-active-btn" data-id="${id}" data-set-active="true">Активировать</button>`;
+      return `
       <tr>
+        <td>${escapeHtml(id)}</td>
         <td>${escapeHtml(row.asset)}</td>
         <td>${escapeHtml(row.network)}</td>
         <td style="max-width: 220px; word-break: break-all">${escapeHtml(row.address)}</td>
         <td>${escapeHtml(row.onchainUsdtBalance ?? "-")}</td>
         <td>${escapeHtml(row.isActive ? "active" : "inactive")}</td>
-      </tr>
-    `).join("");
+        <td>${actionCell}</td>
+      </tr>`;
+    }).join("");
   } catch (err) {
     showFeedback(err.message || "Wallet list loading failed", "danger");
   }
@@ -845,6 +858,22 @@ const topupsFilterForm = document.getElementById("topupsFilterForm");
 const topupsFilterReset = document.getElementById("topupsFilterReset");
 const topupsTableBody = document.getElementById("topupsTableBody");
 const walletsTableBody = document.getElementById("walletsTableBody");
+walletsTableBody?.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".wallet-active-btn");
+  if (!btn || btn.disabled) return;
+  const id = btn.getAttribute("data-id");
+  const setActive = btn.getAttribute("data-set-active") === "true";
+  markPending(btn, true);
+  try {
+    await submitJson(`/admin/api/wallets/${id}`, "PATCH", { isActive: setActive });
+    showFeedback(setActive ? "Кошелёк активирован." : "Кошелёк деактивирован.");
+    await fetchWallets();
+  } catch (err) {
+    showFeedback(err.message || "Ошибка", "danger");
+  } finally {
+    markPending(btn, false);
+  }
+});
 const verificationFilterForm = document.getElementById("verificationFilterForm");
 const verificationFilterReset = document.getElementById("verificationFilterReset");
 const verificationTableBody = document.getElementById("verificationTableBody");

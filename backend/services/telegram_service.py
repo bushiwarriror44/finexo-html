@@ -9,6 +9,11 @@ def _api_url(bot_token: str, method: str) -> str:
     return f"https://api.telegram.org/bot{bot_token}/{method}"
 
 
+def _format_amount_plain(amount) -> str:
+    value = Decimal(str(amount or 0)).quantize(Decimal("0.00000001"))
+    return format(value, "f").rstrip("0").rstrip(".") or "0"
+
+
 def sync_last_chat_id(bot_token: str, offset: Optional[int] = None) -> dict:
     token = (bot_token or "").strip()
     if not token:
@@ -60,7 +65,7 @@ def send_topup_confirmed_notification(
     target_chat = str(chat_id or "").strip()
     if not token or not target_chat:
         return False
-    amount_text = str(Decimal(str(amount or 0)).quantize(Decimal("0.00000001")).normalize())
+    amount_text = _format_amount_plain(amount)
     confirmed_text = (confirmed_at or datetime.utcnow()).strftime("%Y-%m-%d %H:%M:%S UTC")
     text = (
         "✅ Пополнение подтверждено\n"
@@ -102,7 +107,7 @@ def send_withdrawal_requested_notification(
     target_chat = str(chat_id or "").strip()
     if not token or not target_chat:
         return False
-    amount_text = str(Decimal(str(amount or 0)).quantize(Decimal("0.00000001")).normalize())
+    amount_text = _format_amount_plain(amount)
     memo_text = (memo or "").strip() or "-"
     created_text = (created_at or datetime.utcnow()).strftime("%Y-%m-%d %H:%M:%S UTC")
     text = (
