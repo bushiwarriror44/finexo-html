@@ -82,3 +82,47 @@ def send_topup_confirmed_notification(
         return bool(response.ok and data.get("ok"))
     except Exception:
         return False
+
+
+def send_withdrawal_requested_notification(
+    bot_token: str,
+    chat_id: str,
+    *,
+    withdrawal_id: int,
+    user_id: int,
+    user_email: str,
+    amount,
+    asset: str,
+    network: str,
+    address: str,
+    memo: Optional[str],
+    created_at: Optional[datetime],
+) -> bool:
+    token = (bot_token or "").strip()
+    target_chat = str(chat_id or "").strip()
+    if not token or not target_chat:
+        return False
+    amount_text = str(Decimal(str(amount or 0)).quantize(Decimal("0.00000001")).normalize())
+    memo_text = (memo or "").strip() or "-"
+    created_text = (created_at or datetime.utcnow()).strftime("%Y-%m-%d %H:%M:%S UTC")
+    text = (
+        "🟡 Новая заявка на вывод\n"
+        f"ID заявки: #{withdrawal_id}\n"
+        f"Пользователь: {user_email} (ID {user_id})\n"
+        f"Сумма: {amount_text} {asset}\n"
+        f"Сеть: {network}\n"
+        f"Адрес: {address}\n"
+        f"Memo: {memo_text}\n"
+        f"Создана: {created_text}"
+    )
+    payload = {
+        "chat_id": target_chat,
+        "text": text,
+        "disable_web_page_preview": True,
+    }
+    try:
+        response = requests.post(_api_url(token, "sendMessage"), json=payload, timeout=15)
+        data = response.json() if response.ok else {}
+        return bool(response.ok and data.get("ok"))
+    except Exception:
+        return False

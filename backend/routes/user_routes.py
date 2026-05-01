@@ -34,6 +34,7 @@ from models import (
     SupportSlaRule,
     SupportTicket,
     TeamApplication,
+    TelegramBotSettings,
     User,
     UserBalanceLedger,
     WithdrawalRequest,
@@ -63,6 +64,7 @@ from services.withdrawal_service import (
 )
 from services.email_service import EmailServiceError, send_team_application_email
 from services.rate_limit import rate_limit
+from services.telegram_service import send_withdrawal_requested_notification
 
 user_bp = Blueprint("user", __name__, url_prefix="/api/user")
 _schema_checked = False
@@ -488,6 +490,26 @@ def create_withdrawal():
             return jsonify(payload), status
         payload, status = api_error(message, "WITHDRAWAL_CREATE_FAILED", 400)
         return jsonify(payload), status
+    try:
+        bot_settings = TelegramBotSettings.query.filter_by(is_active=True).order_by(TelegramBotSettings.id.asc()).first()
+        if bot_settings and bot_settings.last_chat_id:
+            bot_token = bot_settings.get_bot_token()
+            if bot_token:
+                send_withdrawal_requested_notification(
+                    bot_token,
+                    bot_settings.last_chat_id,
+                    withdrawal_id=row.id,
+                    user_id=user.id,
+                    user_email=user.email,
+                    amount=row.amount,
+                    asset=row.asset,
+                    network=row.network,
+                    address=row.address,
+                    memo=row.memo,
+                    created_at=row.created_at,
+                )
+    except Exception:
+        pass
     return (
         jsonify(
             {
