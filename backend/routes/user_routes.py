@@ -54,6 +54,7 @@ from services.dashboard_contract import (
 from services.referral_service import ensure_referral_code
 from services.password_policy import validate_password_policy
 from services.security import create_token, hash_password, totp_code, verify_password
+from services.mining_engine import release_matured_user_positions
 from services.mining_service import create_contract_from_plan, get_available_usdt, get_mining_summary
 from services.withdrawal_service import (
     MANUAL_CREDIT_REASON_PREFIX,
@@ -75,6 +76,15 @@ os.makedirs(KYC_STORAGE_ROOT, exist_ok=True)
 ALLOWED_KYC_MIME = {"image/jpeg", "image/png", "application/pdf"}
 MAX_KYC_FILE_SIZE = 8 * 1024 * 1024
 EMAIL_RE = re.compile(r"^[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}$", re.IGNORECASE)
+
+
+def _release_matured_staking_if_needed(user):
+    if not user:
+        return
+    try:
+        release_matured_user_positions(user.id)
+    except Exception:
+        db.session.rollback()
 
 
 def _require_user():
@@ -351,6 +361,7 @@ def balance():
     if not user:
         payload, status = api_error("unauthorized", "AUTH_UNAUTHORIZED", 401)
         return jsonify(payload), status
+    _release_matured_staking_if_needed(user)
 
     positive_entries = {"credit", "withdrawal_release"}
     page = max(1, int(request.args.get("page", 1) or 1))
@@ -432,6 +443,7 @@ def balance():
             "entries": payload,
             "page": page,
             "pageSize": page_size,
+            "serverTime": datetime.utcnow().isoformat(),
         }
     )
 
@@ -442,6 +454,7 @@ def create_withdrawal():
     if not user:
         payload, status = api_error("unauthorized", "AUTH_UNAUTHORIZED", 401)
         return jsonify(payload), status
+    _release_matured_staking_if_needed(user)
     data = request.get_json(silent=True) or {}
     try:
         row = create_withdrawal_request(
@@ -1193,6 +1206,7 @@ def staking_positions():
     if not user:
         payload, status = api_error("unauthorized", "AUTH_UNAUTHORIZED", 401)
         return jsonify(payload), status
+    _release_matured_staking_if_needed(user)
     positions = (
         UserStakingPosition.query.filter_by(user_id=user.id)
         .order_by(UserStakingPosition.created_at.desc())
@@ -1235,6 +1249,7 @@ def staking_summary():
     if not user:
         payload, status = api_error("unauthorized", "AUTH_UNAUTHORIZED", 401)
         return jsonify(payload), status
+    _release_matured_staking_if_needed(user)
     invested = (
         db.session.query(db.func.coalesce(db.func.sum(UserStakingPosition.amount), 0))
         .filter(UserStakingPosition.user_id == user.id)

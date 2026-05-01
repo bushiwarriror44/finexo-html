@@ -176,7 +176,7 @@
         <div class="col-md-5"><input class="form-control" name="reason" placeholder="Причина (обязательно)" required /></div>
         <div class="col-md-2"><button class="btn btn-success w-100" type="submit">Ручное начисление</button></div>
       </form>
-      <p class="text-muted small mt-2 mb-0">Ручное начисление добавляет виртуальные USDT только для покупок. Эти средства можно использовать для тарифов, но нельзя вывести.</p>
+      <p class="text-muted small mt-2 mb-0">Ручное начисление добавляет USDT, доступные пользователю как для покупок, так и для вывода.</p>
     </div>
   </div>
 
@@ -302,6 +302,20 @@
         </div>
         <div class="modal-body" id="verificationDocsModalBody">
           <p class="text-muted">Loading...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="stakingPositionsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="stakingPositionsModalTitle">Стейкинг — позиции</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="stakingPositionsModalBody">
+          <p class="text-muted">Загрузка...</p>
         </div>
       </div>
     </div>
@@ -573,10 +587,11 @@
               <th>Всего поз.</th>
               <th>Начислено</th>
               <th>Последняя позиция</th>
+              <th>Позиции</th>
             </tr>
           </thead>
           <tbody id="stakingUsersTableBody">
-            <tr><td colspan="6">Загрузка...</td></tr>
+            <tr><td colspan="7">Загрузка...</td></tr>
           </tbody>
         </table>
       </div>
@@ -642,12 +657,16 @@
 <script>
 async function submitJson(url, method, payload) {
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-  const res = await fetch(url, {
+  const m = String(method || "GET").toUpperCase();
+  const fetchOpts = {
     method,
     headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken },
     credentials: "same-origin",
-    body: JSON.stringify(payload),
-  });
+  };
+  if (m !== "GET" && m !== "HEAD" && payload !== undefined) {
+    fetchOpts.body = JSON.stringify(payload);
+  }
+  const res = await fetch(url, fetchOpts);
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new Error(data.error || "Request failed");
@@ -888,6 +907,13 @@ const bootstrapModalFactory = window.bootstrap?.Modal || null;
 const verificationDocsModal =
   verificationDocsModalElement && bootstrapModalFactory
     ? new bootstrapModalFactory(verificationDocsModalElement)
+    : null;
+const stakingPositionsModalElement = document.getElementById("stakingPositionsModal");
+const stakingPositionsModalBody = document.getElementById("stakingPositionsModalBody");
+const stakingPositionsModalTitle = document.getElementById("stakingPositionsModalTitle");
+const stakingPositionsModal =
+  stakingPositionsModalElement && bootstrapModalFactory
+    ? new bootstrapModalFactory(stakingPositionsModalElement)
     : null;
 
 function topupsFiltersPayload() {
@@ -1353,6 +1379,116 @@ async function fetchStakingTiers() {
   }
 }
 
+function isoToDatetimeLocalValue(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function datetimeLocalToIso(val) {
+  if (!val) return null;
+  const d = new Date(val);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString();
+}
+
+function renderStakingPositionsModal(rows, userId, email) {
+  const body = stakingPositionsModalBody;
+  if (!body || !stakingPositionsModalTitle) return;
+  stakingPositionsModalTitle.textContent = `Стейкинг — позиции (user ${userId}${email ? `: ${email}` : ""})`;
+  if (!rows.length) {
+    body.innerHTML = `<p class="text-muted">Нет позиций.</p>`;
+    return;
+  }
+  body.innerHTML = `
+    <table class="table table-sm">
+      <thead><tr><th>ID</th><th>Сумма</th><th>Статус</th><th>Lock until</th><th>Создана</th><th>Released</th><th>Действия</th></tr></thead>
+      <tbody>
+        ${rows
+          .map((p) => {
+            const isActive = String(p.status || "").toLowerCase() === "active";
+            const lockCell = isActive
+              ? `<input type="datetime-local" class="form-control form-control-sm staking-lock-input-${p.id}" value="${escapeHtml(isoToDatetimeLocalValue(p.lockUntil))}" />`
+              : escapeHtml(p.lockUntil || "-");
+            const actions = isActive
+              ? `<div class="d-flex flex-wrap gap-1">
+                  <button type="button" class="btn btn-sm btn-primary staking-save-lock-btn" data-position-id="${p.id}">Сохранить lockUntil</button>
+                  <button type="button" class="btn btn-sm btn-warning staking-release-now-btn" data-position-id="${p.id}">Закрыть сейчас</button>
+                </div>`
+              : "—";
+            return `<tr>
+              <td>${escapeHtml(p.id)}</td>
+              <td>${escapeHtml(formatDecimalValue(p.amount))}</td>
+              <td>${escapeHtml(p.status)}</td>
+              <td style="min-width:220px">${lockCell}</td>
+              <td>${escapeHtml(p.createdAt || "-")}</td>
+              <td>${escapeHtml(p.releasedAt || "-")}</td>
+              <td>${actions}</td>
+            </tr>`;
+          })
+          .join("")}
+      </tbody>
+    </table>`;
+  body.querySelectorAll(".staking-save-lock-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const pid = btn.getAttribute("data-position-id");
+      const input = body.querySelector(`.staking-lock-input-${pid}`);
+      const iso = datetimeLocalToIso(input?.value || "");
+      if (!iso) {
+        showFeedback("Укажите дату lockUntil", "danger");
+        return;
+      }
+      markPending(btn, true);
+      try {
+        await submitJson(`/admin/api/staking/positions/${pid}`, "PATCH", { lockUntil: iso });
+        showFeedback("Позиция обновлена.");
+        const refreshed = await submitJson(`/admin/api/staking/positions?userId=${encodeURIComponent(userId)}`, "GET");
+        renderStakingPositionsModal(Array.isArray(refreshed) ? refreshed : [], userId, email);
+        await fetchStakingUsers();
+      } catch (err) {
+        showFeedback(err.message || "Ошибка", "danger");
+      } finally {
+        markPending(btn, false);
+      }
+    });
+  });
+  body.querySelectorAll(".staking-release-now-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!window.confirm("Закрыть позицию и вернуть principal на баланс пользователя?")) return;
+      const pid = btn.getAttribute("data-position-id");
+      markPending(btn, true);
+      try {
+        await submitJson(`/admin/api/staking/positions/${pid}`, "PATCH", { action: "release" });
+        showFeedback("Позиция закрыта.");
+        const refreshed = await submitJson(`/admin/api/staking/positions?userId=${encodeURIComponent(userId)}`, "GET");
+        renderStakingPositionsModal(Array.isArray(refreshed) ? refreshed : [], userId, email);
+        await fetchStakingUsers();
+      } catch (err) {
+        showFeedback(err.message || "Ошибка", "danger");
+      } finally {
+        markPending(btn, false);
+      }
+    });
+  });
+}
+
+async function openStakingPositionsModal(userId, email) {
+  if (!stakingPositionsModalBody || !stakingPositionsModal) {
+    showFeedback("Modal недоступен", "danger");
+    return;
+  }
+  stakingPositionsModalBody.innerHTML = `<p class="text-muted">Загрузка...</p>`;
+  stakingPositionsModal.show();
+  try {
+    const rows = await submitJson(`/admin/api/staking/positions?userId=${encodeURIComponent(userId)}`, "GET");
+    renderStakingPositionsModal(Array.isArray(rows) ? rows : [], userId, email || "");
+  } catch (err) {
+    stakingPositionsModalBody.innerHTML = `<p class="text-danger">${escapeHtml(err.message || "Ошибка загрузки")}</p>`;
+  }
+}
+
 async function fetchStakingUsers() {
   const tbody = document.getElementById("stakingUsersTableBody");
   const form = document.getElementById("stakingUsersFilterForm");
@@ -1367,7 +1503,7 @@ async function fetchStakingUsers() {
     const data = await submitJson(`/admin/api/staking/users?${params.toString()}`, "GET");
     const items = data?.items || [];
     if (!items.length) {
-      tbody.innerHTML = `<tr><td colspan="6">Нет пользователей</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7">Нет пользователей</td></tr>`;
       return;
     }
     tbody.innerHTML = items
@@ -1380,13 +1516,22 @@ async function fetchStakingUsers() {
         <td>${escapeHtml(row.positionsCount)}</td>
         <td>${escapeHtml(formatDecimalValue(row.totalAccruedUsdt))}</td>
         <td>${escapeHtml(row.lastOpenedAt || "-")}</td>
+        <td><button type="button" class="btn btn-sm btn-outline-primary staking-positions-btn" data-user-id="${escapeHtml(row.userId)}" data-email="${escapeHtml(row.email || "")}">Открыть</button></td>
       </tr>`,
       )
       .join("");
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="6" class="text-danger">${escapeHtml(err.message || "Ошибка")}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="text-danger">${escapeHtml(err.message || "Ошибка")}</td></tr>`;
   }
 }
+
+document.getElementById("stakingUsersTableBody")?.addEventListener("click", (e) => {
+  const btn = e.target.closest(".staking-positions-btn");
+  if (!btn) return;
+  const userId = btn.getAttribute("data-user-id");
+  const email = btn.getAttribute("data-email") || "";
+  if (userId) openStakingPositionsModal(userId, email);
+});
 
 document.getElementById("stakingTierForm")?.addEventListener("submit", async (e) => {
   e.preventDefault();

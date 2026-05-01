@@ -993,6 +993,10 @@
       "copyFailed": "Copy failed."
     },
     "nextActionTitle": "Next step:",
+    "serverTime": {
+      "label": "Server time",
+      "loading": "Syncing..."
+    },
     "trust": {
       "verification": "Verification level",
       "review": "Under review",

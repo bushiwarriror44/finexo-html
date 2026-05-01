@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 import re
 
@@ -42,6 +42,7 @@ from services.withdrawal_service import transition_withdrawal_status
 from services.wallet_verifier import process_topup
 from services.providers.tron_provider import get_tron_usdt_wallet_balance
 from services.telegram_service import sync_last_chat_id
+from services.mining_engine import release_one_matured_position
 
 admin_api_bp = Blueprint("admin_api", __name__, url_prefix="/admin/api")
 MANUAL_CREDIT_REASON_PREFIX = "MANUAL_CREDIT_PURCHASE_ONLY:"
@@ -70,6 +71,16 @@ def _parse_int(value, default=None):
         return int(value)
     except (TypeError, ValueError):
         return None
+
+
+def _parse_lock_until_iso(raw) -> datetime:
+    s = str(raw).strip()
+    if s.endswith("Z"):
+        s = s[:-1] + "+00:00"
+    dt = datetime.fromisoformat(s)
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
 
 
 def _is_valid_email(email: str) -> bool:
@@ -649,7 +660,7 @@ def manual_credit(user_id: int):
             user_id=user.id,
             amount=amount,
             entry_type="credit",
-            reason=f"{MANUAL_CREDIT_REASON_PREFIX}{reason}",
+            reason=f"Manual admin credit: {reason}",
             asset="USDT",
             network="USDT",
         )
@@ -1442,6 +1453,81 @@ def admin_staking_users():
             }
         )
     return jsonify({"items": items, "total": total, "page": page, "pageSize": page_size})
+
+
+@admin_api_bp.get("/staking/positions")
+def admin_staking_positions_list():
+    admin = _require_admin()
+    if not admin:
+        return _json_error("forbidden", "FORBIDDEN", 403)
+    user_id = _parse_int(request.args.get("userId"))
+    if not user_id:
+        return _json_error("userId is required", "USER_ID_REQUIRED", 400)
+    rows = (
+        UserStakingPosition.query.filter_by(user_id=user_id)
+        .order_by(UserStakingPosition.created_at.desc())
+        .all()
+    )
+    return jsonify(
+        [
+            {
+                "id": row.id,
+                "tierId": row.tier_id,
+                "amount": float(row.amount),
+                "status": row.status,
+                "lockUntil": row.lock_until.isoformat() if row.lock_until else None,
+                "releasedAt": row.released_at.isoformat() if row.released_at else None,
+                "createdAt": row.created_at.isoformat() if row.created_at else None,
+                "lockedDailyRate": float(row.locked_daily_rate) if row.locked_daily_rate is not None else None,
+                "lockedMinAmount": float(row.locked_min_amount) if row.locked_min_amount is not None else None,
+                "lockedMaxAmount": float(row.locked_max_amount) if row.locked_max_amount is not None else None,
+            }
+            for row in rows
+        ]
+    )
+
+
+@admin_api_bp.patch("/staking/positions/<int:position_id>")
+def admin_staking_position_patch(position_id: int):
+    admin = _require_admin()
+    if not admin:
+        return _json_error("forbidden", "FORBIDDEN", 403)
+    position = UserStakingPosition.query.get(position_id)
+    if not position:
+        return _json_error("position not found", "STAKING_POSITION_NOT_FOUND", 404)
+    if position.status != "active":
+        return _json_error("position is not active", "STAKING_POSITION_NOT_ACTIVE", 400)
+    data = request.get_json(silent=True) or {}
+    action = (data.get("action") or "").strip().lower()
+    released = False
+
+    if action == "release":
+        position.lock_until = datetime.utcnow() - timedelta(seconds=1)
+    elif "lockUntil" in data and data.get("lockUntil") is not None:
+        try:
+            position.lock_until = _parse_lock_until_iso(data.get("lockUntil"))
+        except (ValueError, TypeError):
+            return _json_error("invalid lockUntil", "STAKING_INVALID_LOCK_UNTIL", 400)
+    else:
+        return _json_error("lockUntil or action release is required", "STAKING_PATCH_REQUIRED", 400)
+
+    now = datetime.utcnow()
+    if position.lock_until and position.lock_until <= now:
+        released = release_one_matured_position(position, now=now, audit_source="admin")
+        if not released:
+            db.session.rollback()
+            return _json_error("release failed", "STAKING_RELEASE_FAILED", 500)
+    else:
+        db.session.commit()
+
+    lock_txt = position.lock_until.isoformat() if position.lock_until else ""
+    write_audit(
+        "admin",
+        admin.id,
+        "staking_position_update",
+        f"position_id={position_id}; lock_until={lock_txt}; released={released}",
+    )
+    return jsonify({"success": True, "released": released})
 
 
 @admin_api_bp.get("/staking/tiers")

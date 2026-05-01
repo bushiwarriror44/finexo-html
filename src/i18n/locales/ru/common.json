@@ -993,6 +993,10 @@
       "copyFailed": "Не удалось скопировать."
     },
     "nextActionTitle": "Следующий шаг:",
+    "serverTime": {
+      "label": "Серверное время",
+      "loading": "Синхронизация..."
+    },
     "trust": {
       "verification": "Уровень верификации",
       "review": "На проверке",

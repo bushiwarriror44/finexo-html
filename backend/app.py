@@ -85,6 +85,7 @@ csrf.exempt(api_bp)
 csrf.exempt(auth_bp)
 csrf.exempt(user_bp)
 csrf.exempt(wallet_bp)
+csrf.exempt(admin_api_bp)
 
 app.register_blueprint(api_bp)
 app.register_blueprint(admin_bp)

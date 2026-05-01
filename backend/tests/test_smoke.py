@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 try:
     from backend.app import app
     from backend.models import (
-        ApiCredential,
         DashboardFilterPreset,
         DashboardNotification,
         KycDocument,
@@ -14,11 +13,13 @@ try:
         MiningContract,
         MiningPlan,
         ReferralRule,
+        StakingTier,
         SupportTicket,
         TeamApplication,
         TopUpTransaction,
         User,
         UserBalanceLedger,
+        UserStakingPosition,
         WalletAddress,
         WithdrawalRequest,
         db,
@@ -31,7 +32,6 @@ try:
 except ModuleNotFoundError:
     from app import app
     from models import (
-        ApiCredential,
         DashboardFilterPreset,
         DashboardNotification,
         KycDocument,
@@ -40,11 +40,13 @@ except ModuleNotFoundError:
         MiningContract,
         MiningPlan,
         ReferralRule,
+        StakingTier,
         SupportTicket,
         TeamApplication,
         TopUpTransaction,
         User,
         UserBalanceLedger,
+        UserStakingPosition,
         WalletAddress,
         WithdrawalRequest,
         db,
@@ -63,9 +65,10 @@ class SmokeTestCase(unittest.TestCase):
 
     def setUp(self):
         app.config["TESTING"] = True
+        app.config.pop("SQLALCHEMY_ENGINE_OPTIONS", None)
         app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
-        self.client = app.test_client()
         with app.app_context():
+            db.session.remove()
             db.drop_all()
             db.create_all()
             init_all_models()
@@ -74,15 +77,13 @@ class SmokeTestCase(unittest.TestCase):
                     asset="USDT", network="TRX", address="TTEST123", is_active=True
                 )
             )
-            db.session.add(
-                ApiCredential(
-                    provider="tron", api_url="https://api.trongrid.io", is_active=True
-                )
-            )
+            # Tron ApiCredential is created by init_all_models(); avoid UNIQUE(provider) clash.
             db.session.commit()
 
+        self.client = app.test_client()
+
     def register_user(
-        self, email: str, password: str = "password123", referral_code: str = ""
+        self, email: str, password: str = "Password123", referral_code: str = ""
     ):
         payload = {
             "email": email,
@@ -95,7 +96,7 @@ class SmokeTestCase(unittest.TestCase):
             payload["referralCode"] = referral_code
         return self.client.post("/api/auth/register", json=payload)
 
-    def login_user(self, email: str, password: str = "password123"):
+    def login_user(self, email: str, password: str = "Password123"):
         return self.client.post(
             "/api/auth/login", json={"email": email, "password": password}
         )
@@ -253,7 +254,7 @@ class SmokeTestCase(unittest.TestCase):
         self.assertEqual(detail.get_json()["id"], user_id)
         self.assertIn("balances", detail.get_json())
 
-    def test_manual_credit_purchase_only_for_buy_not_withdraw(self):
+    def test_manual_credit_is_withdrawable(self):
         self.register_user("manual@test.com")
         self.login_user("manual@test.com")
         plan_id = self.client.get("/api/user/mining/plans").get_json()[0]["id"]
@@ -274,9 +275,10 @@ class SmokeTestCase(unittest.TestCase):
             json={"amount": 200, "reason": "ops bonus"},
         )
         self.assertEqual(manual.status_code, 200)
-        self.assertGreater(manual.get_json()["balances"]["availableUsdt"], 0)
-        self.assertEqual(manual.get_json()["balances"]["withdrawableUsdt"], 0)
-        self.assertGreater(manual.get_json()["balances"]["purchaseOnlyUsdt"], 0)
+        balances = manual.get_json()["balances"]
+        self.assertGreater(float(balances["availableUsdt"]), 0)
+        self.assertGreater(float(balances["withdrawableUsdt"]), 0)
+        self.assertEqual(float(balances["purchaseOnlyUsdt"]), 0)
 
         self.client.post("/api/auth/logout", json={})
         self.login_user("manual@test.com")
@@ -286,12 +288,13 @@ class SmokeTestCase(unittest.TestCase):
             "/api/user/withdrawals",
             json={
                 "asset": "USDT",
-                "network": "USDT",
-                "address": "TNO_WITHDRAW",
+                "network": "TRX",
+                "address": "TWD123",
+                "memo": "",
                 "amount": 1,
             },
         )
-        self.assertEqual(withdrawal.status_code, 400)
+        self.assertEqual(withdrawal.status_code, 201)
 
     def test_manual_credit_requires_positive_amount(self):
         self.register_user("manual2@test.com")
@@ -306,6 +309,174 @@ class SmokeTestCase(unittest.TestCase):
             json={"amount": -5, "reason": "invalid"},
         )
         self.assertEqual(bad.status_code, 400)
+
+    def test_staking_position_lazy_release_on_get_positions(self):
+        self.register_user("stakelazy@test.com")
+        self.login_user("stakelazy@test.com")
+        before = self.client.get("/api/user/balance")
+        self.assertEqual(before.status_code, 200)
+        withdrawable_before = float(before.get_json().get("withdrawableBalance") or 0)
+
+        with app.app_context():
+            user = User.query.filter_by(email="stakelazy@test.com").first()
+            tier = StakingTier.query.first()
+            self.assertIsNotNone(tier)
+            position = UserStakingPosition(
+                user_id=user.id,
+                tier_id=tier.id,
+                amount=100,
+                status="active",
+                lock_until=datetime.utcnow() - timedelta(minutes=1),
+                locked_daily_rate=tier.daily_rate,
+                locked_min_amount=tier.min_amount,
+                locked_max_amount=tier.max_amount,
+            )
+            db.session.add(position)
+            db.session.commit()
+            position_id = position.id
+            user_id = user.id
+
+        resp = self.client.get("/api/user/staking/positions")
+        self.assertEqual(resp.status_code, 200)
+        items = resp.get_json() or []
+        row = next((p for p in items if int(p["id"]) == int(position_id)), None)
+        self.assertIsNotNone(row)
+        self.assertEqual(row.get("status"), "completed")
+        self.assertTrue(row.get("releasedAt"))
+
+        with app.app_context():
+            ledger_rows = UserBalanceLedger.query.filter_by(
+                user_id=user_id,
+                entry_type="credit",
+                reason=f"Staking principal release #{position_id}",
+            ).count()
+            self.assertEqual(ledger_rows, 1)
+
+        after = self.client.get("/api/user/balance")
+        self.assertEqual(after.status_code, 200)
+        withdrawable_after = float(after.get_json().get("withdrawableBalance") or 0)
+        self.assertGreaterEqual(withdrawable_after, withdrawable_before + 99.99)
+
+    def test_admin_staking_position_release_now(self):
+        self.register_user("stakerelease@test.com")
+        self.login_user("stakerelease@test.com")
+        position_id = None
+        user_id = None
+        with app.app_context():
+            user = User.query.filter_by(email="stakerelease@test.com").first()
+            tier = StakingTier.query.first()
+            self.assertIsNotNone(tier)
+            position = UserStakingPosition(
+                user_id=user.id,
+                tier_id=tier.id,
+                amount=500,
+                status="active",
+                lock_until=datetime.utcnow() + timedelta(days=30),
+                locked_daily_rate=tier.daily_rate,
+                locked_min_amount=tier.min_amount,
+                locked_max_amount=tier.max_amount,
+            )
+            db.session.add(position)
+            db.session.commit()
+            position_id = position.id
+            user_id = user.id
+
+        with app.app_context():
+            admin_id = User.query.filter_by(is_admin=True).first().id
+        with self.client.session_transaction() as sess:
+            sess["admin_user_id"] = admin_id
+
+        patch = self.client.patch(
+            f"/admin/api/staking/positions/{position_id}",
+            json={"action": "release"},
+        )
+        self.assertEqual(patch.status_code, 200)
+        self.assertTrue(patch.get_json().get("released"))
+
+        with app.app_context():
+            pos = UserStakingPosition.query.get(position_id)
+            self.assertEqual(pos.status, "completed")
+            self.assertIsNotNone(pos.released_at)
+            n = UserBalanceLedger.query.filter_by(
+                user_id=user_id,
+                entry_type="credit",
+                reason=f"Staking principal release #{position_id}",
+            ).count()
+            self.assertEqual(n, 1)
+
+        self.client.post("/api/auth/logout", json={})
+        self.login_user("stakerelease@test.com")
+        bal = self.client.get("/api/user/balance")
+        self.assertGreaterEqual(float(bal.get_json().get("withdrawableBalance") or 0), 499.99)
+        wd = self.client.post(
+            "/api/user/withdrawals",
+            json={
+                "asset": "USDT",
+                "network": "TRX",
+                "address": "TWD123",
+                "memo": "",
+                "amount": 100,
+            },
+        )
+        self.assertEqual(wd.status_code, 201)
+
+    def test_admin_staking_position_extend_lock_until(self):
+        self.register_user("stakeext@test.com")
+        position_id = None
+        uid = None
+        with app.app_context():
+            user = User.query.filter_by(email="stakeext@test.com").first()
+            tier = StakingTier.query.first()
+            self.assertIsNotNone(tier)
+            position = UserStakingPosition(
+                user_id=user.id,
+                tier_id=tier.id,
+                amount=50,
+                status="active",
+                lock_until=datetime.utcnow() + timedelta(days=10),
+                locked_daily_rate=tier.daily_rate,
+                locked_min_amount=tier.min_amount,
+                locked_max_amount=tier.max_amount,
+            )
+            db.session.add(position)
+            db.session.commit()
+            position_id = position.id
+            uid = user.id
+
+        with app.app_context():
+            admin_id = User.query.filter_by(is_admin=True).first().id
+        with self.client.session_transaction() as sess:
+            sess["admin_user_id"] = admin_id
+
+        future = (datetime.utcnow() + timedelta(days=20)).replace(microsecond=0).isoformat()
+        r1 = self.client.patch(
+            f"/admin/api/staking/positions/{position_id}",
+            json={"lockUntil": future},
+        )
+        self.assertEqual(r1.status_code, 200)
+        self.assertFalse(r1.get_json().get("released"))
+        with app.app_context():
+            pos = UserStakingPosition.query.get(position_id)
+            self.assertEqual(pos.status, "active")
+
+        past = (datetime.utcnow() - timedelta(minutes=2)).replace(microsecond=0).isoformat()
+        r2 = self.client.patch(
+            f"/admin/api/staking/positions/{position_id}",
+            json={"lockUntil": past},
+        )
+        self.assertEqual(r2.status_code, 200)
+        self.assertTrue(r2.get_json().get("released"))
+        with app.app_context():
+            pos = UserStakingPosition.query.get(position_id)
+            self.assertEqual(pos.status, "completed")
+            self.assertEqual(
+                UserBalanceLedger.query.filter_by(
+                    user_id=uid,
+                    entry_type="credit",
+                    reason=f"Staking principal release #{position_id}",
+                ).count(),
+                1,
+            )
 
     def test_negative_invalid_reset_token(self):
         register = self.register_user("u2@test.com")

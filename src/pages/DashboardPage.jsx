@@ -22,7 +22,7 @@ const DASHBOARD_LINKS = [
 ];
 
 export function DashboardPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const [counters, setCounters] = useState({ topups: 0, withdrawals: 0, support: 0 });
@@ -34,6 +34,9 @@ export function DashboardPage() {
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [markAllBusy, setMarkAllBusy] = useState(false);
+  const [serverTimeBaseMs, setServerTimeBaseMs] = useState(null);
+  const [serverTimeCapturedAtMs, setServerTimeCapturedAtMs] = useState(null);
+  const [serverClockTick, setServerClockTick] = useState(0);
   const lastLoadAtRef = useRef(0);
   const load = useCallback(async ({ silent = false } = {}) => {
     if (!silent) {
@@ -41,7 +44,7 @@ export function DashboardPage() {
       setError("");
     }
     try {
-      const [topups, withdrawals, tickets, kyc, notifications] = await Promise.all([
+      const [topups, withdrawals, tickets, kyc, notifications, balanceData] = await Promise.all([
         apiGet("/api/wallet/topups"),
         apiGet("/api/user/withdrawals"),
         apiGet("/api/user/support/tickets"),
@@ -51,6 +54,7 @@ export function DashboardPage() {
             notificationFilters.priority
           )}&read=${encodeURIComponent(notificationFilters.read)}`
         ),
+        apiGet("/api/user/balance"),
       ]);
       const topupPending = (topups || []).filter((x) => ["pending", "queued", "running"].includes(String(x?.status || "").toLowerCase())).length;
       const withdrawalPending = (withdrawals || []).filter((x) => ["pending", "review"].includes(String(x?.status || "").toLowerCase())).length;
@@ -60,6 +64,11 @@ export function DashboardPage() {
       const rawKyc = String(kyc?.rawStatus || kyc?.status || "not_started").toLowerCase();
       setKycEnforcementActive(Boolean(kyc?.verificationRequested) && rawKyc !== "approved");
       setActivityFeed(Array.isArray(notifications?.items) ? notifications.items : []);
+      const parsedServerTime = Date.parse(String(balanceData?.serverTime || ""));
+      if (Number.isFinite(parsedServerTime)) {
+        setServerTimeBaseMs(parsedServerTime);
+        setServerTimeCapturedAtMs(Date.now());
+      }
       lastLoadAtRef.current = Date.now();
       setInitialLoaded(true);
     } catch {
@@ -91,6 +100,13 @@ export function DashboardPage() {
   }, [load]);
 
   useEffect(() => {
+    const interval = setInterval(() => {
+      setServerClockTick((v) => v + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     const es = new EventSource("/api/user/realtime/stream", { withCredentials: true });
     es.onopen = () => {};
     es.onerror = () => {};
@@ -118,6 +134,18 @@ export function DashboardPage() {
     }),
     [counters]
   );
+
+  const serverNowText = useMemo(() => {
+    if (!Number.isFinite(serverTimeBaseMs) || !Number.isFinite(serverTimeCapturedAtMs)) {
+      return t("dashboardCabinet.serverTime.loading", { defaultValue: "Syncing..." });
+    }
+    const elapsed = Math.max(0, Date.now() - serverTimeCapturedAtMs);
+    const live = new Date(serverTimeBaseMs + elapsed);
+    const locale = String(i18n?.language || "").toLowerCase().startsWith("ru") ? "ru-RU" : "en-GB";
+    const datePart = live.toLocaleDateString(locale, { timeZone: "UTC", year: "numeric", month: "2-digit", day: "2-digit" });
+    const timePart = live.toLocaleTimeString(locale, { timeZone: "UTC", hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    return `${datePart} ${timePart} UTC`;
+  }, [i18n?.language, serverClockTick, serverTimeBaseMs, serverTimeCapturedAtMs, t]);
 
   const contextualActions = useMemo(() => {
     const byPath = {
@@ -174,6 +202,9 @@ export function DashboardPage() {
         <ErrorState message={error} onRetry={() => load().catch(() => {})} retryLabel={t("dashboardCabinet.actions.retry")} />
         {status ? <p className="dash-alert is-success">{status}</p> : null}
         {loading && !initialLoaded ? <LoadingSkeleton rows={2} /> : null}
+        <p className="dash-help">
+          {t("dashboardCabinet.serverTime.label", { defaultValue: "Server time" })}: <strong>{serverNowText}</strong>
+        </p>
         <ActionPopupCard
           icon={FiTrendingUp}
           title={t("dashboardCabinet.nextAction.buyPower", { defaultValue: "Start earning!" })}

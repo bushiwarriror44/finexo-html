@@ -136,6 +136,71 @@ def run_daily_mining_accruals(now: Optional[datetime] = None) -> int:
     return run_hourly_mining_accruals(now)
 
 
+def release_one_matured_position(
+    position: UserStakingPosition,
+    *,
+    now: Optional[datetime] = None,
+    audit_source: str = "lazy",
+) -> bool:
+    """If position is active and lock_until has passed, credit principal and complete.
+
+    audit_source: "lazy" | "worker" | "admin" — appended to staking_release audit line.
+    """
+    now = now or datetime.utcnow()
+    if position.status != "active":
+        return False
+    lock_until = position.lock_until or (position.created_at + timedelta(days=30))
+    if not lock_until or now < lock_until:
+        return False
+    slot = now.replace(minute=0, second=0, microsecond=0)
+    if not position.released_at:
+        principal_amount = Decimal(str(position.amount or 0))
+        if principal_amount > 0:
+            db.session.add(
+                UserBalanceLedger(
+                    user_id=position.user_id,
+                    amount=principal_amount,
+                    entry_type="credit",
+                    reason=f"Staking principal release #{position.id}",
+                    asset="USDT",
+                    network="USDT",
+                )
+            )
+        position.released_at = slot
+    position.status = "completed"
+    db.session.commit()
+    if audit_source == "worker":
+        audit_detail = f"position_id={position.id}; released_at={slot.isoformat()}"
+    elif audit_source == "admin":
+        audit_detail = f"position_id={position.id}; admin_triggered=1; released_at={slot.isoformat()}"
+    else:
+        audit_detail = f"position_id={position.id}; lazy=1; released_at={slot.isoformat()}"
+    write_audit("system", None, "staking_release", audit_detail)
+    return True
+
+
+def release_matured_user_positions(user_id: int, now: Optional[datetime] = None) -> int:
+    """Release principal for matured staking positions for one user (lazy close).
+
+    Mirrors the maturity branch of run_hourly_staking_accruals without hourly accruals.
+    Safe to call from HTTP handlers when the worker is down.
+    """
+    now = now or datetime.utcnow()
+    positions = (
+        UserStakingPosition.query.filter(
+            UserStakingPosition.user_id == user_id,
+            UserStakingPosition.status == "active",
+        )
+        .order_by(UserStakingPosition.created_at.asc())
+        .all()
+    )
+    released = 0
+    for position in positions:
+        if release_one_matured_position(position, now=now, audit_source="lazy"):
+            released += 1
+    return released
+
+
 def run_hourly_staking_accruals(now: Optional[datetime] = None) -> int:
     now = now or datetime.utcnow()
     slot = now.replace(minute=0, second=0, microsecond=0)
@@ -148,23 +213,7 @@ def run_hourly_staking_accruals(now: Optional[datetime] = None) -> int:
     for position in positions:
         lock_until = position.lock_until or (position.created_at + timedelta(days=30))
         if lock_until and now >= lock_until:
-            if not position.released_at:
-                principal_amount = Decimal(str(position.amount or 0))
-                if principal_amount > 0:
-                    db.session.add(
-                        UserBalanceLedger(
-                            user_id=position.user_id,
-                            amount=principal_amount,
-                            entry_type="credit",
-                            reason=f"Staking principal release #{position.id}",
-                            asset="USDT",
-                            network="USDT",
-                        )
-                    )
-                position.released_at = slot
-            position.status = "completed"
-            db.session.commit()
-            write_audit("system", None, "staking_release", f"position_id={position.id}; released_at={slot.isoformat()}")
+            release_one_matured_position(position, now=now, audit_source="worker")
             continue
         exists = StakingAccrual.query.filter_by(position_id=position.id, accrual_at=slot).first()
         if exists:

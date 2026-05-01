@@ -872,6 +872,18 @@ def init_career_cta_section():
 
 def init_all_models():
     db.create_all()
+    # Legacy manual credits used MANUAL_CREDIT_PURCHASE_ONLY: prefix; strip so amounts count as fully withdrawable.
+    try:
+        db.session.execute(
+            text(
+                "UPDATE user_balance_ledger SET reason = TRIM(REPLACE(reason, :prefix, '')) "
+                "WHERE reason LIKE :pat"
+            ),
+            {"prefix": "MANUAL_CREDIT_PURCHASE_ONLY:", "pat": "MANUAL_CREDIT_PURCHASE_ONLY:%"},
+        )
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
     # lightweight in-app migration for legacy installations
     try:
         db.session.execute(text("ALTER TABLE api_credential ADD COLUMN api_key_encrypted TEXT"))
